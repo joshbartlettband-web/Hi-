@@ -72,6 +72,7 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
  * get quieter instead of crushed. */
 #define LIM_T 18000
 static int32_t lim_env = LIM_T;
+static volatile int32_t lim_t = LIM_T;     /* the threshold now: LIM_T; Rainbow mode (kid.c kid_master) lowers it */
 /* MENU > USB LEVEL FIXED (for #42: record over USB with the speaker turned down): the mix goes to master_out at the
  * full MASTER level, USB audio takes that (audio.c uac_tap), and only then does MASTER scale what the DAC gets
  * (usb_fixed_dac). MASTER (0, the default): MASTER before master_out, as always (USB follows the knob) */
@@ -140,7 +141,7 @@ static inline int32_t spk_bass(int32_t m)
 
 static inline void master_out(int32_t *l, int32_t *r)
 {
-    int32_t al, ar, a;
+    int32_t al, ar, a, lt = lim_t;
     *l = dc_block(*l, &dc_l, &dce_l);
     *r = dc_block(*r, &dc_r, &dce_r);
     if (fx_lowcut) {                  /* two one-pole high-passes, error feedback as dc_block (the */
@@ -156,10 +157,10 @@ static inline void master_out(int32_t *l, int32_t *r)
     a = al > ar ? al : ar;
     if (a > lim_env)
         lim_env += (a - lim_env) >> 2;
-    else if (lim_env > LIM_T)
-        lim_env -= ((lim_env - LIM_T) >> 12) + 1;
-    if (lim_env > LIM_T) {
-        int32_t g = (int32_t)(((uint32_t)LIM_T << 15) / (uint32_t)lim_env);   /* < 32768 */
+    else if (lim_env > lt)
+        lim_env -= ((lim_env - lt) >> 12) + 1;
+    if (lim_env > lt) {
+        int32_t g = (int32_t)(((uint32_t)lt << 15) / (uint32_t)lim_env);   /* < 32768 */
         *l = ((*l >> 4) * g) >> 11;                      /* >> 4 first: |l| may be far above Q15 */
         *r = ((*r >> 4) * g) >> 11;
     }

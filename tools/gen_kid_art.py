@@ -698,6 +698,58 @@ FRIENDS = [
 ]
 
 
+# the treble clef of the staff (kid.c): 16 x 46, the G clef (U+1D11E) of the FreeSerif font (GNU FreeFont, GPL-3.0 or
+# later with the font exception), scaled down and thresholded, as plain rows here so the build needs no font
+CLEF = [
+    "........###.....",
+    "........####....",
+    ".......#####....",
+    ".......#####....",
+    "......###..##...",
+    "......##...##...",
+    "......##...##...",
+    "......##...##...",
+    "......#....##...",
+    "......#...###...",
+    "......#...###...",
+    "......#..###....",
+    "......######....",
+    ".......#####....",
+    "......#####.....",
+    ".....#####......",
+    "....######......",
+    "...######.......",
+    "...######.......",
+    "..####..#.......",
+    ".#####..#.......",
+    ".####...##......",
+    "####....#####...",
+    "###...########..",
+    "###...#########.",
+    "##...#####.#####",
+    "##...##..#...###",
+    "##...##..##...##",
+    "##...##...#...##",
+    "##...##...#...##",
+    ".##...#...#...##",
+    "..#....#..#...##",
+    "..##......##.##.",
+    "...##......###..",
+    ".....########...",
+    "........#..#....",
+    "...........##...",
+    "...........##...",
+    "............#...",
+    ".....###....#...",
+    "....#####...#...",
+    "...######...#...",
+    "...######...#...",
+    "....####...##...",
+    "....###...##....",
+    "......#####.....",
+]
+
+
 def rgb565(c):
     r, g, b = c[:3]
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
@@ -746,6 +798,11 @@ def main(out, png=None):
     lines.append(f"static const uint8_t KID_PIX[KID_N][{N * N // 2}] = {{")
     for d in data:
         lines.append("    {" + ",".join(str(b) for b in d) + "},")
+    lines.append("};")
+    lines.append(f"#define KID_CLEF_W {len(CLEF[0])}")
+    lines.append(f"#define KID_CLEF_H {len(CLEF)}")
+    lines.append(f"static const uint16_t KID_CLEF[{len(CLEF)}] = {{    /* bit 15 the left column */")
+    lines.append("    " + ", ".join(f"0x{sum(1 << (15 - x) for x, c in enumerate(r) if c == '#'):04X}" for r in CLEF))
     lines.append("};")
     open(out, "w").write("\n".join(lines) + "\n")
     print(f"kid art: {len(pics)} friends, {sum(len(d) for d in data)} B of pixels")

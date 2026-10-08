@@ -3,7 +3,8 @@
 //   node web/emu/kid_test.mjs build/emu/felucca.wasm [OUT_DIR]
 // Checks: it is on from power-up (the hello, then the friend's name in the band), a key sounds and shows its letter in the bubble,
 // PRESETS changes the friend (the band), every friend sounds at about the same level, MASTER is capped, PLAY starts
-// the beat, the top row's held effects, ten beats on SEQ, REC's skies, and HOME + SAVE held 3 s leaves for the full Felucca. With OUT_DIR, a screenshot of each step (.ppm).
+// the beat, the top row's tapped effects (and that a key after the tap still sounds), the staff, the grown-ups' VOLUME and the limiter,
+// ten beats on SEQ, REC's skies, and HOME + SAVE held 3 s leaves for the full Felucca. With OUT_DIR, a screenshot of each step (.ppm).
 import fs from "fs";
 
 const wasmPath = process.argv[2] || "build/emu/felucca.wasm", outDir = process.argv[3];
@@ -40,6 +41,8 @@ const shot = (name) => {
   fs.writeFileSync(`${outDir}/kid_${name}.ppm`, Buffer.concat([Buffer.from("P6 240 240 255\n"), b]));
 };
 const WHITE = 0xFFFF;
+const KID_Y = (step) => 54 - 3 * step;
+const FXB = [B.FX, B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO];
 
 render(1200);
 shot("hello");
@@ -64,6 +67,43 @@ ex.web_enc(EN.PRESETS, 1);
 render(1700);
 shot("friend2");
 check("PRESETS: another friend (the band shows its name)", band() !== name0);
+
+// the staff: a clef and five lines come in when she plays, her notes are coloured heads, a chord is stacked, the octave
+// is marked (8VA), and it goes after about 6 s of quiet
+{
+  const INK = ((52 >> 3) << 11) | ((26 >> 2) << 5) | (58 >> 3);               // kid.c KID_INK
+  const col = (r, g, b) => ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+  const C_RED = col(236, 40, 52), A_PUR = col(146, 84, 226), F_GR = col(130, 214, 56), G_TEAL = col(30, 176, 150);
+  const lines = () => px(150, 24) === INK && px(150, 36) === INK && px(150, 48) === INK;
+  const press = (k, ms = 120) => { ex.web_keys(1 << k); render(ms); ex.web_keys(0); render(250); };
+  render(7000);
+  check("no staff while she is not playing", !lines());
+  press(12);                                                                   // F4: step 3, on the second space
+  shot("staff1");
+  check("a key: the staff comes in (five lines)", lines() && px(14 + 6, 40) !== 0);
+  check("its note is a head in the note's colour (F green) on the staff", px(56, KID_Y(3)) === F_GR);
+  press(14);                                                                   // G4
+  check("the next key writes the next head to its right (G teal)", px(77, KID_Y(4)) === G_TEAL && px(56, KID_Y(3)) === F_GR);
+  ex.web_enc(EN.ALGO, 3); render(100);
+  press(12);                                                                   // F4 with CHORD: F A C stacked
+  shot("staff2");
+  check("a chord is stacked (F, A and C in their colours)", px(98, KID_Y(3)) === F_GR && px(98, KID_Y(5)) === A_PUR && px(98, KID_Y(7)) === C_RED);
+  ex.web_enc(EN.ALGO, -3); render(100);
+  press(0);                                                                    // F3: step -4, a ledger line under the staff
+  check("a low note has its ledger lines (C4 below the staff)", px(125, KID_Y(0)) === INK && px(125, KID_Y(-2)) === INK && px(125, KID_Y(-4)) === INK);
+  ex.web_buttons(1 << B.OCTUP); render(60); ex.web_buttons(0); render(250);
+  press(12);
+  shot("staff3");
+  let mark = false;
+  for (let y = 7; y < 16; y++) for (let x = 31; x < 50; x++) if (px(x, y) === INK) mark = true;
+  check("an octave up: 8VA is written over the staff", mark);
+  ex.web_buttons(1 << B.OCTDN); render(60); ex.web_buttons(0); render(250);
+  render(6500);
+  check("after about 6 s of quiet the staff goes", !lines());
+  press(14);
+  check("and starts again from the left when she plays again", lines() && px(56, KID_Y(4)) === G_TEAL && px(77, KID_Y(4)) !== G_TEAL);
+  render(6500);
+}
 
 const levels = [];
 for (let f = 0; f < 40; f++) {
@@ -120,6 +160,109 @@ check("PLAY again stops it", ex.web_playing() === 0);
   tap(B.SCL);
   tap(B.ENV); render(3300);
   check("SLEEPY wakes up by itself (its light goes off)", !((ex.web_lit_buttons() >> B.ENV) & 1));
+}
+
+// a key pressed after an effect was tapped on (the effect heard silence): the note must still sound. HICCUP, BACKWARDS,
+// SLEEPY and FREEZE keep what they last heard, which in a silence is nothing, unless each new key sets them again
+{
+  const wait = (ms) => render(ms);
+  const heard = (btn) => {
+    wait(1500);
+    if (btn !== null) { ex.web_buttons(1 << btn); render(60); ex.web_buttons(0); render(500); }
+    peak = 0;
+    ex.web_keys(1 << 14); render(700);
+    const p = peak;
+    ex.web_keys(0); render(300);
+    if (btn !== null) { ex.web_buttons(1 << btn); render(60); ex.web_buttons(0); }
+    wait(3200);
+    return p;
+  };
+  const plain = heard(null);
+  const names = ["HICCUP", "BACKWARDS", "SLEEPY", "SQUEAKY", "GIANT", "FREEZE"];
+  const r = [FXB.map((b) => heard(b))][0];
+  r.forEach((p, i) => check(`${names[i]} tapped in a silence, then a key: the note sounds (${p.toFixed(3)} of ${plain.toFixed(3)})`, p > plain * 0.4));
+}
+
+// the grown-ups' VOLUME: HOME held 1 s opens it (VOLUME and its dots in the band), OCT- / OCT+ step it (eight steps),
+// MASTER can go no higher, and the limiter's ceiling goes down with it
+{
+  const lvl = () => ex.web_master_q12();
+  const capOf = { 1: 362, 2: 512, 3: 724, 4: 1024, 5: 1448, 6: 2048, 7: 2896, 8: 4080 };   // (the pot's top: 4080)
+  const holdHome = () => { ex.web_buttons(1 << B.HOME); render(1300); };
+  const step = (b) => { ex.web_buttons((1 << B.HOME) | (1 << b)); render(80); ex.web_buttons(1 << B.HOME); render(150); };
+  render(2500);
+  check("VOLUME 6 to begin with: MASTER all up gives 2048", lvl() === 2048);
+  ex.web_buttons(1 << B.HOME); render(300);
+  ex.web_buttons((1 << B.HOME) | (1 << B.OCTDN)); render(80); ex.web_buttons(0); render(300);
+  check("HOME held a short while: OCT- is still the size, the volume stays", lvl() === 2048);
+  render(3500);
+  const name = band();
+  holdHome();
+  check("HOME held 1 s: the band shows VOLUME", band() !== name);
+  shot("volume");
+  step(B.OCTDN);
+  check("..OCT-: one step down (1448)", lvl() === 1448);
+  step(B.OCTUP);
+  step(B.OCTUP);
+  check("..OCT+ twice: two up (2896)", lvl() === 2896);
+  for (let i = 0; i < 9; i++) step(B.OCTUP);
+  check("..the top step is the full MASTER (4080 at the pot's top), and no more", lvl() === 4080);
+  for (let i = 0; i < 12; i++) step(B.OCTDN);
+  check("..the bottom step is 362, and no less", lvl() === 362);
+  ex.web_buttons(0);
+  render(2600);
+  check("HOME let go after VOLUME: no surprise friend, the name stays", band() === name);
+  // the limiter: a chord over the beat at every step stays under its ceiling, and is not squashed by it
+  ex.web_enc(EN.ALGO, 3); render(100);
+  ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(300);
+  const peaks = [];
+  for (let L = 1; L <= 8; L++) {
+    render(2200);
+    const cap = lvl(), lim = ex.web_lim_t();
+    check(`VOLUME ${L}: MASTER ${cap}, the limiter's ceiling ${(lim / 32768).toFixed(3)}`, cap === capOf[L] && lim <= 18000 && lim >= 400);
+    peak = 0;
+    for (const ks of [[12, 14, 16], [5, 7, 9], [20, 22, 24]]) { ex.web_keys(ks.reduce((a, x) => a | (1 << x), 0)); render(500); ex.web_keys(0); render(200); }
+    peaks.push(peak);
+    check(`VOLUME ${L}: a chord over the beat peaks at ${peak.toFixed(3)}, under the ceiling`, peak <= lim / 32768 * 1.08);
+    ex.web_buttons(1 << B.HOME); render(1300);
+    step(B.OCTUP);
+    ex.web_buttons(0); render(2200);
+  }
+  check(`the levels rise with the steps (${peaks.map((p) => p.toFixed(2)).join(" ")})`, peaks.every((p, i) => !i || p >= peaks[i - 1] * 0.95));
+  // an effect that raised the level (here the gain after MASTER, 8 times) is held to the ceiling, at the quietest step and the middle
+  for (const L of [1, 4]) {
+    ex.web_buttons(1 << B.HOME); render(1300);
+    for (let i = 0; i < 8; i++) step(B.OCTDN);
+    for (let i = 1; i < L; i++) step(B.OCTUP);
+    ex.web_buttons(0); render(2200);
+    const lim = ex.web_lim_t() / 32768;
+    ex.web_boost_q12(8 * 4096); render(300);
+    peak = 0;
+    for (const ks of [[12, 14, 16], [5, 7, 9], [20, 22, 24]]) { ex.web_keys(ks.reduce((a, x) => a | (1 << x), 0)); render(500); ex.web_keys(0); render(200); }
+    const hot = peak;
+    ex.web_boost_q12(4096); render(300);
+    check(`VOLUME ${L}, the level 8 times too high: the limiter holds it to ${hot.toFixed(3)} (ceiling ${lim.toFixed(3)})`, hot <= lim * 1.15);
+  }
+  ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(300);
+  ex.web_enc(EN.ALGO, -3); render(100);
+  // back to 6, and kept over a power-off
+  ex.web_buttons(1 << B.HOME); render(1300);
+  for (let i = 0; i < 8; i++) step(B.OCTUP);
+  for (let i = 0; i < 2; i++) step(B.OCTDN);
+  ex.web_buttons(0); render(2200);
+  check("VOLUME back to 6 (2048)", lvl() === 2048);
+  ex.web_buttons(1 << B.HOME); render(1300);
+  step(B.OCTDN); step(B.OCTDN);
+  ex.web_buttons(0); render(2200);
+  check("VOLUME 4 (1024)", lvl() === 1024);
+  const nor = new Uint8Array(mem.buffer, ex.web_nor(), ex.web_nor_size()).slice();
+  const inst2 = (await WebAssembly.instantiate(fs.readFileSync(wasmPath), {})).instance, e2 = inst2.exports;
+  e2._initialize();
+  new Uint8Array(e2.memory.buffer, e2.web_nor(), e2.web_nor_size()).set(nor);
+  e2.web_boot();
+  e2.web_master(1023);
+  for (let k = 0; k < 400; k++) e2.web_render(128);
+  check("kept over a power-off: the next start has the same VOLUME (1024)", e2.web_master_q12() === 1024);
 }
 
 // SEQ: ten beats, each named in the band; the friend's bass line plays with them

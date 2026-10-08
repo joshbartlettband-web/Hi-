@@ -212,8 +212,7 @@ static void fm1_main(void)
         }
         master_poll();
 #if FELUCCA_KID
-        if (KID_ON() && song.master_q12 > KID_VOL_MAX)  /* Rainbow mode: at most about half, for small ears */
-            song.master_q12 = KID_VOL_MAX;
+        kid_master();                                   /* Rainbow mode: MASTER at most the grown-ups' VOLUME, the limiter with it */
 #endif
         {   /* OCT- + OCT+ held 5 s: enter UBOOT with RAM intact (debug / update); a countdown
              * shows from 2 s over the whole screen (the menu and the dialogs too: ui_draw), letting

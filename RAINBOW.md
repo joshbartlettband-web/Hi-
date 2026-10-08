@@ -11,7 +11,7 @@ at the next power-on.
 
 | Control | What happens |
 | --- | --- |
-| Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own colour, and the friend hops. |
+| Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own colour, and the friend hops. A music staff drops in at the top and writes the note (see below). |
 | PRESETS | Next or previous friend (40 of them, each with its own picture, sound, home sky and favourite beat). |
 | ALGORITHM | Right: three friends sing (one key plays a chord that is always in key). Left: back to one. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
@@ -21,18 +21,40 @@ at the next power-on.
 | KNOB 4 | Wiggle. The sound wobbles (vibrato) and so does the friend. |
 | FX | Tap: HICCUP. The sound stutters and the friend shakes. |
 | SCL | Tap: BACKWARDS. The sound plays in reverse and the friend turns round. |
-| ENV | Tap: SLEEPY. The sound winds down like a record player and the friend droops and dozes, then wakes up by itself after 3 seconds. |
+| ENV | Tap: SLEEPY. The sound winds down like a record player each time she plays a note, and the friend droops and dozes. It wakes up by itself after 3 seconds. |
 | LFO | Tap: SQUEAKY. Everything an octave up, and the friend shrinks. |
 | EDIT | Tap: GIANT. Everything an octave down, and the friend grows. |
 | GLO | Tap: FREEZE. The sound freezes in place and the friend turns to ice. |
-| | The top row's effects turn on with a tap and off with another (one at a time; the lit button shows which). |
+| | The top row's effects turn on with a tap and off with another (one at a time; the lit button shows which). HICCUP, BACKWARDS, SLEEPY and FREEZE start again on every new note, so a key pressed after the tap always sounds. |
 | PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
 | SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY. |
 | ARP | Sparkle: a held key plays up and down by itself. |
 | REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti. |
-| HOME | A surprise friend, with confetti. |
+| HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
 | SAVE | A confetti party. |
-| MASTER | Volume. It is capped at about half in Rainbow mode, for small ears. |
+| HOME held 1 s, then OCT- / OCT+ | The grown-ups' VOLUME: the most the MASTER knob can give (below). |
+| MASTER | Volume, up to the VOLUME the grown-ups chose (about half, unless changed). |
+
+## The staff
+
+When she plays, a treble clef and five lines drop in at the top of the screen and write her notes as coloured heads (the colour of the
+letter in the band), left to right, up to 8 of them; the oldest drops off. Keys played together, or a key with ALGORITHM on (three friends), stack as a chord. A
+black key gets a sharp sign, notes below the staff get their ledger lines, and **8VA / 8VB** (or 15MA / 15MB) shows over or under the
+staff when OCT or KNOB 1 has moved her an octave or two up or down. It goes after 6 seconds of quiet and starts again from the left. The big
+letter stays in the band. The clef is the treble clef of the FreeSerif font (GNU FreeFont, GPL-3.0 or later), scaled down to a bitmap in
+`tools/gen_kid_art.py`.
+
+## Volume, for grown-ups
+
+Two guards, both in `kid.c` (`kid_master`):
+
+- **Your maximum.** Hold **HOME for 1 second**: the band says VOLUME and shows eight dots. While HOME is still down, **OCT-** steps it
+  down and **OCT+** up. Step 6 is the old "about half" and is where it starts; step 8 lets the MASTER knob go
+  all the way, step 1 is very quiet. It is kept when the FM-1 is switched off. Let go of HOME and nothing else happens (no surprise
+  friend). A shorter HOME press, and OCT- / OCT+ without HOME, do what they always did.
+- **A limiter that follows it.** The FM-1 already had a peak limiter; in Rainbow mode its ceiling now moves with the volume (7.5 times the
+  MASTER level it is at, never above the old fixed ceiling), a little above what a plain chord over a beat peaks at. So an effect that makes the sound louder
+  (GIANT, FREEZE, echo, a chord on a beat) is held to the level she was already hearing. Outside Rainbow mode the limiter is as it was.
 
 Note colours follow the coloured tubes and bells used in many early music classes: C red, D orange,
 E yellow, F green, G teal, A purple, B pink. Sharps get the colour in between.
@@ -84,21 +106,17 @@ protected: anyone who learns it can open it, so it is for your own use, not for 
 firmware package (the FM-1's package format encodes the app), not as readable text, and GitHub hides both secrets in its logs.
 With only one of them set, there is no private build.
 
-## Known issue: the greeting is choppy on a real FM-1
+## The greeting on a real FM-1
 
-Reported from the real FM-1 (everything else felt fine). The greeting redraws the whole 240 x 240 screen every frame and computes every
-pixel: the rainbow, the three letters being tested (with 8 outline lookups per pixel), the confetti hash and the friend. Measured in
-the browser build it costs about 25 times a normal frame (324 ms of CPU per second of device time, against 13 to 20 while playing),
-and the FM-1's processor is far slower than a browser's. Ideas, cheapest first, none done yet:
-
-1. Draw the greeting at half resolution (one computed pixel per 2 x 2 block): about 4 times less work, and it fits the chunky look.
-2. Draw the still parts (sky, rainbow, grass) once and redraw only the letters, the friend and the confetti boxes.
-3. Fewer confetti, and cap the greeting at 20 frames a second.
-4. Check the animated skies (stars, hearts, bubbles, confetti) on the device too: they redraw the whole picture area every 90 ms.
+It was choppy on the first real FM-1 (a full-screen redraw every frame, with outline lookups for every pixel). Now the letters skip rows
+they are nowhere near, and the whole greeting is computed in 2 x 2 blocks: in the browser build it costs about 7 times less (roughly 45
+ms of CPU per second of device time on top of an idle screen, against about 345 before). It needs a check on the device. If it is
+still not smooth: draw the still parts (sky, rainbow, grass) once and redraw only the letters, the friend and the confetti, or fewer confetti.
 
 ## Not checked yet on a real FM-1
 
 - Drawing speed. The screen has no frame buffer, so moving pictures are drawn in strips. Animated skies
   (stars, hearts, bubbles, confetti) redraw the whole picture area, about 60 ms a frame over the screen's
   connection. If it feels slow on the device, the first thing to try is drawing only the friend's area.
-- The volume cap (`KID_VOL_MAX` in `kid.c`): half of the MASTER curve. Raise or lower it to taste.
+- The volume steps (`KID_VOL_CAP` in `kid.c`, 8 steps of about 3 dB) and the limiter's ceiling (`KID_LIM_X2`): check that the middle steps feel right on the speaker and the headphones.
+- The staff drawing on the animated skies (it adds the panel's pixels to each redraw).

@@ -262,6 +262,8 @@ static void web_power_on(void)
     web_booted = 1;
 }
 
+static uint32_t web_boost = 4096;         /* kid_test.mjs: a gain applied after Rainbow mode's cap (4096 = none) */
+
 /* one pass of main.c fm1_main's loop (what the browser has: no USB, editor, UBOOT, console) */
 static void web_frame(void)
 {
@@ -269,8 +271,9 @@ static void web_frame(void)
     if (b > 0)
         song.batt_raw = song.batt_raw ? song.batt_raw + (b - song.batt_raw) / 32 : b;
     master_poll();
-    if (KID_ON() && song.master_q12 > KID_VOL_MAX)
-        song.master_q12 = KID_VOL_MAX;
+    kid_master();
+    if (web_boost != 4096u)                    /* (a test: the level raised after the cap, as an effect might) */
+        song.master_q12 = (uint32_t)(((uint64_t)song.master_q12 * web_boost) >> 12);
     felucca_dbg.ui_frames++;
     if (kid_frame())
         return;
@@ -476,6 +479,9 @@ EXPORT uint16_t *web_screen(void) { return web_fb; }
 EXPORT uint32_t web_screen_draws(void) { return web_draws; }
 EXPORT uint32_t web_now_ms(void) { return fm1_ms; }
 EXPORT uint32_t web_playing(void) { return song.playing; }
+EXPORT int32_t web_lim_t(void) { return lim_t; }
+EXPORT void web_boost_q12(uint32_t v) { web_boost = v; }
+EXPORT uint32_t web_master_q12(void) { return song.master_q12; }
 EXPORT void web_kid(uint32_t on)               /* Rainbow mode off (the tests: the full Felucca from boot) */
 {
     if (!on && KID_ON()) {

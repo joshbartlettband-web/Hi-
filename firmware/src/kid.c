@@ -21,8 +21,13 @@
  *   ARP         sparkle: a held key plays up and down
  *   REC         the next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti
  *   HOME        a surprise friend; SAVE a confetti party
- * MASTER is capped at about half (KID_VOL_MAX) for small ears. Everything else (USB, MIDI, the editor, the web
- * installer) works as in the full Felucca.
+ *   THE STAFF   a treble clef drops in at the top when she plays, and writes her notes as coloured noteheads, up to 8,
+ *               chords stacked, sharps with a #, ledger lines, 8VA / 8VB over the staff for the octave (OCT); it goes
+ *               after 6 s of quiet. The big letter stays in the band
+ *   HOME held 1 s, then OCT- / OCT+   the grown-ups' VOLUME: how loud MASTER can go (8 steps, kept over power-off)
+ * MASTER is capped at that level (the default is about half) for small ears, and the output limiter's ceiling
+ * follows it, so an effect cannot make the toy louder than a plain note (kid_master). Everything else (USB, MIDI,
+ * the editor, the web installer) works as in the full Felucca.
  * The screen has no frame buffer: a changed area is drawn row strip by row strip into the two halves of the
  * canvas (gfx.c cv_px), one strip computed while the other goes to the panel. */
 #ifndef FELUCCA_KID
@@ -35,7 +40,13 @@
 
 #define KID_BAND_Y 184u                 /* the band at the bottom (the name, the note, a knob's word) */
 #define KID_GROUND 182                  /* the friend stands here */
-#define KID_VOL_MAX 2048u               /* MASTER at most this (song.master_q12, 4096 = full) */
+#define KID_VOL_BYTE (favorites.factory[15][26])   /* the VOLUME level, ^ 6 (0 = 6, the default; settings_persist.c) */
+#define KID_VOL_DEF 6u
+#define KID_VOL_HOLD_MS 1000u           /* HOME held this long opens the VOLUME (then OCT- / OCT+) */
+#define KID_LIM_X2 15u                  /* the limiter's ceiling is song.master_q12 * 7.5 (a plain chord over the beat peaks
+                                         * at about 0.8 of it, any friend: web/emu/kid_test.mjs) */
+/* MASTER at most this at VOLUME 1 .. 8 (song.master_q12, 4096 = full): steps of about 3 dB; 6 is the old half */
+static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4096};
 #define KID_EXIT_MS 3000u
 #define KID_HELLO_MS 4000u              /* the hello at power-up, at most this long (any key or knob ends it) */
 #define KID_SLEEP_MS 3000u              /* SLEEPY: winds down, dozes, then wakes up by itself after this */
@@ -155,7 +166,7 @@ static const uint16_t KID_RAINBOW[7] = {
 #define KID_INK RGB(52, 26, 58)          /* outlines (the pictures' too) */
 #define KID_WHITE RGB(255, 255, 255)
 
-/* 5 x 7 capitals, digits 1 and 3, '#' and '!': a row a byte, bit 4 the left column */
+/* 5 x 7 capitals, digits 1, 3, 5 and 8, '#' and '!': a row a byte, bit 4 the left column */
 static const uint8_t KID_FONT[][7] = {
     {0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11}, {0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E},   /* A B */
     {0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E}, {0x1E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1E},   /* C D */
@@ -172,19 +183,34 @@ static const uint8_t KID_FONT[][7] = {
     {0x11, 0x11, 0x0A, 0x04, 0x04, 0x04, 0x04}, {0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F},   /* Y Z */
     {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, {0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E},   /* 1 3 */
     {0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A}, {0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04},   /* # ! */
+    {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},   /* 5 8 */
 };
 static int32_t kid_glyph_of(char c)
 {
     if (c >= 'A' && c <= 'Z')
         return c - 'A';
-    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : -1;
+    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : -1;
 }
 
 static const int8_t KID_SIN[32] = {0, 25, 49, 71, 90, 106, 117, 125, 127, 125, 117, 106, 90, 71, 49, 25,
                                    0, -25, -49, -71, -90, -106, -117, -125, -127, -125, -117, -106, -90, -71, -49, -25};
 
-enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SPARKLE, KH_BEAT };
+enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SPARKLE, KH_BEAT, KH_VOLUME };
 enum { KB_NAME, KB_NOTE, KB_HINT };
+
+/* the staff: what she played, as the heads of one entry (a key, or the keys of a chord pressed together) */
+#define KID_ST_N 8                      /* entries on the staff at most */
+#define KID_ST_MS 6000u                 /* it goes after this long without a note */
+#define KID_ST_X0 9                     /* its panel */
+#define KID_ST_X1 231
+#define KID_ST_Y0 2
+#define KID_ST_Y1 74
+#define KID_ST_Y(step) (54 - 3 * (step))   /* a step: a line or a space; C4 is 0, the bottom line (E4) 2, the top (F5) 10 */
+typedef struct {
+    int8_t step[6];
+    uint8_t sharp;                      /* bit i: head i has a sharp */
+    uint8_t n;
+} kid_st_t;
 
 static struct {
     uint8_t on, ready, fr, scene, beat, chord, arp, night, echo, wiggle;
@@ -192,6 +218,12 @@ static struct {
     int8_t acc;                         /* KNOB 1: detents toward the next octave */
     uint8_t hint, home_down;
     uint8_t fx, fxk;                    /* the top row's effect that is on (a KX_* bit, or 0), the one tapped last */
+    uint8_t rearm;                      /* the looping effects let go for a new note, to be pressed again (kid_input) */
+    uint8_t st_n;                       /* the staff's entries (st), oldest first */
+    kid_st_t st[KID_ST_N];
+    uint32_t st_ms, st_t0, st_sig;      /* the last note; the last entry's start; what the panel last showed */
+    uint8_t vol_open, vol_hold;         /* the VOLUME is open (HOME held 1 s); HOME is down, since vol_ms */
+    uint32_t vol_ms;
     uint32_t sleep_ms;                  /* SLEEPY on since (fm1_ms | 1), 0 none */
     uint8_t zz_was;                     /* SLEEPY's Z was drawn last frame, at zx0, zy0 */
     int16_t zx0, zy0;
@@ -295,6 +327,7 @@ static void kid_friend(uint32_t f)
 static void kid_fx_set(uint32_t want)
 {
     uint32_t k;
+    kid.rearm = 0;
     for (k = 0; k < KX_COUNT; k++)
         if (((want ^ kid.fx) >> k) & 1u) {
             fm1_irq_off();
@@ -302,6 +335,30 @@ static void kid_fx_set(uint32_t want)
             fm1_irq_on();
         }
     kid.fx = (uint8_t)want;
+}
+
+/* the grown-ups' VOLUME, 1 .. 8 */
+static uint32_t kid_vol_level(void)
+{
+    uint32_t l = (uint32_t)KID_VOL_BYTE ^ 6u;
+    return l >= 1u && l <= 8u ? l : KID_VOL_DEF;
+}
+
+/* every main-loop pass (main.c, web_frame), after master_poll: MASTER at most the VOLUME's level, and the limiter's
+ * ceiling a little over what a plain note makes at that MASTER: an effect that raises the volume (an octave down, a
+ * frozen or repeated chord) is held to it. Out of Rainbow mode it is the full Felucca's again */
+static void kid_master(void)
+{
+    int32_t c;
+    if (!kid.on) {
+        lim_t = LIM_T;
+        return;
+    }
+    c = KID_VOL_CAP[kid_vol_level() - 1u];
+    if (song.master_q12 > (uint32_t)c)
+        song.master_q12 = (uint32_t)c;
+    c = (int32_t)song.master_q12 * (int32_t)KID_LIM_X2 / 2;
+    lim_t = c < 400 ? 400 : c > LIM_T ? LIM_T : c;
 }
 
 static void kid_enter(void)
@@ -352,6 +409,57 @@ static void kid_size(int32_t d)
     kid_hint(KH_SIZE);
 }
 
+/* the grown-ups' VOLUME one step (OCT- / OCT+ with HOME held 1 s): kept over power-off */
+static void kid_vol_step(int32_t d)
+{
+    uint32_t l = (uint32_t)clamp((int32_t)kid_vol_level() + d, 1, 8);
+    KID_VOL_BYTE = (uint8_t)(l ^ 6u);
+    settings_save();
+    kid_hint(KH_VOLUME);
+}
+
+/* the staff gets the keys pressed now (a bit a key: key k plays MIDI 53 + k, F3 .. G5 at OCT 0), with a chord's
+ * third and fifth if CHORD is on; keys within 90 ms of the entry's start are one chord */
+static void kid_staff_add(uint32_t keys, uint32_t now)
+{
+    static const uint8_t IDX[12] = {0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6};          /* a pitch class's letter, C = 0 */
+    static const uint8_t SHARP[12] = {0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0};
+    kid_st_t *e;
+    uint32_t k, j;
+    if (kid.st_n && now - kid.st_t0 < 90u && now - kid.st_ms < 90u) {
+        e = &kid.st[kid.st_n - 1u];
+    } else {
+        if (kid.st_n == KID_ST_N) {
+            for (j = 1; j < KID_ST_N; j++)
+                kid.st[j - 1u] = kid.st[j];
+            kid.st_n--;
+        }
+        e = &kid.st[kid.st_n++];
+        e->n = 0;
+        e->sharp = 0;
+        kid.st_t0 = now;
+    }
+    for (k = 0; k < 27u; k++) {
+        uint32_t n = 53u + k, pc = n % 12u, h;
+        int32_t st = ((int32_t)(n / 12u) - 5) * 7 + IDX[pc];
+        if (!((keys >> k) & 1u))
+            continue;
+        for (h = 0; h < (kid.chord ? 3u : 1u); h++) {
+            uint32_t d = e->n, sh = h ? 0u : SHARP[pc], i;
+            int32_t s = st + (int32_t)h * 2;
+            for (i = 0; i < d; i++)
+                if (e->step[i] == s && ((e->sharp >> i) & 1u) == sh)
+                    break;
+            if (i < d || d >= 6u)
+                continue;
+            e->step[d] = (int8_t)s;
+            e->sharp = (uint8_t)(e->sharp | sh << d);
+            e->n++;
+        }
+    }
+    kid.st_ms = now;
+}
+
 static void kid_input(void)
 {
     uint32_t pressed = fm1_input_edges(0), notes = fm1_input_note_edges(), held = fm1_in.buttons, id, k;
@@ -362,6 +470,16 @@ static void kid_input(void)
     song.grid = 0;
     perf_kill = 0;
     perf_latch_on = 0;                            /* (held, not latched) */
+    if (kid.rearm) {                              /* the looping effects, let go for the last note: on again */
+        uint32_t m = kid.rearm & kid.fx;
+        kid.rearm = 0;
+        for (k = 0; k < KX_COUNT; k++)
+            if ((m >> k) & 1u) {
+                fm1_irq_off();
+                perf_press(KID_FX_PF[k], 1);
+                fm1_irq_on();
+            }
+    }
     for (id = 0; id < 14u; id++) {
         uint32_t b;
         if (!((pressed >> id) & 1u))
@@ -402,10 +520,15 @@ static void kid_input(void)
             break;
         case B_HOME:
             kid.home_down = 1;
+            kid.vol_hold = 1;
+            kid.vol_ms = fm1_ms | 1u;
             break;
         case B_OCTDN:
         case B_OCTUP:
-            kid_size(b == B_OCTUP ? 1 : -1);
+            if (kid.vol_open)
+                kid_vol_step(b == B_OCTUP ? 1 : -1);
+            else
+                kid_size(b == B_OCTUP ? 1 : -1);
             break;
         default:
             break;
@@ -427,17 +550,41 @@ static void kid_input(void)
     } else {
         kid.exit_ms = 0;
     }
+    if (kid.vol_hold && (held & home) && !(held & both & ~home) && !kid.vol_open &&
+        (fm1_ms | 1u) - kid.vol_ms >= KID_VOL_HOLD_MS) {   /* HOME held 1 s: the grown-ups' VOLUME opens */
+        kid.vol_open = 1;
+        kid.home_down = 0;                        /* (no surprise friend when it is let go) */
+        kid_hint(KH_VOLUME);
+    }
+    if (kid.vol_open && (held & home))
+        kid.hint_ms = fm1_ms;                     /* (stays up while HOME is held) */
+    if (!(held & home)) {
+        if (kid.vol_open)
+            kid.hint_ms = fm1_ms - 800u;          /* (a moment more, then the name again) */
+        kid.vol_open = kid.vol_hold = 0;
+    }
     if (kid.home_down && !(held & home)) {        /* HOME let go: a surprise friend */
         kid.home_down = 0;
         kid_friend(kid.fr + 1u + rng() % (KID_N - 1u));
         kid.party_ms = fm1_ms | 1u;
     }
     if (notes) {                                  /* a key: its letter, and a hop */
+        uint32_t loop = kid.fx & (1u << KX_HICCUP | 1u << KX_BACK | 1u << KX_SLEEPY | 1u << KX_FREEZE);
+        if (loop) {                               /* HICCUP, BACKWARDS, SLEEPY and FREEZE loop or stop what they */
+            for (k = 0; k < KX_COUNT; k++)        /* heard: let go for the new note and press again next frame, or a key */
+                if ((loop >> k) & 1u) {           /* tapped in a silence would loop that silence */
+                    fm1_irq_off();
+                    perf_press(KID_FX_PF[k], 0);
+                    fm1_irq_on();
+                }
+            kid.rearm = (uint8_t)loop;
+        }
         for (k = 26u; notes >> k == 0u; k--)
             ;
         kid.key = (int8_t)k;
         kid.key_ms = fm1_ms;
         kid.hop_ms = fm1_ms;
+        kid_staff_add(notes, fm1_ms);
     } else if (kid.key >= 0 && ((fm1_in.notes >> kid.key) & 1u)) {
         kid.key_ms = fm1_ms;                      /* (held: it stays) */
     } else if (kid.key >= 0 && fm1_in.notes) {    /* let go with others held: the highest of them */
@@ -573,6 +720,8 @@ static struct {
     int16_t ol;                         /* its outline (px) */
     uint16_t ink, bg, bg2;
     int8_t meter;                       /* dots lit (HINT), -1 none */
+    uint8_t staff;                      /* the staff shows */
+    kid_txt_t stl;                      /* .. its octave mark (8VA ..), sc 0 = none */
 } kf;
 
 static uint32_t kid_beat_ms(void) { return 60000u / (uint32_t)clamp(song.g[G_BPM], 40, 240); }
@@ -679,9 +828,10 @@ static void kid_frame_setup(uint32_t now)
 static uint32_t kid_band_setup(uint32_t now)
 {
     uint32_t sig, len, w;
+    int vol = kid.hint == KH_VOLUME && now - kid.hint_ms < 1500u;     /* (the grown-ups' VOLUME comes before all) */
     kf.meter = -1;
     kf.ol = 2;
-    if (kid.key >= 0 && now - kid.key_ms < 900u) {      /* a note: its letter, big (the effect's word, if one is on) */
+    if (!vol && kid.key >= 0 && now - kid.key_ms < 900u) {      /* a note: its letter, big (the effect's word, if one is on) */
         uint32_t pc = (53u + (uint32_t)kid.key) % 12u;    /* key 0 is F (seq.c kb_map: 53 + k) */
         kf.band = KB_NOTE;
         kf.txt = KID_NOTE[pc];
@@ -700,7 +850,7 @@ static uint32_t kid_band_setup(uint32_t now)
             kf.bg2 = kid_mix(kf.bg, RGB(0, 0, 0), 60u);
             sig = 0x400u | kid.fxk;
         }
-    } else if (kid.fx) {                                  /* an effect held: its word */
+    } else if (kid.fx && !vol) {                          /* an effect held: its word */
         kf.band = KB_NAME;
         kf.txt = KID_FX_NAME[kid.fxk % KX_COUNT];
         kf.bt.sc = 4;
@@ -709,7 +859,7 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.bg2 = kid_mix(kf.bg, RGB(0, 0, 0), 60u);
         sig = 0x400u | kid.fxk;
     } else if (kid.hint != KH_NONE && now - kid.hint_ms < 1500u) {
-        static const char *const WORD[] = {"", "", "DAY", "ECHO", "WIGGLE", "", "", "SPARKLE", ""};
+        static const char *const WORD[] = {"", "", "DAY", "ECHO", "WIGGLE", "", "", "SPARKLE", "", "VOLUME"};
         int32_t v = 0;
         kf.band = KB_HINT;
         kf.txt = WORD[kid.hint];
@@ -725,6 +875,7 @@ static uint32_t kid_band_setup(uint32_t now)
         case KH_CHORD: kf.txt = kid.chord ? "3 FRIENDS" : "1 FRIEND"; v = kid.chord ? 8 : 0; break;
         case KH_SPARKLE: v = kid.arp ? 8 : 0; break;
         case KH_BEAT: kf.txt = KID_BEATS[kid.beat % KB_COUNT].name; v = -1; break;
+        case KH_VOLUME: v = (int32_t)kid_vol_level(); break;
         default: break;
         }
         kf.meter = (int8_t)clamp(v, -1, 8);
@@ -961,6 +1112,8 @@ static int32_t kid_hello_line(const char *s, int32_t sc, int32_t top, uint32_t f
             d = t - at;
             w = KID_SIN[((t / 40u) + i * 3u) & 31u];
             cy = top - (d < 300u ? (int32_t)(300u - d) / 2 : 0) - (w > 0 ? w * 7 / 127 : 0);   /* drop in, then wave */
+            if (y < cy - ol || y >= cy + 7 * sc + ol)                 /* (most pixels are nowhere near the letter) */
+                continue;
             if (!pass && kid_char_ink(s[k], cx, cy, sc, x, y))
                 return KID_RAINBOW[i % 7u];
             for (o = 0; pass && o < 8; o++)
@@ -1022,6 +1175,83 @@ static uint16_t kid_pic_px(int32_t x, int32_t y)
     return kf.sky[y];
 }
 
+/* the staff: whether it shows, and a signature of what it shows (a change repaints its panel) */
+static uint32_t kid_staff_setup(uint32_t now)
+{
+    static const char *const MARK[5] = {"15MB", "8VB", 0, "8VA", "15MA"};
+    uint32_t i, j, sig = 7;
+    kf.staff = kid.st_n && now - kid.st_ms < KID_ST_MS;
+    if (!kf.staff) {
+        kid.st_n = 0;
+        return 0;
+    }
+    for (i = 0; i < kid.st_n; i++) {
+        sig = sig * 31u + kid.st[i].n + (uint32_t)kid.st[i].sharp * 7u;
+        for (j = 0; j < kid.st[i].n; j++)
+            sig = sig * 31u + (uint8_t)kid.st[i].step[j];
+    }
+    kf.stl.s = MARK[clamp(kid.oct + 2, 0, 4)];
+    kf.stl.sc = kf.stl.s ? 1 : 0;
+    kf.stl.x = 31;
+    kf.stl.y = kid.oct < 0 ? 60 : 8;
+    return sig * 5u + (uint32_t)(kid.oct + 3);
+}
+
+static int kid_staff_in(int32_t x, int32_t y, int32_t in, int32_t r)    /* in the panel, shrunk by in (corners: radius r) */
+{
+    int32_t x0 = KID_ST_X0 + in, x1 = KID_ST_X1 - 1 - in, y0 = KID_ST_Y0 + in, y1 = KID_ST_Y1 - 1 - in, cx, cy;
+    if (x < x0 || x > x1 || y < y0 || y > y1)
+        return 0;
+    cx = x < x0 + r ? x0 + r : x > x1 - r ? x1 - r : x;
+    cy = y < y0 + r ? y0 + r : y > y1 - r ? y1 - r : y;
+    return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r + r;
+}
+
+/* a pixel of the panel: the picture through a pale glass, the clef, five lines, the notes in their colours */
+static uint16_t kid_staff_px(int32_t x, int32_t y)
+{
+    static const uint8_t SPC[7] = {0, 2, 4, 5, 7, 9, 11};            /* a letter's pitch class */
+    int32_t i = x < 44 ? -1 : (x - 44) / 21, d, h;
+    uint16_t pic = kid_pic_px(x, y);
+    if (!kid_staff_in(x, y, 0, 6))
+        return pic;
+    if (!kid_staff_in(x, y, 2, 4))
+        return KID_INK;
+    if (i >= 0 && i < (int32_t)kid.st_n) {                           /* the notes of this slot */
+        const kid_st_t *e = &kid.st[i];
+        int32_t cx = 56 + 21 * i, dx = x - cx, lo = 99, hi = -99, ls;
+        for (h = 0; h < (int32_t)e->n; h++) {
+            int32_t s = e->step[h], dy = y - KID_ST_Y(s), a = dx * dx, pc;
+            lo = s < lo ? s : lo;
+            hi = s > hi ? s : hi;
+            if (dx >= -4 && dx <= 4 && dy >= -3 && dy <= 3 && 49 * a + 81 * dy * dy <= 992) {
+                pc = (SPC[((s % 7) + 7) % 7] + (int32_t)((e->sharp >> h) & 1u)) % 12;
+                return 36 * a + 49 * dy * dy <= 440 ? KID_NOTE_COL[pc] : KID_INK;
+            }
+            if (((e->sharp >> h) & 1u) && kid_char_ink('#', cx - 12, KID_ST_Y(s) - 3, 1, x, y))
+                return KID_INK;
+        }
+        ls = (54 - y) % 3 == 0 ? (54 - y) / 3 : 1;                   /* a ledger line: on an even step off the staff */
+        if (dx >= -7 && dx <= 7 && !(ls & 1) && ((ls <= 0 && lo <= ls) || (ls >= 12 && hi >= ls)))
+            return KID_INK;
+    }
+    d = y - 15;
+    if (x >= 13 && x < 13 + KID_CLEF_W && d >= 0 && d < KID_CLEF_H && ((KID_CLEF[d] >> (15 - (x - 13))) & 1u))
+        return KID_INK;
+    if (x >= 12 && x < 228 && y >= 24 && y <= 48 && (y - 24) % 6 == 0)
+        return KID_INK;
+    if (kf.stl.sc && kid_ink_at(&kf.stl, x, y))
+        return KID_INK;
+    return kid_mix(pic, KID_WHITE, 214u);
+}
+
+static inline uint16_t kid_view_px(int32_t x, int32_t y)             /* the picture, and the staff over it */
+{
+    if (kf.staff && x >= KID_ST_X0 && x < KID_ST_X1 && y >= KID_ST_Y0 && y < KID_ST_Y1)
+        return kid_staff_px(x, y);
+    return kid_pic_px(x, y);
+}
+
 /* draw x0 .. x1-1, y0 .. y1-1: strips into the canvas's two halves, one drawn while the other goes out */
 static void kid_paint(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 {
@@ -1039,10 +1269,20 @@ static void kid_paint(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
     for (y = y0; y < y1; y += (int32_t)rows) {
         uint16_t *px = cv_px + buf * (CV_MAX / 2u), *p = px;
         int32_t yy, x, n = y1 - y < (int32_t)rows ? y1 - y : (int32_t)rows;
-        for (yy = y; yy < y + n; yy++)
+        for (yy = y; yy < y + n; yy++) {
+            if (kid.hello_ms) {                   /* the hello in 2 x 2 blocks: a quarter of the work (it ran choppy) */
+                if ((yy & 1) && yy > y) {
+                    for (x = x0; x < x1; x++, p++)
+                        *p = p[-(int32_t)w];
+                } else {
+                    for (x = x0; x < x1; x++, p++)
+                        *p = (x & 1) && x > x0 ? p[-1] : swap16(kid_hello_px(x & ~1, yy & ~1));
+                }
+                continue;
+            }
             for (x = x0; x < x1; x++)
-                *p++ = swap16(kid.hello_ms ? kid_hello_px(x, yy) :
-                              yy < (int32_t)KID_BAND_Y ? kid_pic_px(x, yy) : kid_band_px(x, yy));
+                *p++ = swap16(yy < (int32_t)KID_BAND_Y ? kid_view_px(x, yy) : kid_band_px(x, yy));
+        }
         lcd_blit((uint32_t)x0, (uint32_t)y, w, (uint32_t)n, px);
         buf ^= 1u;
     }
@@ -1050,7 +1290,7 @@ static void kid_paint(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 
 static void kid_draw(void)
 {
-    uint32_t now = fm1_ms, i, band = kid_band_setup(now), sig = 0;
+    uint32_t now = fm1_ms, i, band = kid_band_setup(now), sig = 0, ssig, top = 0;
     int32_t x0 = 240, y0 = 240, x1 = 0, y1 = 0;
     int anim = kid.scene == KS_STARS || kid.scene == KS_HEARTS || kid.scene == KS_BUBBLES || kid.scene == KS_CONFETTI;
     kid_frame_setup(now);
@@ -1068,6 +1308,7 @@ static void kid_draw(void)
         }
         kid_frame_setup(now);
     }
+    ssig = kid_staff_setup(now);
     for (i = 0; i < kf.n; i++) {
         const kid_inst_t *in = &kf.in[i];
         x0 = in->x - in->wig < x0 ? in->x - in->wig : x0;
@@ -1100,19 +1341,24 @@ static void kid_draw(void)
         kid_paint(0, 0, 240, 240);
         kid.band_sig = band;
         kid.bg_ms = now;
+        top = 1;
     } else {
         if (kf.party || (kid.party_ms && (now | 1u) - kid.party_ms < 1700u) || (anim && now - kid.bg_ms >= 90u)) {
             kid_paint(0, 0, 240, KID_BAND_Y);                     /* (the confetti's last frame clears it) */
             kid.bg_ms = now;
+            top = 1;
         } else if (sig != kid.pic_sig) {                          /* the friends moved: where they were and are */
             kid_paint(x0 < kid.bx0 ? x0 : kid.bx0, y0 < kid.by0 ? y0 : kid.by0,
                       x1 > kid.bx1 ? x1 : kid.bx1, y1 > kid.by1 ? y1 : kid.by1);
         }
+        if (ssig != kid.st_sig && !top)                           /* the staff came, wrote a note, or went */
+            kid_paint(KID_ST_X0, KID_ST_Y0, KID_ST_X1, KID_ST_Y1);
         if (band != kid.band_sig) {
             kid_paint(0, KID_BAND_Y, 240, 240);
             kid.band_sig = band;
         }
     }
+    kid.st_sig = ssig;
     kid.pic_sig = sig;
     kid.bx0 = (int16_t)x0;
     kid.by0 = (int16_t)y0;
@@ -1121,6 +1367,8 @@ static void kid_draw(void)
 }
 
 /* the main loop's frame (main.c, the browser's web_frame): 1 if Rainbow mode took it */
+static void settings_poll(void);                 /* (project.c) */
+
 static int kid_frame(void)
 {
     if (!kid.on)
@@ -1128,6 +1376,7 @@ static int kid_frame(void)
     if (!kid.ready)
         kid_enter();
     kid_input();
+    settings_poll();                              /* the VOLUME saved (only while the transport is stopped) */
     if (!kid.on)                                  /* (left just now) */
         return 0;
     kid_leds();
@@ -1138,4 +1387,5 @@ static int kid_frame(void)
 #else
 #define KID_ON() 0
 static int kid_frame(void) { return 0; }
+static void kid_master(void) {}
 #endif
