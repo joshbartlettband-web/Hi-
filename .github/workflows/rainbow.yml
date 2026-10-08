@@ -1,0 +1,202 @@
+# Felucca, built by GitHub and published to this fork's GitHub Pages site.
+#   firmware:  the FM-1 package (JieLi toolchain + three files of the AC79 SDK, cached after the first run)
+#   browser:   the same firmware compiled to WebAssembly (Felucca in the browser)
+#   publish:   the site: /webapp/installer/ flashes the FM-1, /webapp/try/ runs it in the browser
+# The browser version needs nothing from JieLi, so it is published even if the firmware job fails. It is tested
+# first (web/emu/emu_test.mjs, and web/emu/kid_test.mjs for Rainbow mode): a red test publishes nothing.
+# Setup: Actions enabled on the fork, and Settings > Pages > Source set to "GitHub Actions".
+name: rainbow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  SDK_TAG: AC79NN_SDK_V1.2.1_2023-12-13   # the SDK version build.py was tested with
+  EMSDK_VERSION: 3.1.74
+  BUILD_TAG: rb                           # added to the version, so ABOUT shows this is our build (v1.0.5.2-rb)
+
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    outputs:
+      release: ${{ steps.ver.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python packages
+        run: pip install Pillow fonttools
+
+      - name: Version
+        id: ver
+        run: |
+          v=$(sed -n 's/^#define FELUCCA_VERSION "v\([^"]*\)".*/\1/p' firmware/src/felucca.c)
+          echo "release=$v-$BUILD_TAG" >> "$GITHUB_OUTPUT"
+          echo "Building Felucca $v-$BUILD_TAG"
+
+      - name: Restore the JieLi toolchain and SDK
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.jieli
+            ~/ac79-sdk
+          key: jieli-${{ env.SDK_TAG }}-v1
+
+      - name: Download the JieLi toolchain
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sh tools/get_toolchain.sh
+
+      - name: Download the JieLi AC79 SDK (only cpu/wl82/tools is used)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          for i in 1 2 3; do
+            git clone --depth 1 --branch "$SDK_TAG" https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$RUNNER_TEMP/sdk" && break
+            echo "clone failed (try $i), retrying"; rm -rf "$RUNNER_TEMP/sdk"; sleep 30
+          done
+          mkdir -p ~/ac79-sdk/cpu/wl82
+          cp -r "$RUNNER_TEMP/sdk/cpu/wl82/tools" ~/ac79-sdk/cpu/wl82/
+          rm -rf "$RUNNER_TEMP/sdk"
+          ls -la ~/ac79-sdk/cpu/wl82/tools/uboot.boot ~/ac79-sdk/cpu/wl82/tools/cfg_tool.bin ~/ac79-sdk/cpu/wl82/tools/cfg/eq_cfg_hw.bin
+
+      - name: Save the JieLi toolchain and SDK
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.jieli
+            ~/ac79-sdk
+          key: jieli-${{ env.SDK_TAG }}-v1
+
+      - name: Check the toolchain runs here (otherwise use Docker, as on macOS)
+        run: |
+          clang="$HOME/.jieli/toolchain/pi32v2/bin/clang"
+          if "$clang" --version; then
+            echo "toolchain runs natively"
+          else
+            ldd "$clang" || true
+            echo "toolchain does not run natively; building in a debian:bookworm-slim container"
+            echo "JIELI_DOCKER=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build the firmware (KID_NAME, a repository secret, is the name the hello greets)
+        env:
+          KID_NAME: ${{ secrets.KID_NAME }}
+        run: |
+          export AC79_SDK="$HOME/ac79-sdk"
+          ./build.sh --release "${{ steps.ver.outputs.release }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: build/felucca-${{ steps.ver.outputs.release }}.fwsc
+          if-no-files-found: error
+
+  browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python packages
+        run: pip install Pillow fonttools
+
+      - name: Generated headers (fonts, icons, tables, samples), as build.py makes them
+        run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
+
+      - name: Restore Emscripten
+        id: emcache
+        uses: actions/cache@v4
+        with:
+          path: ~/emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}-v1
+
+      - name: Install Emscripten
+        if: steps.emcache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git ~/emsdk
+          ~/emsdk/emsdk install "$EMSDK_VERSION"
+
+      - name: Build Felucca for the browser
+        run: |
+          ~/emsdk/emsdk activate "$EMSDK_VERSION" >/dev/null
+          . ~/emsdk/emsdk_env.sh >/dev/null
+          EMU_PREVIEW=0 sh web/emu/build.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test the browser build (Felucca's own checks, then Rainbow mode's)
+        run: |
+          node web/emu/emu_test.mjs build/emu/felucca.wasm
+          if [ -f web/emu/kid_test.mjs ]; then node web/emu/kid_test.mjs build/emu/felucca.wasm; fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser
+          path: build/emu
+          if-no-files-found: error
+
+  publish:
+    needs: [firmware, browser]
+    if: always() && needs.browser.result == 'success'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get the browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser
+          path: site/webapp/try
+
+      - name: Get the firmware
+        if: needs.firmware.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: fw
+
+      - name: Make the site
+        run: |
+          rel="${{ needs.firmware.outputs.release }}"
+          if [ -f "fw/felucca-$rel.fwsc" ]; then
+            python3 web/make_site.py "fw/felucca-$rel.fwsc" "$rel" site
+          else
+            echo "::warning::No firmware this run; publishing the browser version only (no installer)"
+            printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Felucca</title>' \
+              '<meta http-equiv="refresh" content="0; url=webapp/try/"><a href="webapp/try/">Felucca in the browser</a>' \
+              > site/index.html
+          fi
+          touch site/.nojekyll
+          find site -type f | sort
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
