@@ -4,8 +4,8 @@ A music toy for little hands: this fork of [Felucca](https://github.com/hugelton
 four-year-old. 40 friends, each with its own picture, sound, sky and favourite beat; a colour for every note; 10 beats with a
 bass line that always fits; and a knob for big and small, day and night, echo and wiggle.
 
-- **Try it in your browser** (no FM-1 needed): <https://joshbartlettband-web.github.io/Hi-/webapp/try/>
-- **Install it on an FM-1** (Chrome or Edge, USB): <https://joshbartlettband-web.github.io/Hi-/webapp/installer/>
+- **The website** (the link under *About* on this page) has a demo video and two buttons: **Try it in your browser**, no FM-1
+  needed, and **Put it on an FM-1** (Chrome or Edge, USB).
 - **Every control, and how it is built:** [RAINBOW.md](RAINBOW.md)
 
 Installing firmware is at your own risk; the installer can put the official firmware back. This is an independent fan project, not
