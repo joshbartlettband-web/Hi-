@@ -12,9 +12,10 @@
  *   KNOB 2      day / night: the sky, the sun and the moon, and the sound gets darker (FX filter)
  *   KNOB 3      echo: delay and reverb, and copies of the friend that follow it
  *   KNOB 4      wiggle: vibrato, and the friend wobbles
- *   FX SCL ENV LFO EDIT GLO   held: HICCUP (repeat), BACKWARDS, SLEEPY (tape stop), SQUEAKY (an octave up), GIANT
- *               (an octave down), FREEZE: Felucca's performance effects (perform.c), and the friend shakes, turns
- *               round, droops and dozes, shrinks, grows, turns to ice
+ *   FX SCL ENV LFO EDIT GLO   a tap turns one on (its light lit), another tap off: HICCUP (repeat), BACKWARDS,
+ *               SLEEPY (tape stop; it wakes up by itself), SQUEAKY (an octave up), GIANT (an octave down), FREEZE:
+ *               Felucca's performance effects (perform.c), and the friend shakes, turns round, droops and dozes,
+ *               shrinks, grows, turns to ice
  *   PLAY        the beat: drums (track 4) and a bass line in key (track 2), the friend dances to it; SEQ: the next
  *               of ten beats
  *   ARP         sparkle: a held key plays up and down
@@ -37,6 +38,7 @@
 #define KID_VOL_MAX 2048u               /* MASTER at most this (song.master_q12, 4096 = full) */
 #define KID_EXIT_MS 3000u
 #define KID_HELLO_MS 4000u              /* the hello at power-up, at most this long (any key or knob ends it) */
+#define KID_SLEEP_MS 3000u              /* SLEEPY: winds down, dozes, then wakes up by itself after this */
 /* the bubble a note shows in: top right, over the sun (the friends mostly face left); smaller when the friend is
  * big, so it hides less of it. Its redraw box (kid_draw) holds both */
 #define KID_BUB_X 186
@@ -122,7 +124,7 @@ static const kid_beat_t KID_BEATS[KB_COUNT] = {
      {36, 1, 1, 1, 1, 1, 1, 1, 31, 1, 1, 1, 1, 1, 1, 1}},
 };
 
-/* the top row, held: Felucca's performance effects (perform.c), and what the friend does meanwhile */
+/* the top row, tapped on and off: Felucca's performance effects (perform.c), and what the friend does meanwhile */
 enum { KX_HICCUP, KX_BACK, KX_SLEEPY, KX_SQUEAKY, KX_GIANT, KX_FREEZE, KX_COUNT };
 static const uint8_t KID_FX_BTN[KX_COUNT] = {B_FX, B_SCL, B_ENV, B_LFO, B_EDIT, B_GLO};
 static const uint8_t KID_FX_PF[KX_COUNT] = {PF_R16, PF_REV, PF_TAPE, PF_OUP, PF_ODN, PF_FRZ};
@@ -177,7 +179,8 @@ static struct {
     int8_t oct;                         /* -2 .. 2: song.octave; the friend's size follows */
     int8_t acc;                         /* KNOB 1: detents toward the next octave */
     uint8_t hint, home_down, bub_was;
-    uint8_t fx, fxk;                    /* the top row's effects held (KX_* bits), the one pressed last */
+    uint8_t fx, fxk;                    /* the top row's effect that is on (a KX_* bit, or 0), the one tapped last */
+    uint32_t sleep_ms;                  /* SLEEPY on since (fm1_ms | 1), 0 none */
     uint8_t zz_was;                     /* SLEEPY's Z was drawn last frame, at zx0, zy0 */
     int16_t zx0, zy0;
     uint8_t bass_ready;
@@ -352,9 +355,12 @@ static void kid_input(void)
         if (!((pressed >> id) & 1u))
             continue;
         b = panel_btn_of(id);
-        for (k = 0; k < KX_COUNT; k++)
-            if (b == KID_FX_BTN[k])
-                kid.fxk = (uint8_t)k;             /* (the picture shows the one pressed last) */
+        for (k = 0; k < KX_COUNT; k++)            /* the top row: a tap turns its effect on (another's off), */
+            if (b == KID_FX_BTN[k]) {             /* a second tap off: little hands need not hold */
+                kid.fxk = (uint8_t)k;
+                kid_fx_set(kid.fx == 1u << k ? 0u : 1u << k);
+                kid.sleep_ms = k == KX_SLEEPY && kid.fx ? fm1_ms | 1u : 0u;
+            }
         switch (b) {
         case B_PLAY:
             if (song.playing || chain_busy()) {
@@ -393,16 +399,10 @@ static void kid_input(void)
             break;
         }
     }
-    {   /* the top row: an effect while its button is held */
-        uint32_t want = 0;
-        for (k = 0; k < KX_COUNT; k++)
-            if ((held >> panel.btn[KID_FX_BTN[k]]) & 1u)
-                want |= 1u << k;
-        if (want && !((want >> kid.fxk) & 1u))
-            for (kid.fxk = 0; !((want >> kid.fxk) & 1u); kid.fxk++)
-                ;
-        if (want != kid.fx)
-            kid_fx_set(want);
+    if (kid.sleep_ms && (fm1_ms | 1u) - kid.sleep_ms > KID_SLEEP_MS) {   /* SLEEPY wakes up by itself (its tape */
+        kid.sleep_ms = 0;                                                  /* stop would leave her keys silent) */
+        kid_fx_set(0);
+        kid.hop_ms = fm1_ms;
     }
     if ((held & both) == both) {                  /* HOME + SAVE held 3 s: the full Felucca */
         kid.home_down = 0;

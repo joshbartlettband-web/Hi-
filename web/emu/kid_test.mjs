@@ -81,12 +81,14 @@ check("PLAY: the beat runs", ex.web_playing() === 1);
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(200);
 check("PLAY again stops it", ex.web_playing() === 0);
 
-// the top row: each button held changes the sound of a held key, lights, and names itself in the band
+// the top row: a tap turns each effect on (the sound of a held key changes, its button lights, the band names it),
+// a second tap off; SLEEPY wakes up by itself
 {
   let sig = 0;
   const listen = (btns) => {
     ex.web_keys(1 << 12); render(300);
-    ex.web_buttons(btns); sig = 0;
+    if (btns) { ex.web_buttons(btns); render(60); ex.web_buttons(0); }
+    sig = 0;
     const n = Math.round(600 * 44.1);
     for (let k = 0; k < n; k += 128) {
       const m = Math.min(128, n - k); ex.web_render(m);
@@ -94,16 +96,29 @@ check("PLAY again stops it", ex.web_playing() === 0);
       for (let i = 0; i < m; i++) sig = (sig * 31 + Math.round(l[i] * 30000)) % 1000000007;
     }
     const r = { sig, band: band(), lit: ex.web_lit_buttons() };
-    ex.web_buttons(0); ex.web_keys(0); render(1200);
+    ex.web_keys(0);
+    if (btns && (ex.web_lit_buttons() & btns)) { ex.web_buttons(btns); render(60); ex.web_buttons(0); }   // off again
+    render(3500);
+    r.off = !(ex.web_lit_buttons() & btns);
     return r;
   };
   const plain = listen(0);
   let ok = 0;
   for (const b of [B.FX, B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO]) {
     const r = listen(1 << b);
-    if (r.sig !== plain.sig && r.band !== plain.band && ((r.lit >> b) & 1)) ok++;
+    if (r.sig !== plain.sig && r.band !== plain.band && ((r.lit >> b) & 1) && r.off) ok++;
   }
-  check(`the top row held: ${ok} of 6 effects change the sound, light up and show their word`, ok === 6);
+  check(`the top row tapped: ${ok} of 6 effects change the sound, light up, show their word, and go off again`, ok === 6);
+}
+
+{
+  const tap = (b) => { ex.web_buttons(1 << b); render(60); ex.web_buttons(0); render(200); };
+  tap(B.FX); tap(B.SCL);
+  const lit = ex.web_lit_buttons();
+  check("tapping another effect switches to it (one at a time)", ((lit >> B.SCL) & 1) && !((lit >> B.FX) & 1));
+  tap(B.SCL);
+  tap(B.ENV); render(3300);
+  check("SLEEPY wakes up by itself (its light goes off)", !((ex.web_lit_buttons() >> B.ENV) & 1));
 }
 
 // SEQ: ten beats, each named in the band; the friend's bass line plays with them

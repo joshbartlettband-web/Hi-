@@ -19,12 +19,13 @@ at the next power-on.
 | KNOB 2 | Day to night. The sky darkens, the sun sets, the moon comes out, and the sound gets softer and darker. |
 | KNOB 3 | Echo. The sound repeats, and copies of the friend follow it around. |
 | KNOB 4 | Wiggle. The sound wobbles (vibrato) and so does the friend. |
-| FX | Hold: HICCUP. The sound stutters and the friend shakes. |
-| SCL | Hold: BACKWARDS. The sound plays in reverse and the friend turns round. |
-| ENV | Hold: SLEEPY. The sound winds down like a record player and the friend droops and dozes. |
-| LFO | Hold: SQUEAKY. Everything an octave up, and the friend shrinks. |
-| EDIT | Hold: GIANT. Everything an octave down, and the friend grows. |
-| GLO | Hold: FREEZE. The sound freezes in place and the friend turns to ice. |
+| FX | Tap: HICCUP. The sound stutters and the friend shakes. |
+| SCL | Tap: BACKWARDS. The sound plays in reverse and the friend turns round. |
+| ENV | Tap: SLEEPY. The sound winds down like a record player and the friend droops and dozes, then wakes up by itself after 3 seconds. |
+| LFO | Tap: SQUEAKY. Everything an octave up, and the friend shrinks. |
+| EDIT | Tap: GIANT. Everything an octave down, and the friend grows. |
+| GLO | Tap: FREEZE. The sound freezes in place and the friend turns to ice. |
+| | The top row's effects turn on with a tap and off with another (one at a time; the lit button shows which). |
 | PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
 | SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY. |
 | ARP | Sparkle: a held key plays up and down by itself. |
