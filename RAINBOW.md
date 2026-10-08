@@ -12,19 +12,25 @@ at the next power-on.
 | Control | What happens |
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter pops up giant in a bubble, in its own colour, and the friend hops. |
-| PRESETS | Next or previous friend (20 of them, each with its own picture and sound). |
+| PRESETS | Next or previous friend (20 of them, each with its own picture, sound, home sky and favourite beat). |
 | ALGORITHM | Right: three friends sing (one key plays a chord that is always in key). Left: back to one. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
 | KNOB 2 | Day to night. The sky darkens, the sun sets, the moon comes out, and the sound gets softer and darker. |
 | KNOB 3 | Echo. The sound repeats, and copies of the friend follow it around. |
 | KNOB 4 | Wiggle. The sound wobbles (vibrato) and so does the friend. |
-| FX, SCL, ENV, LFO, EDIT, GLO | The six skies: rainbow, stars, hearts, bubbles, flowers, confetti. The lit button shows which. |
-| PLAY | Starts and stops a drum beat. The friend dances to it. |
-| SEQ | The next beat: DANCE, MARCH, SPOOKY. |
+| FX | Hold: HICCUP. The sound stutters and the friend shakes. |
+| SCL | Hold: BACKWARDS. The sound plays in reverse and the friend turns round. |
+| ENV | Hold: SLEEPY. The sound winds down like a record player and the friend droops and dozes. |
+| LFO | Hold: SQUEAKY. Everything an octave up, and the friend shrinks. |
+| EDIT | Hold: GIANT. Everything an octave down, and the friend grows. |
+| GLO | Hold: FREEZE. The sound freezes in place and the friend turns to ice. |
+| PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
+| SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY. |
 | ARP | Sparkle: a held key plays up and down by itself. |
+| REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti. |
 | HOME | A surprise friend, with confetti. |
-| REC, SAVE | A confetti party. |
+| SAVE | A confetti party. |
 | MASTER | Volume. It is capped at about half in Rainbow mode, for small ears. |
 
 Note colours follow the coloured tubes and bells used in many early music classes: C red, D orange,
@@ -36,8 +42,13 @@ Ducky, Pink Ducky, Cool Ducky, Axolotl, Unicorn, Giraffe, Goo, Goobert, Blue Pup
 Blue Monster, April (the family dog), Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
-level set so they all play at about the same loudness. Scissors plays the drum kit: every key is a
-different drum. Ghost starts with the SPOOKY beat.
+level set so they all play at about the same loudness. Each also has a home sky and a favourite beat
+(Ghost: SPOOKY, a ghost-hunting funk; Frog and Axolotl: REGGAE; Butterfly and Rainbow: LULLABY). Scissors
+plays the drum kit: every key is a different drum.
+
+The pictures are drawn on a roomy canvas, then trimmed, centred and stood on the bottom of a 48 x 48 grid;
+a picture that would not fit stops the build, so none is ever cut off. On the screen they are drawn at 1x,
+1.5x, 2x, 2.5x or 3x (KNOB 1) and kept inside the screen even at their biggest, hopping and wiggling.
 
 The characters are original drawings in the spirit of the ones she loves, not copies, because this
 repository and its website are public.

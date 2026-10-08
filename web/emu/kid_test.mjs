@@ -3,7 +3,7 @@
 //   node web/emu/kid_test.mjs build/emu/felucca.wasm [OUT_DIR]
 // Checks: it is on from power-up (the hello, then the friend's name in the band), a key sounds and shows its letter in the bubble,
 // PRESETS changes the friend (the band), every friend sounds at about the same level, MASTER is capped, PLAY starts
-// the beat, and HOME + SAVE held 3 s leaves for the full Felucca. With OUT_DIR, a screenshot of each step (.ppm).
+// the beat, the top row's held effects, ten beats on SEQ, REC's skies, and HOME + SAVE held 3 s leaves for the full Felucca. With OUT_DIR, a screenshot of each step (.ppm).
 import fs from "fs";
 
 const wasmPath = process.argv[2] || "build/emu/felucca.wasm", outDir = process.argv[3];
@@ -51,10 +51,11 @@ ex.web_keys(1 << 12);
 render(200);
 shot("key");
 check(`a key sounds (peak ${peak.toFixed(3)}) and lights its LED`, peak > 0.05 && (ex.web_lit_keys() >> 12) & 1);
-check("its letter shows in the bubble (white inside, the note's colour ring)", px(54, 13) === WHITE && px(54, 8) !== WHITE);
+const ring = px(186, 8);
+check("its letter shows in the bubble (white inside, the note's colour ring)", px(186, 13) === WHITE && ring !== WHITE);
 ex.web_keys(0);
 render(1200);
-check("let go: the bubble goes", px(54, 13) !== WHITE);
+check("let go: the bubble goes", px(186, 8) !== ring);
 check("the key ended the hello: the friend's name in the band", !hiRed() && new Set(band().split(",")).size >= 3);
 const name0 = band();
 
@@ -80,8 +81,49 @@ check("PLAY: the beat runs", ex.web_playing() === 1);
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(200);
 check("PLAY again stops it", ex.web_playing() === 0);
 
+// the top row: each button held changes the sound of a held key, lights, and names itself in the band
+{
+  let sig = 0;
+  const listen = (btns) => {
+    ex.web_keys(1 << 12); render(300);
+    ex.web_buttons(btns); sig = 0;
+    const n = Math.round(600 * 44.1);
+    for (let k = 0; k < n; k += 128) {
+      const m = Math.min(128, n - k); ex.web_render(m);
+      const l = new Float32Array(mem.buffer, ex.web_out_l(), m);
+      for (let i = 0; i < m; i++) sig = (sig * 31 + Math.round(l[i] * 30000)) % 1000000007;
+    }
+    const r = { sig, band: band(), lit: ex.web_lit_buttons() };
+    ex.web_buttons(0); ex.web_keys(0); render(1200);
+    return r;
+  };
+  const plain = listen(0);
+  let ok = 0;
+  for (const b of [B.FX, B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO]) {
+    const r = listen(1 << b);
+    if (r.sig !== plain.sig && r.band !== plain.band && ((r.lit >> b) & 1)) ok++;
+  }
+  check(`the top row held: ${ok} of 6 effects change the sound, light up and show their word`, ok === 6);
+}
+
+// SEQ: ten beats, each named in the band; the friend's bass line plays with them
+{
+  const seen = new Set();
+  for (let i = 0; i < 10; i++) { ex.web_buttons(1 << B.SEQ); render(60); ex.web_buttons(0); render(200); seen.add(band()); }
+  check(`SEQ steps through ten beats (${seen.size} different names)`, seen.size === 10);
+}
+
+// REC: the next sky
+{
+  render(1700);
+  const sky0 = new Uint16Array(mem.buffer, ex.web_screen(), 240 * 240).slice(0, 240 * 180).join(",");
+  ex.web_buttons(1 << B.REC); render(60); ex.web_buttons(0); render(2000);
+  const sky1 = new Uint16Array(mem.buffer, ex.web_screen(), 240 * 240).slice(0, 240 * 180).join(",");
+  check("REC: another sky", sky0 !== sky1);
+}
+
 for (const r of [EN.K1, EN.K2, EN.K3, EN.K4, EN.ALGO, EN.SELECT]) { ex.web_enc(r, 3); render(200); }
-for (const b of [B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO, B.ARP, B.SEQ, B.REC, B.HOME]) { ex.web_buttons(1 << b); render(60); ex.web_buttons(0); render(300); }
+for (const b of [B.FX, B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO, B.ARP, B.SEQ, B.REC, B.HOME]) { ex.web_buttons(1 << b); render(60); ex.web_buttons(0); render(300); }
 shot("knobs");
 check("every knob and button turned and pressed: still running", ex.web_now_ms() > 0);
 
