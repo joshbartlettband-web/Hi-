@@ -84,6 +84,18 @@ protected: anyone who learns it can open it, so it is for your own use, not for 
 firmware package (the FM-1's package format encodes the app), not as readable text, and GitHub hides both secrets in its logs.
 With only one of them set, there is no private build.
 
+## Known issue: the greeting is choppy on a real FM-1
+
+Reported from the real FM-1 (everything else felt fine). The greeting redraws the whole 240 x 240 screen every frame and computes every
+pixel: the rainbow, the three letters being tested (with 8 outline lookups per pixel), the confetti hash and the friend. Measured in
+the browser build it costs about 25 times a normal frame (324 ms of CPU per second of device time, against 13 to 20 while playing),
+and the FM-1's processor is far slower than a browser's. Ideas, cheapest first, none done yet:
+
+1. Draw the greeting at half resolution (one computed pixel per 2 x 2 block): about 4 times less work, and it fits the chunky look.
+2. Draw the still parts (sky, rainbow, grass) once and redraw only the letters, the friend and the confetti boxes.
+3. Fewer confetti, and cap the greeting at 20 frames a second.
+4. Check the animated skies (stars, hearts, bubbles, confetti) on the device too: they redraw the whole picture area every 90 ms.
+
 ## Not checked yet on a real FM-1
 
 - Drawing speed. The screen has no frame buffer, so moving pictures are drawn in strips. Animated skies
