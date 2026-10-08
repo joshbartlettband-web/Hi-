@@ -64,18 +64,25 @@ repository and its website are public.
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main
   loop's frame while it is on (`firmware/src/main.c`). Build with `FELUCCA_KID=0` to leave it out.
 - `web/emu/kid_test.mjs`: checks it in the browser build (`node web/emu/kid_test.mjs build/emu/felucca.wasm`).
+- `landing/`: the site's front page (the one link to share): a demo video, screenshots, the friends and how to try it. The workflow
+  copies it to the site's root and fills in the site's address.
 - `.github/workflows/rainbow.yml`: GitHub builds the firmware and the browser version on every push to
   `main`, tests the browser version, and publishes both to this fork's GitHub Pages site:
   `/webapp/try/` plays it in the browser, `/webapp/installer/` puts it on the FM-1.
 
-## The name in the hello
+## The name in the hello, and the private installer
 
-The name is not in this repository. It is a GitHub secret: **Settings → Secrets and variables → Actions →
-New repository secret**, named `KID_NAME`. The workflow hands it to the firmware build only
-(`tools/gen_kid_art.py` reads it), so the FM-1 says HI and the name, while the browser version on the
-public site says a plain HI!. Without the secret the firmware says HI! too. The firmware package on the
-site holds it scrambled with the rest of the firmware (the FM-1's package format encodes the app),
-not as readable text.
+The name is not in this repository, and the installer on the public site has none in it: its hello is a plain HI!, the same as the
+browser demo. Two repository secrets (**Settings → Secrets and variables → Actions**) add a second, named build:
+
+- `KID_NAME`: the name the hello greets, capitals only, at most 10 letters (`tools/gen_kid_art.py` reads it).
+- `PRIVATE_PATH`: a long random word, 12 to 64 letters, digits, `-` or `_`.
+
+With both set, the workflow builds a second firmware package that greets by name and puts its installer at
+`https://USER.github.io/REPO/PRIVATE_PATH/`. That address is not linked from anywhere and is marked noindex, but it is not password
+protected: anyone who learns it can open it, so it is for your own use, not for posting. The name is held scrambled inside the
+firmware package (the FM-1's package format encodes the app), not as readable text, and GitHub hides both secrets in its logs.
+With only one of them set, there is no private build.
 
 ## Not checked yet on a real FM-1
 

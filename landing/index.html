@@ -1,0 +1,151 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Rainbow mode's landing page. The workflow (.github/workflows/rainbow.yml) copies this folder to the site's root
+     and fills in @SITE@ (the site's address) and @REPO@ (owner/name). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rainbow mode for the FM-1</title>
+<meta name="description" content="A music toy for little hands: 40 friends, 10 beats, a colour for every note. Free firmware for the M-VAVE FM-1. Try it in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Rainbow mode for the FM-1">
+<meta property="og:description" content="A music toy for little hands: 40 friends, 10 beats, a colour for every note. Free firmware for the M-VAVE FM-1. Try it in your browser.">
+<meta property="og:image" content="@SITE@/card.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23241830'/%3E%3Crect x='3' y='3' width='10' height='2' fill='%23ec3440'/%3E%3Crect x='3' y='6' width='10' height='2' fill='%23ffd82e'/%3E%3Crect x='3' y='9' width='10' height='2' fill='%2350c85a'/%3E%3Crect x='3' y='12' width='10' height='1' fill='%233880f4'/%3E%3C/svg%3E">
+<style>
+  /* the palette: the FM-1 screen's own colours on a deep plum */
+  :root {
+    --bg: #241830; --panel: #2f2040; --panel-2: #3a2850; --ink: #fff; --soft: #d6c4ec; --dim: #9c86bb;
+    --red: #ec3440; --orange: #ff8c1e; --yellow: #ffd82e; --green: #50c85a; --blue: #3880f4; --purple: #9658e2;
+    --font: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.55 var(--font); }
+  a { color: var(--yellow); }
+  .stripe { height: 10px; background: linear-gradient(90deg, var(--red) 0 16.66%, var(--orange) 0 33.33%, var(--yellow) 0 50%,
+            var(--green) 0 66.66%, var(--blue) 0 83.33%, var(--purple) 0); }
+  main, footer { width: 100%; max-width: 920px; margin: 0 auto; padding-inline: 16px; }
+  h1 { font-size: clamp(2.6rem, 9vw, 4.4rem); line-height: 1.02; margin: 40px 0 12px; letter-spacing: -.02em; }
+  h1 span:nth-child(1) { color: var(--red); } h1 span:nth-child(2) { color: var(--orange); }
+  h1 span:nth-child(3) { color: var(--yellow); } h1 span:nth-child(4) { color: var(--green); }
+  h1 span:nth-child(5) { color: var(--blue); } h1 span:nth-child(6) { color: var(--purple); }
+  h2 { font-size: 1.7rem; line-height: 1.15; margin: 56px 0 14px; }
+  .lede { font-size: 1.25rem; color: var(--soft); max-width: 36em; margin: 0 0 24px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 32px; }
+  .btn { display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px; border-radius: 14px; font-weight: 700;
+         text-decoration: none; color: var(--bg); background: var(--yellow); }
+  .btn.alt { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--purple); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .hero > div { margin-bottom: 28px; }
+  video { display: block; width: 100%; max-width: 440px; height: auto; aspect-ratio: 4 / 5; margin: 0 auto; border-radius: 18px;
+          background: var(--panel); }
+  .screens { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .screens li { background: var(--panel); border-radius: 16px; overflow: hidden; }
+  .screens img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  .screens p { margin: 0; padding: 10px 14px 14px; font-size: .95rem; color: var(--soft); line-height: 1.35; }
+  .screens b { display: block; color: var(--ink); font-size: 1.05rem; }
+  .facts { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+  .facts li { padding-left: 28px; position: relative; }
+  .facts li::before { content: ""; position: absolute; left: 0; top: .5em; width: 14px; height: 14px; border-radius: 50%; background: var(--c, var(--yellow)); }
+  .facts li:nth-child(1) { --c: var(--red); } .facts li:nth-child(2) { --c: var(--orange); } .facts li:nth-child(3) { --c: var(--yellow); }
+  .facts li:nth-child(4) { --c: var(--green); } .facts li:nth-child(5) { --c: var(--blue); } .facts li:nth-child(6) { --c: var(--purple); }
+  .poster { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; border-radius: 18px; image-rendering: auto; }
+  .cards { display: grid; gap: 16px; }
+  .card { background: var(--panel); border-radius: 18px; padding: 22px 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 1.25rem; }
+  .card p { margin: 0 0 14px; color: var(--soft); }
+  .card .btn { min-height: 48px; padding: 0 22px; }
+  .card small { display: block; margin-top: 12px; color: var(--dim); font-size: .9rem; line-height: 1.4; }
+  details { background: var(--panel); border-radius: 14px; padding: 4px 18px; margin: 12px 0 0; }
+  summary { cursor: pointer; padding: 14px 0; font-weight: 700; }
+  details p { margin: 0 0 14px; color: var(--soft); }
+  footer { margin-top: 64px; padding-block: 28px 44px; color: var(--dim); font-size: .95rem; border-top: 1px solid var(--panel-2); }
+  footer p { margin: 0 0 10px; }
+  @media (min-width: 640px) {
+    body { font-size: 19px; }
+    .screens { grid-template-columns: repeat(3, 1fr); }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: center; }
+    .hero > div { margin-bottom: 0; }
+    video { margin: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<main>
+  <section class="hero">
+    <div>
+      <h1><span>R</span><span>a</span><span>i</span><span>n</span><span>b</span><span>o</span><span>w</span> mode</h1>
+      <p class="lede">A music toy for little hands. Free firmware for the M-VAVE FM-1 synthesizer, made for a four-year-old.</p>
+      <div class="buttons">
+        <a class="btn" href="webapp/try/">Try it in your browser</a>
+        <a class="btn alt" href="webapp/installer/">Put it on an FM-1</a>
+      </div>
+      <p class="lede" style="font-size:1rem;margin:0">No FM-1 needed to try it. Press the keys on the screen, or use your computer keyboard.</p>
+    </div>
+    <video controls playsinline preload="none" poster="poster.png" aria-label="A 35 second demo of Rainbow mode">
+      <source src="rainbow-mode.mp4" type="video/mp4">
+    </video>
+  </section>
+
+  <h2>What it feels like</h2>
+  <ul class="facts">
+    <li><b>Every key shows its note,</b> big, in its own colour, like the coloured bells in a music class. C is red, D orange, E yellow, F green, G teal, A purple, B pink.</li>
+    <li><b>40 friends.</b> Each has its own picture, sound, sky and favourite beat: ducks, an axolotl, a unicorn, a ghost, a rocket, a bunny and more.</li>
+    <li><b>10 beats with a bass line</b> that always fits the keys. Dance, March, Spooky, Rock, Disco, Hip Hop, Train, Samba, Reggae, Lullaby.</li>
+    <li><b>Every knob does something you can see and hear:</b> big and small, day and night, echo, wiggle, and a choir of three friends.</li>
+    <li><b>Six sound tricks on the top buttons,</b> one tap on and one tap off: hiccup, backwards, sleepy, squeaky, giant and freeze.</li>
+    <li><b>Six skies,</b> a surprise friend on HOME, and a volume limit for small ears.</li>
+  </ul>
+
+  <h2>On the FM-1's screen</h2>
+  <ul class="screens">
+    <li><img src="screen-1.png" width="480" height="480" alt="A rainbow, a rubber duck and a big HI!"><p><b>Hello</b>A greeting every time it starts</p></li>
+    <li><img src="screen-2.png" width="480" height="480" alt="A rubber duck among bubbles, with a big letter G at the bottom"><p><b>A colour for every note</b>Press a key, see its letter</p></li>
+    <li><img src="screen-3.png" width="480" height="480" alt="A unicorn under a rainbow, named at the bottom"><p><b>40 friends</b>Turn PRESETS to meet them</p></li>
+    <li><img src="screen-4.png" width="480" height="480" alt="A ghost in a starry sky, with SPOOKY at the bottom"><p><b>10 beats</b>Press PLAY, and the friend dances</p></li>
+    <li><img src="screen-5.png" width="480" height="480" alt="A very big ghost, with GIANT at the bottom"><p><b>Sound tricks</b>Tap a top button: GIANT</p></li>
+    <li><img src="screen-6.png" width="480" height="480" alt="A night sky with a moon and three ghosts"><p><b>Day to night</b>A knob changes the sky and the sound</p></li>
+  </ul>
+
+  <h2>Meet the friends</h2>
+  <img class="poster" src="friends.png" width="1080" height="1350" alt="All 40 friends with their names">
+
+  <h2>Try it</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>In your browser</h3>
+      <p>The same firmware, running on your screen. Works on computers, phones and tablets.</p>
+      <a class="btn" href="webapp/try/">Open the demo</a>
+      <small>It needs sound on, and you may have to tap once to start.</small>
+    </div>
+    <div class="card">
+      <h3>On an M-VAVE FM-1</h3>
+      <p>Connect it by USB and press Install. It takes about a minute.</p>
+      <a class="btn alt" href="webapp/installer/">Open the installer</a>
+      <small>Needs Chrome or Edge on a computer or an Android phone, and a USB cable. Safari and iPhones cannot do it.</small>
+    </div>
+  </div>
+  <details>
+    <summary>Is it safe? Can I go back?</summary>
+    <p>You can return to the official firmware at any time: the installer page has a "Return to official V15" section. You download the official file from M-VAVE's website, and the installer backs up the FM-1 before it goes back. Installing firmware is at your own risk. This is an independent fan project and is not made or endorsed by M-VAVE.</p>
+  </details>
+  <details>
+    <summary>How do I leave Rainbow mode?</summary>
+    <p>It starts every time the FM-1 is switched on. Hold HOME and SAVE together for 3 seconds to get the full Felucca synthesizer, with your last session restored. Switch the FM-1 off and on to come back to Rainbow mode.</p>
+  </details>
+</main>
+
+<footer>
+  <p><b>Built on Felucca</b>, the multi-engine synthesizer firmware for the FM-1 by Leo Kuroshita and Hügelton Instruments. Rainbow mode is a fork of it and adds a toy mode on top: <a href="https://github.com/hugelton/Felucca">github.com/hugelton/Felucca</a>.</p>
+  <p>Free and open source under the GPL-3.0. Source code and a guide to every control: <a href="https://github.com/@REPO@">github.com/@REPO@</a>. The pictures are original drawings.</p>
+</footer>
+</body>
+</html>

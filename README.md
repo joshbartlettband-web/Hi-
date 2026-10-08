@@ -1,3 +1,18 @@
+# Rainbow mode for the FM-1
+
+A music toy for little hands: this fork of [Felucca](https://github.com/hugelton/Felucca) starts the M-VAVE FM-1 as a toy for a
+four-year-old. 40 friends, each with its own picture, sound, sky and favourite beat; a colour for every note; 10 beats with a
+bass line that always fits; and a knob for big and small, day and night, echo and wiggle.
+
+- **Try it in your browser** (no FM-1 needed): <https://joshbartlettband-web.github.io/Hi-/webapp/try/>
+- **Install it on an FM-1** (Chrome or Edge, USB): <https://joshbartlettband-web.github.io/Hi-/webapp/installer/>
+- **Every control, and how it is built:** [RAINBOW.md](RAINBOW.md)
+
+Installing firmware is at your own risk; the installer can put the official firmware back. This is an independent fan project, not
+made or endorsed by M-VAVE. Everything below is Felucca's own README, by Leo Kuroshita and Hügelton Instruments (GPL-3.0).
+
+---
+
 # Felucca
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
