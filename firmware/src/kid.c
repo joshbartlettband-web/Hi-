@@ -23,12 +23,15 @@
 #define FELUCCA_KID 1
 #endif
 #if FELUCCA_KID
-#include "kid_art.h"                    /* KID_N friends: KID_NAME, KID_PAL, KID_PIX (tools/gen_kid_art.py) */
+#include "kid_art.h"                    /* KID_N friends: KID_NAME, KID_PAL, KID_PIX (tools/gen_kid_art.py); and
+                                         * KID_HELLO_NAME, the child's name in the hello (from the build's environment,
+                                         * KID_NAME: kept out of the source; none, a plain HI!) */
 
 #define KID_BAND_Y 184u                 /* the band at the bottom (the name, the note, a knob's word) */
 #define KID_GROUND 182                  /* the friend stands here */
 #define KID_VOL_MAX 2048u               /* MASTER at most this (song.master_q12, 4096 = full) */
 #define KID_EXIT_MS 3000u
+#define KID_HELLO_MS 4000u              /* the hello at power-up, at most this long (any key or knob ends it) */
 #define KID_BUB_X 54                    /* the bubble a note shows in */
 #define KID_BUB_Y 54
 #define KID_BUB_R 50
@@ -48,7 +51,7 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {3, "PULSE LD", 1, 103},       /* BLUE PUP: LOFI */
     {5, "VOX LEAD", 0, 96},       /* RED MONSTER */
     {7, "FULL ORGAN", 0, 107},     /* BLUE MONSTER */
-    {2, "BRASS", 1, 97},          /* DOGGY: PHASE */
+    {2, "BRASS", 1, 97},          /* APRIL: PHASE (the family dog) */
     {10, "DRUM KIT", 1, 104},      /* SCISSORS: DRUM, every key another drum */
     {5, "CHOIR AAH", 2, 89},      /* GHOST: oooOOooo, and the spooky beat */
     {6, "SYNC LEAD", 1, 103},      /* WEB HERO */
@@ -129,6 +132,8 @@ static struct {
     uint8_t rev0, dly0;                 /* the friend's sound's own sends (the echo adds to them) */
     uint8_t full;                       /* draw everything next frame */
     uint32_t hint_ms, key_ms, hop_ms, party_ms, exit_ms, play_ms, bg_ms;
+    uint32_t hello_ms;                  /* the power-up hello since (fm1_ms | 1), 0 none */
+    /* (the times stored as fm1_ms | 1 are compared from now | 1: never "in the future") */
     uint32_t band_sig, pic_sig;         /* what the band and the picture last showed */
     int16_t bx0, by0, bx1, by1;         /* the area the friends covered last frame */
 } kid = {1};
@@ -206,6 +211,7 @@ static void kid_enter(void)
     kid.beat = KID_SOUND[kid.fr].beat;
     kid_beat_load();
     kid_friend(kid.fr);
+    kid.hello_ms = fm1_ms | 1u;
 }
 
 static void kid_leave(void)
@@ -241,6 +247,7 @@ static void kid_input(void)
     uint32_t pressed = fm1_input_edges(0), notes = fm1_input_note_edges(), held = fm1_in.buttons, id, k;
     uint32_t home = 1u << panel.btn[B_HOME], both = home | (1u << panel.btn[B_SAVE]);
     int32_t s;
+    uint32_t any = pressed | notes;
     fm6_poll();
     song.grid = 0;
     perf_kill = 0;
@@ -293,7 +300,7 @@ static void kid_input(void)
         kid.home_down = 0;
         if (!kid.exit_ms)
             kid.exit_ms = fm1_ms | 1u;
-        else if (fm1_ms - kid.exit_ms > KID_EXIT_MS) {
+        else if ((fm1_ms | 1u) - kid.exit_ms > KID_EXIT_MS) {
             kid_leave();
             return;
         }
@@ -319,18 +326,23 @@ static void kid_input(void)
         kid.key = (int8_t)k;
         kid.key_ms = fm1_ms;
     }
-    if ((s = panel_enc(EN_PRESET)) != 0)
+    if ((s = panel_enc(EN_PRESET)) != 0) {
+        any = 1u;
         kid_friend((uint32_t)((int32_t)kid.fr + (s > 0 ? 1 : (int32_t)KID_N - 1)));
+    }
     if ((s = panel_enc(EN_ALGO)) != 0) {
+        any = 1u;
         kid.chord = s > 0;
         kid_knobs();
         kid_hint(KH_CHORD);
     }
     if ((s = panel_enc(EN_SELECT)) != 0) {
+        any = 1u;
         song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + s * 5, 60, 180);
         kid_hint(KH_SPEED);
     }
     if ((s = panel_enc(EN_K1)) != 0) {            /* two detents an octave: a small hand turns a lot */
+        any = 1u;
         kid.acc = (int8_t)clamp(kid.acc + s, -2, 2);
         if (kid.acc >= 2 || kid.acc <= -2) {
             kid_size(kid.acc > 0 ? 1 : -1);
@@ -339,6 +351,7 @@ static void kid_input(void)
         kid_hint(KH_SIZE);
     }
     if ((s = panel_enc(EN_K2)) != 0) {
+        any = 1u;
         uint32_t n = (uint32_t)clamp(kid.night + s, 0, 8);
         if (n != kid.night) {
             kid.night = (uint8_t)n;
@@ -348,14 +361,20 @@ static void kid_input(void)
         kid_hint(KH_NIGHT);
     }
     if ((s = panel_enc(EN_K3)) != 0) {
+        any = 1u;
         kid.echo = (uint8_t)clamp(kid.echo + s, 0, 8);
         kid_knobs();
         kid_hint(KH_ECHO);
     }
     if ((s = panel_enc(EN_K4)) != 0) {
+        any = 1u;
         kid.wiggle = (uint8_t)clamp(kid.wiggle + s, 0, 8);
         kid_knobs();
         kid_hint(KH_WIGGLE);
+    }
+    if (any && kid.hello_ms) {                    /* she is playing: the hello makes way */
+        kid.hello_ms = 0;
+        kid.full = 1;
     }
 }
 
@@ -471,7 +490,7 @@ static void kid_frame_setup(uint32_t now)
     for (y = 0; y < KID_BAND_Y; y++)
         kf.sky[y] = kid_mix(top, bot, y * 256u / KID_BAND_Y);
     kf.sky_mid = kf.sky[KID_BAND_Y / 2u];
-    kf.party = kid.party_ms && now - kid.party_ms < 1600u;
+    kf.party = kid.party_ms && (now | 1u) - kid.party_ms < 1600u;
     /* back to front into tmp: the echoes (farthest first), the chord's two friends, the friend */
     for (k = ne; k >= 1u; k--) {
         uint32_t i;
@@ -598,10 +617,10 @@ static uint16_t kid_band_px(int32_t x, int32_t y)
     return kf.bg;
 }
 
-static int32_t kid_scene_px(int32_t x, int32_t y)          /* the scene's decoration, -1 none */
+static int32_t kid_scene_px(uint32_t scene, int32_t x, int32_t y)   /* the scene's decoration, -1 none */
 {
     uint32_t t = kf.t, h;
-    switch (kid.scene) {
+    switch (scene) {
     case KS_RAINBOW: {
         int32_t dx = x - 120, dy = y - 236, d = dx * dx + dy * dy, i;
         if (d >= 208 * 208 || d < 136 * 136)
@@ -692,9 +711,84 @@ static int32_t kid_confetti(int32_t x, int32_t y, uint32_t speed, uint32_t salt)
     return -1;
 }
 
-static uint16_t kid_pic_px(int32_t x, int32_t y)
+static int32_t kid_friends_px(int32_t x, int32_t y)        /* the friends, front first; -1 none */
 {
     uint32_t i;
+    for (i = 0; i < kf.n; i++) {
+        const kid_inst_t *in = &kf.in[i];
+        int32_t sy = y - in->y, sx, ry, rx, xo;
+        uint32_t b;
+        if ((uint32_t)sy >= (uint32_t)in->s)
+            continue;
+        ry = sy * in->inv >> 8;
+        xo = in->wig ? KID_SIN[((uint32_t)ry / 3u + kf.ph) & 31u] * in->wig / 127 : 0;
+        sx = x - in->x - xo;
+        if ((uint32_t)sx >= (uint32_t)in->s)
+            continue;
+        rx = sx * in->inv >> 8;
+        b = in->pix[ry * 24 + (rx >> 1)];
+        b = rx & 1 ? b & 15u : b >> 4;
+        if (b)
+            return in->pal[b];
+    }
+    return -1;
+}
+
+/* the hello: HI and the name, a letter at a time, each dropping in, then a wave running through them */
+static int kid_char_ink(char ch, int32_t cx, int32_t cy, int32_t sc, int32_t x, int32_t y)
+{
+    int32_t g = kid_glyph_of(ch), gx, gy;
+    if (g < 0 || x < cx || y < cy || x >= cx + 5 * sc || y >= cy + 7 * sc)
+        return 0;
+    gx = (x - cx) / sc;
+    gy = (y - cy) / sc;
+    return (KID_FONT[g][gy] >> (4 - gx)) & 1;
+}
+
+static int32_t kid_hello_line(const char *s, int32_t sc, int32_t top, uint32_t first, int32_t x, int32_t y)
+{
+    static const int8_t OX[8] = {-1, 1, 0, 0, -1, 1, -1, 1}, OY[8] = {0, 0, -1, 1, -1, -1, 1, 1};
+    int32_t n = (int32_t)str_len(s), x0 = (240 - (n * 6 * sc - sc)) / 2, k, o, pass, ol = sc >= 7 ? 3 : 2;
+    int32_t ci = x < x0 ? -1 : (x - x0) / (6 * sc);
+    uint32_t t = (kf.t | 1u) - kid.hello_ms;
+    for (pass = 0; pass < 2; pass++)                  /* the letters first, then their outlines (under neighbours) */
+        for (k = ci - 1; k <= ci + 1; k++) {
+            uint32_t i = first + (uint32_t)k, at = i * 160u, d;
+            int32_t cx = x0 + k * 6 * sc, cy, w;
+            if (k < 0 || k >= n || t < at)
+                continue;
+            d = t - at;
+            w = KID_SIN[((t / 40u) + i * 3u) & 31u];
+            cy = top - (d < 300u ? (int32_t)(300u - d) / 2 : 0) - (w > 0 ? w * 7 / 127 : 0);   /* drop in, then wave */
+            if (!pass && kid_char_ink(s[k], cx, cy, sc, x, y))
+                return KID_RAINBOW[i % 7u];
+            for (o = 0; pass && o < 8; o++)
+                if (kid_char_ink(s[k], cx, cy, sc, x + OX[o] * ol, y + OY[o] * ol))
+                    return KID_INK;
+        }
+    return -1;
+}
+
+static uint16_t kid_hello_px(int32_t x, int32_t y)
+{
+    int32_t c;
+    if (KID_HELLO_NAME[0] ? (c = kid_hello_line("HI", 7, 14, 0u, x, y)) >= 0 ||
+                            (c = kid_hello_line(KID_HELLO_NAME, KID_HELLO_SC, 76, 2u, x, y)) >= 0
+                          : (c = kid_hello_line("HI!", 8, 34, 0u, x, y)) >= 0)
+        return (uint16_t)c;
+    if ((c = kid_confetti(x, y, 14u, 5u)) >= 0)
+        return (uint16_t)c;
+    if ((c = kid_friends_px(x, y)) >= 0)
+        return (uint16_t)c;
+    if (y >= KID_GROUND)
+        return y < KID_GROUND + 3 ? RGB(56, 156, 66) : RGB(96, 200, 90);
+    if ((c = kid_scene_px(KS_RAINBOW, x, y)) >= 0)
+        return (uint16_t)c;
+    return kf.sky[y];
+}
+
+static uint16_t kid_pic_px(int32_t x, int32_t y)
+{
     int32_t c;
     if (kf.party && (c = kid_confetti(x, y, 9u, 77u)) >= 0)
         return (uint16_t)c;
@@ -712,23 +806,8 @@ static uint16_t kid_pic_px(int32_t x, int32_t y)
         if (dx > 20 && dx < 46 && dy > 20 && dy < 46 && dx + dy < 70 && (dx - dy < 6 && dy - dx < 6))
             return dx + dy > 64 || dx - dy > 3 || dy - dx > 3 ? KID_INK : KID_NOTE_COL[kf.bub];   /* its tail */
     }
-    for (i = 0; i < kf.n; i++) {                              /* the friends, front first */
-        const kid_inst_t *in = &kf.in[i];
-        int32_t sy = y - in->y, sx, ry, rx, xo;
-        uint32_t b;
-        if ((uint32_t)sy >= (uint32_t)in->s)
-            continue;
-        ry = sy * in->inv >> 8;
-        xo = in->wig ? KID_SIN[((uint32_t)ry / 3u + kf.ph) & 31u] * in->wig / 127 : 0;
-        sx = x - in->x - xo;
-        if ((uint32_t)sx >= (uint32_t)in->s)
-            continue;
-        rx = sx * in->inv >> 8;
-        b = in->pix[ry * 24 + (rx >> 1)];
-        b = rx & 1 ? b & 15u : b >> 4;
-        if (b)
-            return in->pal[b];
-    }
+    if ((c = kid_friends_px(x, y)) >= 0)
+        return (uint16_t)c;
     if (kid.night >= 3u || kid.scene == KS_RAINBOW || kid.scene == KS_FLOWERS) {   /* the sun or the moon */
         int32_t dx = x - 206, dy = y - 32, d = dx * dx + dy * dy;
         if (kid.night < 5u) {
@@ -747,7 +826,7 @@ static uint16_t kid_pic_px(int32_t x, int32_t y)
         if (d >= 19 * 19 && d <= 25 * 25 && (ax <= 1 || ay <= 1 || (ax - ay <= 1 && ay - ax <= 1)))
             return RGB(255, 200, 40);
     }
-    if ((c = kid_scene_px(x, y)) >= 0)
+    if ((c = kid_scene_px(kid.scene, x, y)) >= 0)
         return (uint16_t)c;
     if (kid.scene == KS_CONFETTI && (c = kid_confetti(x, y, 30u, 3u)) >= 0)
         return (uint16_t)c;
@@ -773,7 +852,8 @@ static void kid_paint(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
         int32_t yy, x, n = y1 - y < (int32_t)rows ? y1 - y : (int32_t)rows;
         for (yy = y; yy < y + n; yy++)
             for (x = x0; x < x1; x++)
-                *p++ = swap16(yy < (int32_t)KID_BAND_Y ? kid_pic_px(x, yy) : kid_band_px(x, yy));
+                *p++ = swap16(kid.hello_ms ? kid_hello_px(x, yy) :
+                              yy < (int32_t)KID_BAND_Y ? kid_pic_px(x, yy) : kid_band_px(x, yy));
         lcd_blit((uint32_t)x0, (uint32_t)y, w, (uint32_t)n, px);
         buf ^= 1u;
     }
@@ -785,6 +865,20 @@ static void kid_draw(void)
     int32_t x0 = 240, y0 = 240, x1 = 0, y1 = 0;
     int anim = kid.scene == KS_STARS || kid.scene == KS_HEARTS || kid.scene == KS_BUBBLES || kid.scene == KS_CONFETTI;
     kid_frame_setup(now);
+    if (kid.hello_ms) {                                           /* the hello: the whole screen, every frame */
+        if ((now | 1u) - kid.hello_ms > KID_HELLO_MS) {
+            kid.hello_ms = 0;
+            kid.full = 1;
+        } else {
+            if (now - kid.hop_ms > 700u)
+                kid.hop_ms = now;                                 /* the friend hops along, small, under the name */
+            kid_inst(&kf.in[0], 120, 56, kid_hop(now), KID_PAL[kid.fr % KID_N]);
+            kf.n = 1;
+            kid_paint(0, 0, 240, 240);
+            return;
+        }
+        kid_frame_setup(now);
+    }
     for (i = 0; i < kf.n; i++) {
         const kid_inst_t *in = &kf.in[i];
         x0 = in->x - in->wig < x0 ? in->x - in->wig : x0;
@@ -811,7 +905,7 @@ static void kid_draw(void)
         kid.band_sig = band;
         kid.bg_ms = now;
     } else {
-        if (kf.party || (kid.party_ms && now - kid.party_ms < 1700u) || (anim && now - kid.bg_ms >= 90u)) {
+        if (kf.party || (kid.party_ms && (now | 1u) - kid.party_ms < 1700u) || (anim && now - kid.bg_ms >= 90u)) {
             kid_paint(0, 0, 240, KID_BAND_Y);                     /* (the confetti's last frame clears it) */
             kid.bg_ms = now;
         } else if (sig != kid.pic_sig) {                          /* the friends moved: where they were and are */

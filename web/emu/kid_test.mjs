@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Rainbow mode (firmware/src/kid.c) in the browser build, in Node.
 //   node web/emu/kid_test.mjs build/emu/felucca.wasm [OUT_DIR]
-// Checks: it is on from power-up (the friend's name in the band), a key sounds and shows its letter in the bubble,
+// Checks: it is on from power-up (the hello, then the friend's name in the band), a key sounds and shows its letter in the bubble,
 // PRESETS changes the friend (the band), every friend sounds at about the same level, MASTER is capped, PLAY starts
 // the beat, and HOME + SAVE held 3 s leaves for the full Felucca. With OUT_DIR, a screenshot of each step (.ppm).
 import fs from "fs";
@@ -42,9 +42,9 @@ const shot = (name) => {
 const WHITE = 0xFFFF;
 
 render(1200);
-shot("boot");
-const name0 = band();
-check("on from power-up: a friend in the sky, its name in the band", new Set(name0.split(",")).size >= 3 && px(120, 120) !== px(5, 5));
+shot("hello");
+const hiRed = () => { for (let y = 10; y < 100; y++) for (let x = 40; x < 120; x++) if (px(x, y) === 0xE9A8) return true; return false; };
+check("on from power-up, with the hello (HI in rainbow letters: H red)", hiRed());
 check("silent at rest", peak === 0);
 
 ex.web_keys(1 << 12);
@@ -55,6 +55,8 @@ check("its letter shows in the bubble (white inside, the note's colour ring)", p
 ex.web_keys(0);
 render(1200);
 check("let go: the bubble goes", px(54, 13) !== WHITE);
+check("the key ended the hello: the friend's name in the band", !hiRed() && new Set(band().split(",")).size >= 3);
+const name0 = band();
 
 ex.web_enc(EN.PRESETS, 1);
 render(1700);

@@ -1,8 +1,9 @@
 # Rainbow mode
 
 This fork of Felucca turns the FM-1 into a music toy for a four-year-old. It starts in Rainbow mode every
-time it powers on. A grown-up can get back to the full Felucca by holding **HOME and SAVE together for
-3 seconds**. Rainbow mode comes back at the next power-on.
+time it powers on, with a hello in bouncing rainbow letters and confetti that greets her by name, for a few
+seconds or until she presses something. A grown-up can get back to the full Felucca by holding **HOME and
+SAVE together for 3 seconds**. Rainbow mode comes back at the next power-on.
 
 ## What everything does
 
@@ -30,7 +31,7 @@ E yellow, F green, G teal, A purple, B pink. Sharps get the colour in between.
 ## The friends
 
 Ducky, Pink Ducky, Cool Ducky, Axolotl, Unicorn, Giraffe, Goo, Goobert, Blue Pup, Red Monster,
-Blue Monster, Doggy, Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow.
+Blue Monster, April (the family dog), Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Scissors plays the drum kit: every key is a
@@ -50,6 +51,15 @@ repository and its website are public.
 - `.github/workflows/rainbow.yml`: GitHub builds the firmware and the browser version on every push to
   `main`, tests the browser version, and publishes both to this fork's GitHub Pages site:
   `/webapp/try/` plays it in the browser, `/webapp/installer/` puts it on the FM-1.
+
+## The name in the hello
+
+The name is not in this repository. It is a GitHub secret: **Settings → Secrets and variables → Actions →
+New repository secret**, named `KID_NAME`. The workflow hands it to the firmware build only
+(`tools/gen_kid_art.py` reads it), so the FM-1 says HI and the name, while the browser version on the
+public site says a plain HI!. Without the secret the firmware says HI! too. The firmware package on the
+site holds it scrambled with the rest of the firmware (the FM-1's package format encodes the app),
+not as readable text.
 
 ## Not checked yet on a real FM-1
 
