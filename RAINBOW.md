@@ -3,7 +3,9 @@
 This fork of Felucca turns the FM-1 into a music toy for a four-year-old. It starts in Rainbow mode every
 time it powers on, with a hello in bouncing rainbow letters and confetti that greets her by name, for a few
 seconds or until she presses something. A grown-up can get back to the full Felucca by holding **HOME and
-SAVE together for 3 seconds**. Rainbow mode comes back at the next power-on.
+SAVE together for 3 seconds**. That brings back the music of your last session: Rainbow mode never
+writes Felucca's autosave, so playing with the toy can't overwrite your own work. Rainbow mode comes back
+at the next power-on.
 
 ## What everything does
 

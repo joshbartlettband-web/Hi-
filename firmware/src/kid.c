@@ -214,11 +214,18 @@ static void kid_enter(void)
     kid.hello_ms = fm1_ms | 1u;
 }
 
+static int autosave_boot(int allowed);           /* (project.c) */
+
+/* HOME + SAVE held: the full Felucca, with the music of the last session (the autosave, which the toy never
+ * writes: main.c skips autosave_poll while Rainbow mode is on) */
 static void kid_leave(void)
 {
     kid.on = 0;
     perf_k[0] = 0;
     trk[0].p[P_AMODE] = 0;
+    if (song.playing)
+        transport_req = 2;
+    autosave_boot(1);
     lcd_fill(0, 0, 240, 240, T_BG);
     ui.home = 1;
     ui.force = 1;
