@@ -1,0 +1,59 @@
+# Rainbow mode
+
+This fork of Felucca turns the FM-1 into a music toy for a four-year-old. It starts in Rainbow mode every
+time it powers on. A grown-up can get back to the full Felucca by holding **HOME and SAVE together for
+3 seconds**. Rainbow mode comes back at the next power-on.
+
+## What everything does
+
+| Control | What happens |
+| --- | --- |
+| Keys | Play the friend's sound. The note's letter pops up giant in a bubble, in its own colour, and the friend hops. |
+| PRESETS | Next or previous friend (20 of them, each with its own picture and sound). |
+| ALGORITHM | Right: three friends sing (one key plays a chord that is always in key). Left: back to one. |
+| SELECT | The beat slower or faster (SLOW, WALK, FAST). |
+| KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
+| KNOB 2 | Day to night. The sky darkens, the sun sets, the moon comes out, and the sound gets softer and darker. |
+| KNOB 3 | Echo. The sound repeats, and copies of the friend follow it around. |
+| KNOB 4 | Wiggle. The sound wobbles (vibrato) and so does the friend. |
+| FX, SCL, ENV, LFO, EDIT, GLO | The six skies: rainbow, stars, hearts, bubbles, flowers, confetti. The lit button shows which. |
+| PLAY | Starts and stops a drum beat. The friend dances to it. |
+| SEQ | The next beat: DANCE, MARCH, SPOOKY. |
+| ARP | Sparkle: a held key plays up and down by itself. |
+| HOME | A surprise friend, with confetti. |
+| REC, SAVE | A confetti party. |
+| MASTER | Volume. It is capped at about half in Rainbow mode, for small ears. |
+
+Note colours follow the coloured tubes and bells used in many early music classes: C red, D orange,
+E yellow, F green, G teal, A purple, B pink. Sharps get the colour in between.
+
+## The friends
+
+Ducky, Pink Ducky, Cool Ducky, Axolotl, Unicorn, Giraffe, Goo, Goobert, Blue Pup, Red Monster,
+Blue Monster, Doggy, Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow.
+
+Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
+level set so they all play at about the same loudness. Scissors plays the drum kit: every key is a
+different drum. Ghost starts with the SPOOKY beat.
+
+The characters are original drawings in the spirit of the ones she loves, not copies, because this
+repository and its website are public.
+
+## Where it lives
+
+- `tools/gen_kid_art.py`: the 20 pictures, drawn from shapes on a 48 x 48 grid and outlined
+  automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
+  sheet to look at. The build runs it (`tools/build.py` generate).
+- `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main
+  loop's frame while it is on (`firmware/src/main.c`). Build with `FELUCCA_KID=0` to leave it out.
+- `web/emu/kid_test.mjs`: checks it in the browser build (`node web/emu/kid_test.mjs build/emu/felucca.wasm`).
+- `.github/workflows/rainbow.yml`: GitHub builds the firmware and the browser version on every push to
+  `main`, tests the browser version, and publishes both to this fork's GitHub Pages site:
+  `/webapp/try/` plays it in the browser, `/webapp/installer/` puts it on the FM-1.
+
+## Not checked yet on a real FM-1
+
+- Drawing speed. The screen has no frame buffer, so moving pictures are drawn in strips. Animated skies
+  (stars, hearts, bubbles, confetti) redraw the whole picture area, about 60 ms a frame over the screen's
+  connection. If it feels slow on the device, the first thing to try is drawing only the friend's area.
+- The volume cap (`KID_VOL_MAX` in `kid.c`): half of the MASTER curve. Raise or lower it to taste.

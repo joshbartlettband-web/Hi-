@@ -93,9 +93,7 @@ jobs:
             echo "JIELI_DOCKER=1" >> "$GITHUB_ENV"
           fi
 
-      - name: Build the firmware (KID_NAME, a repository secret, is the name the hello greets)
-        env:
-          KID_NAME: ${{ secrets.KID_NAME }}
+      - name: Build the firmware
         run: |
           export AC79_SDK="$HOME/ac79-sdk"
           ./build.sh --release "${{ steps.ver.outputs.release }}"

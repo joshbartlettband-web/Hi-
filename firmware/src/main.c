@@ -211,6 +211,10 @@ static void fm1_main(void)
                 song.batt_raw = song.batt_raw ? song.batt_raw + (b - song.batt_raw) / 32 : b;
         }
         master_poll();
+#if FELUCCA_KID
+        if (KID_ON() && song.master_q12 > KID_VOL_MAX)  /* Rainbow mode: at most about half, for small ears */
+            song.master_q12 = KID_VOL_MAX;
+#endif
         {   /* OCT- + OCT+ held 5 s: enter UBOOT with RAM intact (debug / update); a countdown
              * shows from 2 s over the whole screen (the menu and the dialogs too: ui_draw), letting
              * go cancels it */
@@ -271,15 +275,18 @@ static void fm1_main(void)
         felucca_dbg.page = ui.page;
         felucca_dbg.home = ui.home;
         felucca_dbg.stage = 1;
-        ui_input();
-        settings_poll();                              /* queued settings save: only while stopped */
-        autosave_poll();                              /* (1.2) the music, stopped and idle: project.c */
-        felucca_dbg.stage = 2;
-        ui_leds();
-        ui_draw();
+        if (!kid_frame()) {                           /* Rainbow mode (kid.c) takes the frame while it is on */
+            ui_input();
+            settings_poll();                          /* queued settings save: only while stopped */
+            autosave_poll();                          /* (1.2) the music, stopped and idle: project.c (not the toy's) */
+            felucca_dbg.stage = 2;
+            ui_leds();
+            ui_draw();
+        }
         felucca_dbg.stage = 9;
         while (fm1_ms - m < 15u) {                               /* ~60 UI frames/s at most */
-            ui_input();
+            if (!KID_ON())
+                ui_input();
 #if FELUCCA_OTA
             ed_service();                       /* editor replies without waiting for the next frame */
 #endif

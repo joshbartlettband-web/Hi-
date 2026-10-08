@@ -156,6 +156,7 @@ static void lcd_init(void) {}
 #include "../../firmware/src/ui_menu.c"
 #include "../../firmware/src/ui_input.c"
 #include "../../firmware/src/ui_layer.c"
+#include "../../firmware/src/kid.c"
 
 /* ------------------------------------------------------------ the flash --- */
 static uint32_t web_flash_writes;
@@ -268,7 +269,11 @@ static void web_frame(void)
     if (b > 0)
         song.batt_raw = song.batt_raw ? song.batt_raw + (b - song.batt_raw) / 32 : b;
     master_poll();
+    if (KID_ON() && song.master_q12 > KID_VOL_MAX)
+        song.master_q12 = KID_VOL_MAX;
     felucca_dbg.ui_frames++;
+    if (kid_frame())
+        return;
     ui_input();
     settings_poll();
     autosave_poll();
@@ -310,7 +315,7 @@ static void web_ms(void)
     if (fm1_ms - web_last_frame >= 15u) {                /* main.c: a frame, then ui_input until 15 ms are over */
         web_last_frame = fm1_ms;
         web_frame();
-    } else {
+    } else if (!KID_ON()) {
         ui_input();                                       /* main.c's wait loop */
     }
 }
@@ -471,4 +476,13 @@ EXPORT uint16_t *web_screen(void) { return web_fb; }
 EXPORT uint32_t web_screen_draws(void) { return web_draws; }
 EXPORT uint32_t web_now_ms(void) { return fm1_ms; }
 EXPORT uint32_t web_playing(void) { return song.playing; }
+EXPORT void web_kid(uint32_t on)               /* Rainbow mode off (the tests: the full Felucca from boot) */
+{
+    if (!on && KID_ON()) {
+        if (kid.ready)
+            kid_leave();
+        else
+            kid.on = 0;
+    }
+}
 EXPORT uint32_t web_sample_rate(void) { return FS; }
