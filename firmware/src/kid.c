@@ -568,6 +568,8 @@ static struct {
     uint8_t band;
     const char *txt;
     kid_txt_t bt;                       /* the band's text */
+    kid_txt_t bt2;                      /* .. its second line (a long name: two lines), sc 0 = none */
+    char l1[16], l2[16];
     int16_t ol;                         /* its outline (px) */
     uint16_t ink, bg, bg2;
     int8_t meter;                       /* dots lit (HINT), -1 none */
@@ -740,11 +742,31 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.bg2 = kid.night >= 5u ? RGB(24, 80, 50) : RGB(56, 156, 66);
         sig = 0x300u | (uint32_t)kid.fr << 4 | (kid.night >= 5u) << 12;
     }
+    kf.bt2.sc = 0;
     len = str_len(kf.txt);
     w = len * 6u * (uint32_t)kf.bt.sc - (uint32_t)kf.bt.sc;
     kf.bt.s = kf.txt;
     kf.bt.x = (int16_t)((240 - (int32_t)w) / 2);
     kf.bt.y = (int16_t)(kf.band == KB_NOTE ? KID_BAND_Y + 5 : KID_BAND_Y + ((kf.band == KB_HINT ? 40 : 56) - 7 * kf.bt.sc) / 2 + 2);
+    if (kf.bt.x < 4 && len < sizeof kf.l1) {              /* too wide even at 3: two lines, split at the middle space */
+        uint32_t i, cut = 0;
+        for (i = 0; i < len; i++)
+            if (kf.txt[i] == ' ' && (!cut || (i > cut ? i - len / 2 : len / 2 - i) < (cut > len / 2 ? cut - len / 2 : len / 2 - cut)))
+                cut = i;
+        if (cut) {
+            for (i = 0; i < cut; i++)
+                kf.l1[i] = kf.txt[i];
+            kf.l1[cut] = 0;
+            str_cpy(kf.l2, kf.txt + cut + 1, sizeof kf.l2);
+            kf.bt.s = kf.l1;
+            kf.bt.sc = kf.bt2.sc = 3;
+            kf.bt2.s = kf.l2;
+            kf.bt.x = (int16_t)((240 - (int32_t)(str_len(kf.l1) * 18u - 3u)) / 2);
+            kf.bt2.x = (int16_t)((240 - (int32_t)(str_len(kf.l2) * 18u - 3u)) / 2);
+            kf.bt.y = KID_BAND_Y + 7;
+            kf.bt2.y = KID_BAND_Y + 33;
+        }
+    }
     return sig;
 }
 
@@ -778,6 +800,8 @@ static int kid_text_at(const kid_txt_t *t, int32_t x, int32_t y, int32_t o)
 static uint16_t kid_band_px(int32_t x, int32_t y)
 {
     int k = kid_text_at(&kf.bt, x, y, kf.ol);
+    if (!k && kf.bt2.sc)
+        k = kid_text_at(&kf.bt2, x, y, kf.ol);
     if (k)
         return k == 1 ? kf.ink : KID_INK;
     if (kf.meter >= 0 && y >= (int32_t)KID_BAND_Y + 38) {         /* the meter: 8 dots */

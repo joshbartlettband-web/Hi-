@@ -704,6 +704,12 @@ def rgb565(c):
 
 
 def main(out, png=None):
+    for name, _ in FRIENDS:                      # the band shows the name: one line at scale 4 or 3, or two at 3
+        if not re.fullmatch(r"[A-Z]+( [A-Z]+)*", name):
+            raise SystemExit(f"{name!r}: capitals and single spaces only (the band's font)")
+        if len(name) * 18 - 3 > 232 and (" " not in name or len(name) > 15 or
+                                          max(len(w) for w in name.split(" ", 1)) * 18 - 3 > 232):
+            raise SystemExit(f"{name}: too long for the band, even on two lines")
     pics = []
     for name, f in FRIENDS:
         try:
