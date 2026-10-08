@@ -51,11 +51,12 @@ ex.web_keys(1 << 12);
 render(200);
 shot("key");
 check(`a key sounds (peak ${peak.toFixed(3)}) and lights its LED`, peak > 0.05 && (ex.web_lit_keys() >> 12) & 1);
-const ring = px(186, 8);
-check("its letter shows in the bubble (white inside, the note's colour ring)", px(186, 13) === WHITE && ring !== WHITE);
+const F_GREEN = ((130 >> 3) << 11) | ((214 >> 2) << 5) | (56 >> 3);   // kid.c KID_NOTE_COL: F
+const bandHas = (c) => { for (let y = 186; y < 240; y++) for (let x = 0; x < 240; x++) if (px(x, y) === c) return true; return false; };
+check("its letter shows big in the band, in its colour (F green)", bandHas(F_GREEN));
 ex.web_keys(0);
 render(1200);
-check("let go: the bubble goes", px(186, 8) !== ring);
+check("let go: the letter goes", !bandHas(F_GREEN));
 check("the key ended the hello: the friend's name in the band", !hiRed() && new Set(band().split(",")).size >= 3);
 const name0 = band();
 
@@ -65,7 +66,7 @@ shot("friend2");
 check("PRESETS: another friend (the band shows its name)", band() !== name0);
 
 const levels = [];
-for (let f = 0; f < 20; f++) {
+for (let f = 0; f < 40; f++) {
   peak = 0;
   for (const k of [12, 14, 16]) { ex.web_keys(1 << k); render(500); ex.web_keys(0); render(150); }
   levels.push(peak);
@@ -73,7 +74,7 @@ for (let f = 0; f < 20; f++) {
   render(400);
 }
 const lo = Math.min(...levels), hi = Math.max(...levels);
-check(`all 20 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
+check(`all 40 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
 check("MASTER all the way up stays at about half (no friend peaks over 0.25)", hi < 0.25);
 
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(1500);

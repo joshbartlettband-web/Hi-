@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-"""Rainbow mode's friends: 20 pixel-art pictures (run by tools/build.py generate()).
+"""Rainbow mode's friends: 40 pixel-art pictures (run by tools/build.py generate()).
 
   gen_kid_art.py OUT.h [--png SHEET.png]
 
@@ -107,7 +107,7 @@ class Pic:
 
 
 # ---------------------------------------------------------------- the friends
-SHADE = dict(yellow="dyellow", pink="dpink", lblue="mblue", white="dwhite", lime="dlime", red="dred",
+SHADE = dict(lpurple="purple", yellow="dyellow", pink="dpink", lblue="mblue", white="dwhite", lime="dlime", red="dred",
              blue="dblue", orange="dorange", green="dgreen", purple="dpurple", tan="dtan", brown="dbrown")
 
 
@@ -386,6 +386,273 @@ def rainbow():
     return p.done()
 
 
+def crown(p):
+    p.poly([(11, 12), (13, 6), (16, 9), (19, 4), (22, 9), (25, 6), (27, 12)], "gold")
+    p.rect(11, 11, 27, 13, "gold")
+    p.ell(19, 9, 1, 1, "red"); p.ell(14, 11, 1, 1, "lblue"); p.ell(24, 11, 1, 1, "lblue")
+
+
+def redpup():                                                    # a red heeler pup (original design)
+    p = Pic()
+    p.poly([(7, 2), (18, 14), (5, 20)], "dorange")               # ears
+    p.poly([(41, 2), (30, 14), (43, 20)], "dorange")
+    p.poly([(9, 8), (14, 14), (8, 17)], "cream"); p.poly([(39, 8), (34, 14), (40, 17)], "cream")
+    p.ball(24, 27, 17, 15, "orange", "dorange")                  # head
+    p.ell(24, 14, 5, 3, "dorange")
+    p.ell(15, 25, 6, 6, "dorange"); p.ell(33, 25, 6, 6, "dorange")
+    p.ell(24, 36, 11, 7, "cream")
+    p.eye(15, 25, 4); p.eye(33, 25, 4)
+    p.ell(24, 32, 3, 2, "black")
+    p.smile(24, 37, 4)
+    p.ell(26, 41, 2, 2, "hpink")
+    return p.done()
+
+
+def yellowbird():                                                # a big yellow bird (original design)
+    p = Pic()
+    for i in range(7):                                           # feathery body
+        p.ell(10 + i * 5, 34 + (i % 2) * 2, 6, 9, "dyellow" if i % 2 else "yellow")
+    p.ball(24, 18, 13, 13, "yellow", "dyellow")                  # head
+    for x in (16, 22, 28):                                       # a tuft of feathers on top
+        p.ell(x, 5, 2, 4, "yellow")
+    p.eye(19, 16, 4); p.eye(29, 16, 4)
+    p.poly([(16, 23), (33, 23), (24, 31)], "orange")             # a big beak
+    p.rect(17, 23, 32, 24, "dorange")
+    return p.done()
+
+
+def slimy():                                                     # a green slime ghost (original design)
+    p = Pic()
+    p.ball(24, 22, 17, 16, "lime", "dlime")
+    p.poly([(8, 24), (40, 24), (36, 44), (24, 38), (12, 44)], "lime")   # a wispy tail
+    p.ell(6, 30, 4, 3, "lime"); p.ell(42, 30, 4, 3, "lime")      # little arms
+    p.eye(17, 18, 4); p.eye(31, 18, 4)
+    p.pie(24, 26, 9, 0, 180, "black")                            # a goofy grin, tongue out
+    p.ell(27, 33, 3, 3, "hpink")
+    p.ell(13, 10, 3, 2, "lgreen")
+    return p.done()
+
+
+def bunny():
+    p = Pic()
+    p.ell(16, 10, 4, 11, "white"); p.ell(32, 10, 4, 11, "white")  # long ears
+    p.ell(16, 11, 2, 8, "lpink"); p.ell(32, 11, 2, 8, "lpink")
+    p.ball(24, 30, 16, 14, "white", "dwhite")
+    p.eye(17, 28, 4); p.eye(31, 28, 4)
+    p.poly([(21, 34), (27, 34), (24, 37)], "hpink")
+    p.smile(24, 39, 3)
+    p.rect(22, 40, 26, 43, "white")                              # two front teeth
+    p.line([(24, 40), (24, 43)], "dwhite", 1)
+    p.cheek(11, 35); p.cheek(37, 35)
+    return p.done()
+
+
+def panda():
+    p = Pic()
+    p.ell(9, 10, 6, 6, "black"); p.ell(39, 10, 6, 6, "black")    # ears
+    p.ball(24, 27, 18, 16, "white", "dwhite")
+    p.ell(15, 25, 6, 7, "black"); p.ell(33, 25, 6, 7, "black")   # eye patches
+    p.eye(15, 25, 3); p.eye(33, 25, 3)
+    p.ell(24, 33, 4, 3, "black")
+    p.smile(24, 37, 3)
+    p.cheek(9, 33); p.cheek(39, 33)
+    return p.done()
+
+
+def penguin():
+    p = Pic()
+    p.ball(24, 26, 16, 19, "navy", "black")                      # body
+    p.ell(24, 30, 11, 14, "white")                               # white tummy
+    p.ell(24, 17, 12, 9, "white")                                # face
+    p.ell(7, 30, 4, 9, "navy"); p.ell(41, 30, 4, 9, "navy")      # flippers
+    p.eye(19, 16, 3); p.eye(29, 16, 3)
+    p.poly([(20, 21), (28, 21), (24, 26)], "orange")
+    p.ell(17, 45, 5, 2, "orange"); p.ell(31, 45, 5, 2, "orange")  # feet
+    p.cheek(14, 21); p.cheek(34, 21)
+    return p.done()
+
+
+def owl():
+    p = Pic()
+    p.poly([(8, 4), (16, 12), (8, 16)], "brown"); p.poly([(40, 4), (32, 12), (40, 16)], "brown")   # ear tufts
+    p.ball(24, 26, 17, 19, "brown", "dbrown")
+    p.ell(24, 33, 11, 11, "tan")                                 # tummy
+    for x, y in ((19, 30), (29, 30), (24, 36), (19, 41), (29, 41)):
+        p.poly([(x - 2, y), (x + 2, y), (x, y + 2)], "dtan")     # feathers
+    p.ell(16, 18, 7, 7, "cream"); p.ell(32, 18, 7, 7, "cream")   # big eye rings
+    p.eye(16, 18, 4); p.eye(32, 18, 4)
+    p.poly([(22, 22), (26, 22), (24, 27)], "orange")
+    p.ell(6, 30, 3, 9, "dbrown"); p.ell(42, 30, 3, 9, "dbrown")  # wings
+    return p.done()
+
+
+def bee():
+    p = Pic()
+    p.ell(14, 10, 8, 7, "lblue"); p.ell(32, 10, 8, 7, "lblue")   # wings
+    p.ell(14, 10, 5, 4, "white"); p.ell(32, 10, 5, 4, "white")
+    p.ball(24, 28, 19, 15, "yellow", "dyellow")                  # round body
+    for x in (14, 24, 34):                                       # stripes
+        p.rect(x - 2, 15, x + 2, 42, "black")
+    p.ball(13, 28, 9, 9, "yellow", "dyellow")                    # face
+    p.eye(10, 26, 3); p.eye(17, 26, 3)
+    p.smile(13, 32, 2)
+    p.cheek(7, 31)
+    p.poly([(42, 26), (47, 28), (42, 30)], "black")              # stinger
+    return p.done()
+
+
+def ladybug():
+    p = Pic()
+    p.ball(24, 29, 19, 15, "red", "dred")                        # shell
+    p.rect(23, 14, 25, 44, "black")                              # the line down the back
+    for x, y in ((14, 24), (34, 24), (12, 35), (36, 35), (19, 41), (29, 41)):
+        p.ell(x, y, 3, 3, "black")
+    p.ball(24, 11, 11, 8, "black", "black")                      # head
+    p.eye(19, 11, 3); p.eye(29, 11, 3)
+    p.line([(18, 6), (14, 3)], "black"); p.line([(30, 6), (34, 3)], "black")   # antennae
+    p.ell(14, 3, 2, 2, "black"); p.ell(34, 3, 2, 2, "black")
+    return p.done()
+
+
+def dino():
+    p = Pic()
+    p.poly([(36, 34), (47, 44), (34, 44)], "dgreen")             # tail
+    for x, y in ((14, 6), (22, 3), (30, 6), (36, 12)):           # spikes on top
+        p.poly([(x - 3, y + 6), (x, y), (x + 3, y + 6)], "orange")
+    p.ball(24, 32, 15, 13, "green", "dgreen")                    # body
+    p.ball(18, 18, 14, 11, "green", "dgreen")                    # big head
+    p.ell(24, 36, 8, 7, "lime")                                  # tummy
+    p.eye(19, 15, 4)
+    p.pie(14, 22, 8, 0, 180, "black")                            # a toothy grin
+    p.poly([(9, 22), (11, 25), (13, 22)], "white"); p.poly([(15, 22), (17, 25), (19, 22)], "white")
+    p.ell(14, 45, 4, 2, "dgreen"); p.ell(30, 45, 4, 2, "dgreen")
+    return p.done()
+
+
+def whale():
+    p = Pic()
+    p.poly([(38, 26), (47, 16), (47, 34)], "blue")               # tail
+    p.ball(22, 30, 20, 13, "blue", "dblue")
+    p.ell(20, 36, 15, 6, "lblue")                                # belly
+    p.ell(14, 26, 3, 4, "white"); p.ell(14, 27, 2, 3, "black")   # eye
+    p.px(13, 25, "white")
+    p.smile(10, 33, 4)
+    p.cheek(18, 31)
+    p.line([(22, 16), (22, 9)], "lblue", 3)                      # a spout of water
+    p.ell(18, 7, 3, 3, "lblue"); p.ell(26, 7, 3, 3, "lblue"); p.ell(22, 5, 3, 3, "lblue")
+    return p.done()
+
+
+def octopus():
+    p = Pic()
+    for i, x in enumerate((6, 13, 20, 28, 35, 42)):              # legs, curling
+        p.ell(x, 38, 3, 8, "purple"); p.ell(x + (2 if i < 3 else -2), 45, 3, 2, "purple")
+    p.ball(24, 20, 17, 17, "purple", "dpurple")
+    p.ell(17, 11, 4, 3, "lpurple")
+    p.eye(17, 21, 4); p.eye(31, 21, 4)
+    p.smile(24, 29, 4)
+    p.cheek(11, 27); p.cheek(37, 27)
+    return p.done()
+
+
+def fish():
+    p = Pic()
+    p.poly([(34, 24), (47, 12), (47, 38)], "orange")             # tail
+    p.ball(21, 25, 19, 14, "orange", "dorange")
+    p.rect(14, 12, 18, 38, "white"); p.rect(26, 13, 30, 37, "white")   # clownfish stripes
+    p.poly([(16, 11), (26, 3), (30, 12)], "dorange")             # fin
+    p.eye(9, 22, 4)
+    p.smile(6, 30, 2)
+    p.cheek(13, 29)
+    return p.done()
+
+
+def turtle():
+    p = Pic()
+    p.ball(8, 28, 8, 7, "lime", "dlime")                         # head
+    p.eye(7, 26, 3)
+    p.smile(6, 32, 2)
+    p.ell(14, 41, 4, 4, "lime"); p.ell(34, 41, 4, 4, "lime")     # legs
+    p.ball(25, 30, 18, 13, "green", "dgreen")                    # shell
+    for x, y in ((18, 26), (30, 26), (24, 34), (14, 34), (36, 34)):
+        p.ell(x, y, 4, 3, "dgreen")
+    p.rect(8, 38, 43, 40, "dlime")                               # its rim
+    return p.done()
+
+
+def icecream():
+    p = Pic()
+    p.poly([(12, 26), (36, 26), (24, 45)], "tan")                # cone
+    for y in (31, 36, 41):                                       # its waffle lines, inside the cone
+        half = (45 - y) * 12 // 19
+        p.rect(24 - half + 1, y, 24 + half - 1, y, "dtan")
+    p.ball(24, 24, 13, 7, "lpink", "pink")                       # a scoop of strawberry
+    p.ball(24, 14, 11, 9, "cream", "tan")                        # and one of vanilla
+    for x, y in ((18, 12), (26, 9), (30, 16), (20, 20)):         # sprinkles
+        p.rect(x, y, x + 2, y, "hpink")
+    p.ell(24, 5, 3, 3, "red")                                    # a cherry
+    p.eye(20, 15, 3); p.eye(28, 15, 3)
+    p.smile(24, 21, 2)
+    return p.done()
+
+
+def cupcake():
+    p = Pic()
+    p.poly([(9, 28), (39, 28), (35, 46), (13, 46)], "lblue")     # the cup
+    for x in (14, 20, 26, 32):
+        p.rect(x, 29, x + 1, 45, "mblue")
+    p.ball(24, 24, 17, 8, "pink", "dpink")                       # frosting
+    p.ball(24, 15, 12, 8, "pink", "dpink")
+    p.ell(24, 6, 4, 4, "red")                                    # a cherry
+    for x, y in ((14, 22), (30, 20), (22, 13), (34, 26)):
+        p.rect(x, y, x + 2, y, "yellow")
+    p.eye(19, 36, 3); p.eye(29, 36, 3)
+    p.smile(24, 42, 2)
+    return p.done()
+
+
+def rocket():
+    p = Pic()
+    p.poly([(14, 34), (6, 44), (14, 44)], "red"); p.poly([(34, 34), (42, 44), (34, 44)], "red")   # fins
+    p.poly([(24, 2), (33, 12), (15, 12)], "red")                 # nose
+    p.ball(24, 27, 10, 17, "white", "dwhite")
+    p.rect(14, 12, 34, 40, "white"); p.rect(32, 12, 34, 40, "dwhite")
+    p.ell(24, 22, 6, 6, "dblue"); p.ell(24, 22, 4, 4, "lblue")   # a round window
+    p.px(22, 20, "white")
+    p.poly([(18, 41), (30, 41), (24, 45)], "orange")             # flame
+    p.poly([(21, 41), (27, 41), (24, 44)], "yellow")
+    return p.done()
+
+
+def strawberry():
+    p = Pic()
+    p.poly([(4, 14), (44, 14), (24, 44)], "red")
+    p.ball(24, 20, 20, 12, "red", "dred")
+    for x, y in ((12, 20), (20, 26), (30, 25), (36, 18), (24, 34), (16, 30), (31, 33)):   # seeds
+        p.rect(x, y, x + 1, y + 1, "yellow")
+    p.poly([(12, 9), (24, 4), (36, 9), (30, 13), (24, 10), (18, 13)], "green")   # leaves
+    p.rect(23, 2, 25, 7, "dgreen")
+    p.eye(18, 22, 3); p.eye(30, 22, 3)
+    p.smile(24, 29, 3)
+    return p.done()
+
+
+def star():
+    import math
+    p = Pic()
+    pts = []
+    for i in range(10):
+        r = 23 if i % 2 == 0 else 10
+        a = math.radians(-90 + i * 36)
+        pts.append((24 + r * math.cos(a), 25 + r * math.sin(a)))
+    p.poly([(x + 1, y + 1) for x, y in pts], "dyellow")
+    p.poly(pts, "yellow")
+    p.eye(19, 24, 3); p.eye(29, 24, 3)
+    p.smile(24, 31, 3)
+    p.cheek(15, 30); p.cheek(33, 30)
+    return p.done()
+
+
 # order = the firmware's (kid.c KID_SOUND)
 FRIENDS = [
     ("DUCKY", ducky("yellow", "dyellow")),
@@ -408,6 +675,26 @@ FRIENDS = [
     ("FROG", frog),
     ("ROBOT", robot),
     ("RAINBOW", rainbow),
+    ("PRINCESS DUCKY", ducky("lpurple", "purple", crown)),
+    ("RED PUP", redpup),
+    ("YELLOW BIRD", yellowbird),
+    ("SLIMY", slimy),
+    ("BUNNY", bunny),
+    ("PANDA", panda),
+    ("PENGUIN", penguin),
+    ("OWL", owl),
+    ("BEE", bee),
+    ("LADYBUG", ladybug),
+    ("DINO", dino),
+    ("WHALE", whale),
+    ("OCTOPUS", octopus),
+    ("FISH", fish),
+    ("TURTLE", turtle),
+    ("ICE CREAM", icecream),
+    ("CUPCAKE", cupcake),
+    ("ROCKET", rocket),
+    ("STRAWBERRY", strawberry),
+    ("STAR", star),
 ]
 
 

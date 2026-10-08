@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* RAINBOW MODE (FELUCCA_KID): the FM-1 as a toy for a small child. It is on from power-up; holding HOME and SAVE
  * together for 3 s leaves it for the full Felucca until the next power-up.
- *   Keys        play the friend's sound; the screen shows the note's letter, big, in its colour (C red, D orange,
+ *   Keys        play the friend's sound; the band shows the note's letter, big, in its colour (C red, D orange,
  *               E yellow, F green, G teal, A purple, B pink, as the coloured bells and tubes of music classes),
  *               and the friend hops
- *   PRESETS     the next / previous friend (20, each a picture, a sound, a home sky and a favourite beat:
+ *   PRESETS     the next / previous friend (40, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
  *   ALGORITHM   right: three friends sing (a key plays a chord in key), left: one
  *   SELECT      the beat slower / faster
@@ -39,14 +39,6 @@
 #define KID_EXIT_MS 3000u
 #define KID_HELLO_MS 4000u              /* the hello at power-up, at most this long (any key or knob ends it) */
 #define KID_SLEEP_MS 3000u              /* SLEEPY: winds down, dozes, then wakes up by itself after this */
-/* the bubble a note shows in: top right, over the sun (the friends mostly face left); smaller when the friend is
- * big, so it hides less of it. Its redraw box (kid_draw) holds both */
-#define KID_BUB_X 186
-#define KID_BUB_Y 54
-#define KID_BUB_R 50
-#define KID_BUB_XS 196
-#define KID_BUB_YS 44
-#define KID_BUB_RS 40
 
 enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_COUNT };
 enum { KB_DANCE, KB_MARCH, KB_SPOOKY, KB_ROCK, KB_DISCO, KB_HIPHOP, KB_TRAIN, KB_SAMBA, KB_REGGAE, KB_LULLABY,
@@ -77,6 +69,26 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {3, "WAVE BASS", 111, KS_BUBBLES, KB_REGGAE},     /* FROG */
     {3, "ARP 8BIT", 108, KS_STARS, KB_HIPHOP},        /* ROBOT */
     {8, "CLOUD PAD", 108, KS_RAINBOW, KB_LULLABY},    /* RAINBOW */
+    {6, "CHIP CHOIR", 97, KS_HEARTS, KB_DISCO},      /* PRINCESS DUCKY: TRIO */
+    {3, "STEP LEAD", 103, KS_FLOWERS, KB_ROCK},       /* RED PUP: LOFI */
+    {0, "SINE KEY", 105, KS_FLOWERS, KB_MARCH},       /* YELLOW BIRD: ANALOG */
+    {8, "GLITCH", 107, KS_STARS, KB_SPOOKY},          /* SLIMY: GRAIN, and the spooky beat */
+    {9, "PLUCK", 121, KS_FLOWERS, KB_DANCE},          /* BUNNY: PHYS */
+    {12, "PAD", 113, KS_RAINBOW, KB_HIPHOP},          /* PANDA: FM6 */
+    {3, "WAVE LEAD", 109, KS_STARS, KB_MARCH},        /* PENGUIN: LOFI */
+    {5, "WHISPER", 97, KS_STARS, KB_LULLABY},        /* OWL: VOICE, hoo */
+    {6, "ARP LEAD", 101, KS_FLOWERS, KB_SAMBA},       /* BEE: TRIO, bzz */
+    {9, "BELL TREE", 113, KS_FLOWERS, KB_DANCE},      /* LADYBUG: PHYS */
+    {0, "ACID", 105, KS_CONFETTI, KB_ROCK},           /* DINO: ANALOG */
+    {8, "FROZEN", 125, KS_BUBBLES, KB_LULLABY},       /* WHALE: GRAIN */
+    {9, "MARIMBA", 120, KS_BUBBLES, KB_REGGAE},       /* OCTOPUS: PHYS */
+    {12, "PLUCK", 119, KS_BUBBLES, KB_REGGAE},        /* FISH: FM6 */
+    {9, "HAND DRUM", 111, KS_BUBBLES, KB_LULLABY},    /* TURTLE: PHYS */
+    {6, "RING BELL", 111, KS_CONFETTI, KB_DISCO},     /* ICE CREAM: TRIO */
+    {7, "JAZZ PERC", 106, KS_HEARTS, KB_DANCE},       /* CUPCAKE: WHEEL */
+    {11, "ARCADE", 115, KS_STARS, KB_HIPHOP},         /* ROCKET: NOISE */
+    {0, "PLUCK", 106, KS_HEARTS, KB_SAMBA},           /* STRAWBERRY: ANALOG */
+    {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -178,7 +190,7 @@ static struct {
     uint8_t on, ready, fr, scene, beat, chord, arp, night, echo, wiggle;
     int8_t oct;                         /* -2 .. 2: song.octave; the friend's size follows */
     int8_t acc;                         /* KNOB 1: detents toward the next octave */
-    uint8_t hint, home_down, bub_was;
+    uint8_t hint, home_down;
     uint8_t fx, fxk;                    /* the top row's effect that is on (a KX_* bit, or 0), the one tapped last */
     uint32_t sleep_ms;                  /* SLEEPY on since (fm1_ms | 1), 0 none */
     uint8_t zz_was;                     /* SLEEPY's Z was drawn last frame, at zx0, zy0 */
@@ -557,9 +569,6 @@ static struct {
     const char *txt;
     kid_txt_t bt;                       /* the band's text */
     int16_t ol;                         /* its outline (px) */
-    int8_t bub;                         /* the bubble's note (0 .. 11), -1 none */
-    int16_t bx, by, br;                 /* .. its centre and radius */
-    kid_txt_t bubt;
     uint16_t ink, bg, bg2;
     int8_t meter;                       /* dots lit (HINT), -1 none */
 } kf;
@@ -670,24 +679,12 @@ static uint32_t kid_band_setup(uint32_t now)
     uint32_t sig, len, w;
     kf.meter = -1;
     kf.ol = 2;
-    kf.bub = -1;
-    if (kid.key >= 0 && now - kid.key_ms < 900u) {      /* (a note: the bubble; the band says the effect, if one) */
+    if (kid.key >= 0 && now - kid.key_ms < 900u) {      /* a note: its letter, big (the effect's word, if one is on) */
         uint32_t pc = (53u + (uint32_t)kid.key) % 12u;    /* key 0 is F (seq.c kb_map: 53 + k) */
         kf.band = KB_NOTE;
         kf.txt = KID_NOTE[pc];
-        kf.bt.sc = 6;
+        kf.bt.sc = 7;                                     /* (the band's own: as big as fits) */
         kf.ol = 3;
-        kf.bub = (int8_t)pc;                              /* and the friend sings it, giant, in the bubble */
-        kf.bubt.s = kf.txt;
-        if (kid.oct < 0) {                                /* a big friend: the smaller bubble */
-            kf.bx = KID_BUB_XS; kf.by = KID_BUB_YS; kf.br = KID_BUB_RS;
-            kf.bubt.sc = kf.txt[1] ? 5 : 8;
-        } else {
-            kf.bx = KID_BUB_X; kf.by = KID_BUB_Y; kf.br = KID_BUB_R;
-            kf.bubt.sc = kf.txt[1] ? 6 : 10;
-        }
-        kf.bubt.x = (int16_t)(kf.bx - (int32_t)(str_len(kf.txt) * 6u * (uint32_t)kf.bubt.sc - (uint32_t)kf.bubt.sc) / 2);
-        kf.bubt.y = (int16_t)(kf.by - 7 * kf.bubt.sc / 2);
         kf.ink = KID_NOTE_COL[pc];
         kf.bg = kid_mix(KID_NOTE_COL[pc], KID_WHITE, 170u);
         kf.bg2 = kid_mix(KID_NOTE_COL[pc], KID_WHITE, 90u);
@@ -747,7 +744,7 @@ static uint32_t kid_band_setup(uint32_t now)
     w = len * 6u * (uint32_t)kf.bt.sc - (uint32_t)kf.bt.sc;
     kf.bt.s = kf.txt;
     kf.bt.x = (int16_t)((240 - (int32_t)w) / 2);
-    kf.bt.y = (int16_t)(KID_BAND_Y + ((kf.band == KB_HINT ? 40 : 56) - 7 * kf.bt.sc) / 2 + 2);
+    kf.bt.y = (int16_t)(kf.band == KB_NOTE ? KID_BAND_Y + 5 : KID_BAND_Y + ((kf.band == KB_HINT ? 40 : 56) - 7 * kf.bt.sc) / 2 + 2);
     return sig;
 }
 
@@ -972,21 +969,6 @@ static uint16_t kid_pic_px(int32_t x, int32_t y)
     int32_t c;
     if (kf.party && (c = kid_confetti(x, y, 9u, 77u)) >= 0)
         return (uint16_t)c;
-    if (kf.bub >= 0) {                                        /* the bubble: the note, giant */
-        int32_t dx = kf.bx - x, dy = y - kf.by, d = dx * dx + dy * dy, k, r = kf.br;   /* (dx: leftwards) */
-        if (d <= r * r) {
-            if (d >= (r - 2) * (r - 2))
-                return KID_INK;
-            if (d >= (r - 7) * (r - 7))
-                return KID_NOTE_COL[kf.bub];
-            if ((k = kid_text_at(&kf.bubt, x, y, 3)) != 0)
-                return k == 1 ? KID_NOTE_COL[kf.bub] : KID_INK;
-            return KID_WHITE;
-        }
-        if (dx > r * 2 / 5 && dx < r - 4 && dy > r * 2 / 5 && dy < r - 4 && dx + dy < r * 7 / 5 &&
-            dx - dy < 6 && dy - dx < 6)                       /* its tail, down to the left */
-            return dx + dy > r * 7 / 5 - 6 || dx - dy > 3 || dy - dx > 3 ? KID_INK : KID_NOTE_COL[kf.bub];
-    }
     if (kf.zz_on && (c = kid_text_at(&kf.zz, x, y, 2)) != 0)
         return c == 1 ? KID_WHITE : KID_INK;
     if ((c = kid_friends_px(x, y)) >= 0)
@@ -1087,14 +1069,6 @@ static void kid_draw(void)
     kid.zy0 = (int16_t)(kf.zz.y - 4);
     if (kid.wiggle)
         sig += kf.ph;
-    sig = sig * 31u + (uint32_t)(kf.bub + 1);
-    if (kf.bub >= 0 || kid.bub_was) {                             /* the bubble came, changed or went */
-        x0 = x0 < KID_BUB_X - KID_BUB_R - 4 ? x0 : KID_BUB_X - KID_BUB_R - 4;   /* (both bubbles, their tails) */
-        y0 = 0;
-        x1 = 240;
-        y1 = y1 > KID_BUB_Y + KID_BUB_R + 4 ? y1 : KID_BUB_Y + KID_BUB_R + 4;
-    }
-    kid.bub_was = kf.bub >= 0;
     if (y1 > (int32_t)KID_BAND_Y)
         y1 = KID_BAND_Y;
     if (kid.full) {

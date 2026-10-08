@@ -11,8 +11,8 @@ at the next power-on.
 
 | Control | What happens |
 | --- | --- |
-| Keys | Play the friend's sound. The note's letter pops up giant in a bubble, in its own colour, and the friend hops. |
-| PRESETS | Next or previous friend (20 of them, each with its own picture, sound, home sky and favourite beat). |
+| Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own colour, and the friend hops. |
+| PRESETS | Next or previous friend (40 of them, each with its own picture, sound, home sky and favourite beat). |
 | ALGORITHM | Right: three friends sing (one key plays a chord that is always in key). Left: back to one. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
@@ -40,11 +40,13 @@ E yellow, F green, G teal, A purple, B pink. Sharps get the colour in between.
 ## The friends
 
 Ducky, Pink Ducky, Cool Ducky, Axolotl, Unicorn, Giraffe, Goo, Goobert, Blue Pup, Red Monster,
-Blue Monster, April (the family dog), Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow.
+Blue Monster, April (the family dog), Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow,
+Princess Ducky, Red Pup, Yellow Bird, Slimy, Bunny, Panda, Penguin, Owl, Bee, Ladybug, Dino, Whale,
+Octopus, Fish, Turtle, Ice Cream, Cupcake, Rocket, Strawberry, Star.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favourite beat
-(Ghost: SPOOKY, a ghost-hunting funk; Frog and Axolotl: REGGAE; Butterfly and Rainbow: LULLABY). Scissors
+(Ghost and Slimy: SPOOKY, a ghost-hunting funk; Frog and Axolotl: REGGAE; Butterfly and Rainbow: LULLABY). Scissors
 plays the drum kit: every key is a different drum.
 
 The pictures are drawn on a roomy canvas, then trimmed, centred and stood on the bottom of a 48 x 48 grid;
@@ -56,7 +58,7 @@ repository and its website are public.
 
 ## Where it lives
 
-- `tools/gen_kid_art.py`: the 20 pictures, drawn from shapes on a 48 x 48 grid and outlined
+- `tools/gen_kid_art.py`: the 40 pictures, drawn from shapes on a 48 x 48 grid and outlined
   automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
   sheet to look at. The build runs it (`tools/build.py` generate).
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main
