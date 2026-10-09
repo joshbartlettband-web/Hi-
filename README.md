@@ -1,7 +1,7 @@
 # Rainbow mode for the FM-1
 
 A music toy for little hands: this fork of [Felucca](https://github.com/hugelton/Felucca) starts the M-VAVE FM-1 as a toy for a
-four-year-old. 46 friends, each with its own picture, sound, sky and favorite beat; a color for every note; 11 beats with a
+four-year-old. 50 friends, each with its own picture, sound, sky and favorite beat; a color for every note; 11 beats with a
 bass line that always fits; and a knob for big and small, day and night, echo and wiggle.
 
 - **The website** (the link under *About* on this page) has a demo video and two buttons: **Try it in your browser**, no FM-1

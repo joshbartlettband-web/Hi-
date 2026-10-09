@@ -4,7 +4,7 @@
  *   Keys        play the friend's sound; the band shows the note's letter, big, in its colour (C red, D orange,
  *               E yellow, F green, G teal, A purple, B pink, as the coloured bells and tubes of music classes),
  *               and the friend hops
- *   PRESETS     the next / previous friend (46, each a picture, a sound, a home sky and a favourite beat:
+ *   PRESETS     the next / previous friend (50, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
  *   ALGORITHM   how the keys play, a step a turn, each with a picture: 1 FRIEND, 3 FRIENDS (a key plays a chord in
  *               key), STRUM (an Omnichord: black keys pick a chord, white keys strum it), ACCORDION (a black key plays
@@ -72,6 +72,7 @@ typedef struct {
     int8_t vib;                         /* a vibrato of its own (P_LD_PIT; WIGGLE adds to it), 0 none */
     uint8_t glide;                      /* P_GLIDE: notes slide into each other, 0 none */
     uint8_t dist;                       /* P_DIST: its own drive (a growl), 0 the preset's */
+    uint8_t kit;                        /* DRUM: its KIT + 1 (eng_drum.c DK_*: 5 = 80, 6 = 10, 7 = 66, 8 = 55), 0 STD */
 } kid_sound_t;
 static const kid_sound_t KID_SOUND[KID_N] = {
     {12, "TINE EP", 108, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
@@ -121,6 +122,11 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {0, "PLUCK", 106, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
     {0, "RAVE", 102, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
     {6, "SAW3", 110, KS_STARS, KB_DISCO, 6, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
+    /* more drum kits: every key another drum, as SCISSORS (Felucca's model kits) */
+    {10, "DRUM KIT", 99, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 5},    /* BEAT BOT: the 80 kit, a classic drum machine */
+    {10, "DRUM KIT", 102, KS_FLOWERS, KB_MARCH, 0, 0, 0, 8},     /* TOY DRUM: the 55 kit, small and tight */
+    {10, "DRUM KIT", 98, KS_HEARTS, KB_SAMBA, 0, 0, 0, 7},       /* BONGO: the 66 kit, congas */
+    {10, "DRUM KIT", 107, KS_STARS, KB_ROCK, 0, 0, 0, 6},        /* MONKEY: the 10 kit, a cymbal on the bell */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -331,6 +337,8 @@ static void kid_sound_to(track_t *t, uint32_t fr)
     t->p[P_GLIDE] = s->glide;
     if (s->dist)
         t->p[P_DIST] = s->dist;
+    if (s->kit)
+        t->p[P_E0] = (int16_t)(s->kit - 1u);
     t->p[P_LD_PIT] = s->vib;
 }
 
@@ -632,7 +640,8 @@ static uint32_t kw_len(void)                                    /* the song's le
     return last < 4u ? 4u : last;
 }
 
-/* the song into the band's tracks: a step a beat (DIV 1/4), its notes */
+/* the song into the band's tracks: a step a beat (DIV 1/4), its notes as the keys play them (seq.c kb_map: a drum
+ * friend's keys are its drums, not their pitches) */
 static void kw_commit(void)
 {
     uint32_t s, c, j, len = kw_len();
@@ -642,13 +651,15 @@ static void kw_commit(void)
             step_t *st = &t->step[c];
             step_clear(st);
             for (j = 0; c < KW_COLS && j < 2u; j++) {
-                uint32_t n = kw.note[c][j];
-                if (n && (n >> 5) == s) {
-                    st->note[st->n++] = (uint8_t)(53u + (n & 31u) - 1u);
+                uint32_t n = kw.note[c][j], x;
+                if (n && (n >> 5) == s && (x = kb_map(t, (n & 31u) - 1u)) != KB_SILENT) {
+                    st->note[st->n++] = (uint8_t)x;
                     st->time = ST_NOTE;
                     st->vel = 100;
                 }
             }
+            if (drum_track(t))
+                step_to_grid(st);                                 /* (a drum's own lane: a hit, as the grid has it) */
         }
         t->p[P_SLEN] = (int16_t)len;
         t->p[P_SDIV] = 0;                                        /* 1/4: a column a beat */

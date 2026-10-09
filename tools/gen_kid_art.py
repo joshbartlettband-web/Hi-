@@ -766,6 +766,65 @@ def spacehero():                                                 # a space hero 
     return p.done()
 
 
+# drum kits (Felucca's model kits: kid.c KID_SOUND's kit)
+def beatbot():                                                   # a drum machine with a face (original design)
+    p = Pic()
+    p.rect(4, 10, 44, 44, "dgrey"); p.rect(4, 10, 44, 12, "grey")   # the box
+    p.rect(9, 14, 39, 24, "lgreen")                              # its screen, a face on it
+    p.dot_eye(18, 18); p.dot_eye(30, 18)
+    p.smile(24, 21, 3, "dgreen")
+    for i, c in enumerate(("red", "orange", "yellow", "green", "blue", "purple", "hpink", "teal")):
+        x, y = 9 + (i % 4) * 8, 28 + (i // 4) * 8                 # eight pads in their colors
+        p.rect(x, y, x + 5, y + 5, c)
+    p.rect(22, 3, 25, 9, "grey"); p.ell(24, 3, 3, 2, "red")      # an antenna
+    return p.done()
+
+
+def toydrum():                                                   # a toy marching drum, sticks crossed (original design)
+    p = Pic()
+    p.line([(7, 4), (22, 18)], "tan", 3); p.line([(41, 4), (26, 18)], "tan", 3)   # drumsticks
+    p.ell(7, 4, 3, 3, "white"); p.ell(41, 4, 3, 3, "white")
+    p.rect(6, 20, 42, 42, "red")                                 # the shell
+    for i in range(4):                                           # its cords, zigzag
+        x = 6 + i * 9
+        p.line([(x, 23), (x + 4, 39)], "yellow", 1); p.line([(x + 9, 23), (x + 4, 39)], "yellow", 1)
+    p.ell(24, 20, 18, 5, "white"); p.ell(24, 20, 16, 3, "cream")    # the head on top
+    p.rect(6, 40, 42, 43, "blue"); p.rect(6, 21, 42, 23, "blue")    # the rims
+    p.eye(17, 30, 3); p.eye(31, 30, 3)
+    p.smile(24, 36, 3)
+    return p.done()
+
+
+def bongo():                                                     # two bongos side by side (original design)
+    p = Pic()
+    for cx, w, h in ((14, 11, 26), (35, 9, 22)):
+        top = 46 - h
+        p.poly([(cx - w, top), (cx + w, top), (cx + w - 3, 45), (cx - w + 3, 45)], "brown")
+        p.rect(cx - w, top + 6, cx + w, top + 8, "dbrown")       # a band round it
+        p.ell(cx, top, w, 3, "cream")                            # its head
+    p.rect(24, 30, 26, 34, "dbrown")                             # joined in the middle
+    p.eye(10, 33, 3); p.eye(18, 33, 3)                           # the big one's face
+    p.smile(14, 40, 3)
+    p.cheek(8, 38); p.cheek(20, 38)
+    return p.done()
+
+
+def monkey():                                                    # a cymbal monkey toy (original design)
+    p = Pic()
+    p.line([(16, 39), (8, 36)], "brown", 3); p.line([(32, 39), (40, 36)], "brown", 3)   # arms out
+    p.ell(6, 36, 4, 9, "gold"); p.ell(6, 36, 1, 3, "dorange")    # a cymbal in each hand
+    p.ell(42, 36, 4, 9, "gold"); p.ell(42, 36, 1, 3, "dorange")
+    p.ell(11, 20, 5, 5, "brown"); p.ell(37, 20, 5, 5, "brown")   # ears
+    p.ell(11, 20, 3, 3, "tan"); p.ell(37, 20, 3, 3, "tan")
+    p.rect(14, 36, 34, 46, "red")                                # a little red jacket
+    p.ball(24, 22, 12, 12, "brown", "dbrown")                    # the head
+    p.ell(24, 26, 8, 7, "tan")                                   # the face
+    p.eye(20, 20, 3); p.eye(28, 20, 3)
+    p.ell(24, 29, 4, 2, "black"); p.ell(24, 29, 2, 1, "hpink")   # a big "ooh"
+    p.rect(17, 8, 31, 11, "red"); p.rect(22, 5, 26, 8, "red")    # a fez
+    return p.done()
+
+
 # ALGORITHM's modes, as pictures for children who do not read yet (kid.c KID_ICON_*, in the order of KM_*)
 def icon_one():                                                  # one friend: a smiling face
     p = Pic()
@@ -891,6 +950,10 @@ FRIENDS = [
     ("COWGIRL", cowkid("red", "dred", "orange", "yellow", "white", spots=True, braid=True)),
     ("VACUUM", vacuum),
     ("SPACE HERO", spacehero),
+    ("BEAT BOT", beatbot),
+    ("TOY DRUM", toydrum),
+    ("BONGO", bongo),
+    ("MONKEY", monkey),
 ]
 
 

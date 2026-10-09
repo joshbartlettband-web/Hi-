@@ -481,7 +481,12 @@ EXPORT uint32_t web_now_ms(void) { return fm1_ms; }
 EXPORT uint32_t web_playing(void) { return song.playing; }
 EXPORT int32_t web_lim_t(void) { return lim_t; }
 EXPORT uint32_t web_kid_guess(void) { return kid.g_target; }
-EXPORT uint32_t web_kid_friend(void) { return kid.fr; }   /* (kid_test.mjs: GUESS's note, as a key) */
+EXPORT uint32_t web_kid_friend(void) { return kid.fr; }
+EXPORT uint32_t web_step(uint32_t t, uint32_t c)        /* (kid_test.mjs: a step's first note, its drum hits << 8) */
+{
+    const step_t *s = &trk[t % NTRK].step[c % NSTEP];
+    return (s->n ? s->note[0] : 0u) | (uint32_t)s->hit << 8;
+}   /* (kid_test.mjs: GUESS's note, as a key) */
 EXPORT void web_boost_q12(uint32_t v) { web_boost = v; }
 EXPORT uint32_t web_master_q12(void) { return song.master_q12; }
 EXPORT void web_kid(uint32_t on)               /* Rainbow mode off (the tests: the full Felucca from boot) */

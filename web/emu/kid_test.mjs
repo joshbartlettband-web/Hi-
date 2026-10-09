@@ -130,7 +130,7 @@ check("PRESETS: another friend (the band shows its name)", band() !== name0);
 }
 
 const levels = [];
-for (let f = 0; f < 46; f++) {
+for (let f = 0; f < 50; f++) {
   peak = 0;
   for (const k of [12, 14, 16]) { ex.web_keys(1 << k); render(500); ex.web_keys(0); render(150); }
   levels.push(peak);
@@ -138,7 +138,7 @@ for (let f = 0; f < 46; f++) {
   render(400);
 }
 const lo = Math.min(...levels), hi = Math.max(...levels);
-check(`all 46 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
+check(`all 50 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
 check("MASTER all the way up stays at about half (no friend peaks over 0.25)", hi < 0.25);
 
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(1500);
@@ -400,6 +400,13 @@ check("PLAY again stops it", ex.web_playing() === 0);
   check("kept over a power-off: the next start's WRITE has her song", p2(46 + 10, 128 + 9) === C_RED && p2(46 + 2 * 23 + 10, 128 - 24 + 9) === G_TEAL);
   tapb(B.REC, 2300);
   check("REC held 2 s: a new, empty song", ball(0, 0) !== C_RED && ball(2, 4) !== G_TEAL);
+  while (ex.web_kid_friend() !== 12) { ex.web_enc(EN.PRESETS, 1); render(150); }   // SCISSORS, a drum friend
+  render(300);
+  key(7);                                                                     // its kick (GM 36), as the keys play it
+  let drum = -1;
+  for (let s = 0; s < 3; s++) if (ex.web_step(s, 0) >> 8) drum = ex.web_step(s, 0);
+  check(`a drum friend's note is the drum its key plays (a kick hit, not a pitch: ${drum.toString(16)})`, drum > 0 && ((drum >> 8) & 1) === 1);
+  tapb(B.REC, 2300);
   tapb(B.SAVE); render(1800);
   check("SAVE again: back to playing (the friend's name, SAVE dark)", !((ex.web_lit_buttons() >> B.SAVE) & 1) && band() !== "");
   key(12); render(300);
