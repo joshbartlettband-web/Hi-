@@ -122,7 +122,7 @@ export class Updater {
              `out: ${outs.map((p) => `"${p.name}" (${p.state})`).join(", ") || "none"}`);
     for (const input of ins) {
       if (input.state === "disconnected") continue;
-      if (!/fm-1|felucca|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;   // never probe other gear
+      if (!/fm-1|melodee|felucca|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;   // never probe other gear (Melodee: a Felucca fork, same protocol)
       const output = outs.find((o) => o.name === input.name && o.state !== "disconnected");
       if (!output) { this.log(`"${input.name}": no output port of the same name`); continue; }
       try { await input.open(); await output.open(); } catch (e) { this.log(`"${input.name}": cannot open (${e && e.message})`); continue; }
