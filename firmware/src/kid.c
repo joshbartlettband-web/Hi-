@@ -4,7 +4,7 @@
  *   Keys        play the friend's sound; the band shows the note's letter, big, in its colour (C red, D orange,
  *               E yellow, F green, G teal, A purple, B pink, as the coloured bells and tubes of music classes),
  *               and the friend hops
- *   PRESETS     the next / previous friend (40, each a picture, a sound, a home sky and a favourite beat:
+ *   PRESETS     the next / previous friend (45, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
  *   ALGORITHM   right: three friends sing (a key plays a chord in key), left: one
  *   SELECT      the beat slower / faster
@@ -17,13 +17,14 @@
  *               Felucca's performance effects (perform.c), and the friend shakes, turns round, droops and dozes,
  *               shrinks, grows, turns to ice
  *   PLAY        the beat: drums (track 4) and a bass line in key (track 2), the friend dances to it; SEQ: the next
- *               of ten beats
+ *               of eleven beats
  *   ARP         sparkle: a held key plays up and down
  *   REC         the next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti
  *   HOME        a surprise friend; SAVE a confetti party
  *   THE STAFF   a treble clef drops in at the top when she plays, and writes her notes as coloured noteheads, up to 8,
- *               chords stacked, sharps with a #, ledger lines, 8VA / 8VB over the staff for the octave (OCT); it goes
- *               after 6 s of quiet. The big letter stays in the band
+ *               chords stacked, sharps with a #, ledger lines, 8VA / 8VB over the staff for the octave (OCT); each
+ *               note's value by how long it was held against the beat (a sixteenth .. a whole, growing while held);
+ *               it goes after 6 s of quiet. The big letter stays in the band
  *   HOME held 1 s, then OCT- / OCT+   the grown-ups' VOLUME: how loud MASTER can go (8 steps, kept over power-off)
  * MASTER is capped at that level (the default is about half) for small ears, and the output limiter's ceiling
  * follows it, so an effect cannot make the toy louder than a plain note (kid_master). Everything else (USB, MIDI,
@@ -43,8 +44,9 @@
 #define KID_VOL_BYTE (favorites.factory[15][26])   /* the VOLUME level, ^ 6 (0 = 6, the default; settings_persist.c) */
 #define KID_VOL_DEF 6u
 #define KID_VOL_HOLD_MS 1000u           /* HOME held this long opens the VOLUME (then OCT- / OCT+) */
-#define KID_LIM_X2 15u                  /* the limiter's ceiling is song.master_q12 * 7.5 (a plain chord over the beat peaks
-                                         * at about 0.8 of it, any friend: web/emu/kid_test.mjs) */
+#define KID_LIM_X2 30u                  /* the limiter's ceiling is song.master_q12 * 15 (a plain chord over the beat peaks
+                                         * at about 0.8 of it, any friend: web/emu/kid_test.mjs); below the full Felucca's
+                                         * ceiling it catches every peak at once (fx.c master_out) */
 /* MASTER at most this at VOLUME 1 .. 8 (song.master_q12, 4096 = full): steps of about 3 dB; 6 is the old half */
 static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4096};
 #define KID_EXIT_MS 3000u
@@ -53,12 +55,18 @@ static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4
 
 enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_COUNT };
 enum { KB_DANCE, KB_MARCH, KB_SPOOKY, KB_ROCK, KB_DISCO, KB_HIPHOP, KB_TRAIN, KB_SAMBA, KB_REGGAE, KB_LULLABY,
-       KB_COUNT };
+       KB_HOEDOWN, KB_COUNT };
 
 /* each friend's sound, in the order of KID_NAME: an engine and one of its factory presets (by name), its level
  * (P_LEVEL, 1/2 dB steps: the friends measured alike, about 0.14 peak with MASTER up), its home sky and its
  * favourite beat (PLAY) */
-typedef struct { uint8_t eng; const char *preset; uint8_t level, sky, beat; } kid_sound_t;
+typedef struct {
+    uint8_t eng;
+    const char *preset;
+    uint8_t level, sky, beat;
+    int8_t vib;                         /* a vibrato of its own (P_LD_PIT; WIGGLE adds to it), 0 none */
+    uint8_t glide;                      /* P_GLIDE: notes slide into each other, 0 none */
+} kid_sound_t;
 static const kid_sound_t KID_SOUND[KID_N] = {
     {12, "TINE EP", 108, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
     {7, "SOFT FLUTE", 116, KS_HEARTS, KB_DISCO},      /* PINK DUCKY: WHEEL */
@@ -100,6 +108,12 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {11, "ARCADE", 115, KS_STARS, KB_HIPHOP},         /* ROCKET: NOISE */
     {0, "PLUCK", 106, KS_HEARTS, KB_SAMBA},           /* STRAWBERRY: ANALOG */
     {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
+    /* suggested by r/MVaveFM1's u/veecheech (CREDITS.md) */
+    {12, "FM BASS", 116, KS_FLOWERS, KB_ROCK},        /* T-REX: a growly bass */
+    {0, "SINE KEY", 105, KS_STARS, KB_SPOOKY, 12, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
+    {9, "PLUCK", 118, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
+    {0, "PLUCK", 106, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
+    {0, "RAVE", 102, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -145,6 +159,9 @@ static const kid_beat_t KID_BEATS[KB_COUNT] = {
     {"LULLABY", 70, KD_SLOW, 92, 106,
      {"x.......x.......", 0, 0, 0, 0, 0, "....x.......x...", 0},
      {36, 1, 1, 1, 1, 1, 1, 1, 31, 1, 1, 1, 1, 1, 1, 1}},
+    {"HOEDOWN", 126, KD_HOP, 90, 102,                 /* boom-chick, a walking bass (the cowboy and cowgirl's) */
+     {"x.......x.......", "....x.......x...", 0, "..x...x...x...x.", 0, 0, "..x...x...x...x.", 0},
+     {36, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 40, 0, 41, 0}},
 };
 
 /* the top row, tapped on and off: Felucca's performance effects (perform.c), and what the friend does meanwhile */
@@ -166,7 +183,7 @@ static const uint16_t KID_RAINBOW[7] = {
 #define KID_INK RGB(52, 26, 58)          /* outlines (the pictures' too) */
 #define KID_WHITE RGB(255, 255, 255)
 
-/* 5 x 7 capitals, digits 1, 3, 5 and 8, '#' and '!': a row a byte, bit 4 the left column */
+/* 5 x 7 capitals, digits 1, 3, 5 and 8, '#', '!' and '-': a row a byte, bit 4 the left column */
 static const uint8_t KID_FONT[][7] = {
     {0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11}, {0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E},   /* A B */
     {0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E}, {0x1E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1E},   /* C D */
@@ -184,12 +201,13 @@ static const uint8_t KID_FONT[][7] = {
     {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, {0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E},   /* 1 3 */
     {0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A}, {0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04},   /* # ! */
     {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},   /* 5 8 */
+    {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00},                                                 /* - */
 };
 static int32_t kid_glyph_of(char c)
 {
     if (c >= 'A' && c <= 'Z')
         return c - 'A';
-    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : -1;
+    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : -1;
 }
 
 static const int8_t KID_SIN[32] = {0, 25, 49, 71, 90, 106, 117, 125, 127, 125, 117, 106, 90, 71, 49, 25,
@@ -210,7 +228,12 @@ typedef struct {
     int8_t step[6];
     uint8_t sharp;                      /* bit i: head i has a sharp */
     uint8_t n;
+    uint16_t ms;                        /* how long its keys were held (ms): its note value (KID_ST_TYPE) */
+    uint32_t keys;                      /* its keys (a bit a key) */
 } kid_st_t;
+/* a note's value by how long it was held, against the beat (a quarter note): a sixteenth, an eighth, a quarter, a half,
+ * a whole (suggested by r/MVaveFM1's u/theskyisfalling1, CREDITS.md) */
+enum { KT_16TH, KT_8TH, KT_4TH, KT_HALF, KT_WHOLE };
 
 static struct {
     uint8_t on, ready, fr, scene, beat, chord, arp, night, echo, wiggle;
@@ -244,7 +267,7 @@ static void kid_knobs(void)                       /* the knobs' state into the f
     track_t *t = &trk[0];
     t->p[P_DLY] = (int16_t)clamp(kid.dly0 + kid.echo * 14, 0, 127);
     t->p[P_REV] = (int16_t)clamp(kid.rev0 + kid.echo * 6, 0, 127);
-    t->p[P_LD_PIT] = (int16_t)(kid.wiggle * 5);
+    t->p[P_LD_PIT] = (int16_t)clamp(KID_SOUND[kid.fr % KID_N].vib + kid.wiggle * 5, -64, 63);
     t->p[P_LRATE] = 74;
     t->p[P_CHRD] = kid.chord ? CH_DIA3 : CH_OFF;
     t->p[P_AMODE] = kid.arp ? 3 : 0;              /* UPDN */
@@ -268,6 +291,7 @@ static void kid_sound(void)
         set_engine_of(t, s->eng);
     apply_preset_to(t, p);
     t->p[P_LEVEL] = s->level;
+    t->p[P_GLIDE] = s->glide;
     kid.rev0 = (uint8_t)t->p[P_REV];
     kid.dly0 = (uint8_t)t->p[P_DLY];
     kid_knobs();
@@ -437,8 +461,11 @@ static void kid_staff_add(uint32_t keys, uint32_t now)
         e = &kid.st[kid.st_n++];
         e->n = 0;
         e->sharp = 0;
+        e->ms = 0;
+        e->keys = 0;
         kid.st_t0 = now;
     }
+    e->keys |= keys;
     for (k = 0; k < 27u; k++) {
         uint32_t n = 53u + k, pc = n % 12u, h;
         int32_t st = ((int32_t)(n / 12u) - 5) * 7 + IDX[pc];
@@ -721,6 +748,8 @@ static struct {
     uint16_t ink, bg, bg2;
     int8_t meter;                       /* dots lit (HINT), -1 none */
     uint8_t staff;                      /* the staff shows */
+    uint8_t st_ty[KID_ST_N];            /* .. each entry's note value (KT_*) */
+    int8_t st_lo[KID_ST_N], st_hi[KID_ST_N];   /* .. its lowest and highest head (steps) */
     kid_txt_t stl;                      /* .. its octave mark (8VA ..), sc 0 = none */
 } kf;
 
@@ -1185,10 +1214,26 @@ static uint32_t kid_staff_setup(uint32_t now)
         kid.st_n = 0;
         return 0;
     }
+    {                                                   /* the newest note grows while its keys are held */
+        kid_st_t *e = &kid.st[kid.st_n - 1u];
+        if (fm1_in.notes & e->keys)
+            e->ms = (uint16_t)(now - kid.st_t0 > 60000u ? 60000u : now - kid.st_t0);
+    }
     for (i = 0; i < kid.st_n; i++) {
-        sig = sig * 31u + kid.st[i].n + (uint32_t)kid.st[i].sharp * 7u;
-        for (j = 0; j < kid.st[i].n; j++)
-            sig = sig * 31u + (uint8_t)kid.st[i].step[j];
+        const kid_st_t *e = &kid.st[i];
+        uint32_t q = kid_beat_ms(), m = e->ms;
+        int32_t lo = 99, hi = -99;
+        kf.st_ty[i] = (uint8_t)(m * 8u < q * 3u ? KT_16TH : m * 4u < q * 3u ? KT_8TH : m * 2u < q * 3u ? KT_4TH :
+                                m < q * 3u ? KT_HALF : KT_WHOLE);
+        for (j = 0; j < e->n; j++) {
+            lo = e->step[j] < lo ? e->step[j] : lo;
+            hi = e->step[j] > hi ? e->step[j] : hi;
+        }
+        kf.st_lo[i] = (int8_t)lo;
+        kf.st_hi[i] = (int8_t)hi;
+        sig = sig * 31u + e->n + (uint32_t)e->sharp * 7u + (uint32_t)kf.st_ty[i] * 4099u;
+        for (j = 0; j < e->n; j++)
+            sig = sig * 31u + (uint8_t)e->step[j];
     }
     kf.stl.s = MARK[clamp(kid.oct + 2, 0, 4)];
     kf.stl.sc = kf.stl.s ? 1 : 0;
@@ -1219,17 +1264,28 @@ static uint16_t kid_staff_px(int32_t x, int32_t y)
         return KID_INK;
     if (i >= 0 && i < (int32_t)kid.st_n) {                           /* the notes of this slot */
         const kid_st_t *e = &kid.st[i];
-        int32_t cx = 56 + 21 * i, dx = x - cx, lo = 99, hi = -99, ls;
+        int32_t cx = 56 + 21 * i, dx = x - cx, lo = kf.st_lo[i], hi = kf.st_hi[i], ls, ty = kf.st_ty[i];
         for (h = 0; h < (int32_t)e->n; h++) {
             int32_t s = e->step[h], dy = y - KID_ST_Y(s), a = dx * dx, pc;
-            lo = s < lo ? s : lo;
-            hi = s > hi ? s : hi;
             if (dx >= -4 && dx <= 4 && dy >= -3 && dy <= 3 && 49 * a + 81 * dy * dy <= 992) {
                 pc = (SPC[((s % 7) + 7) % 7] + (int32_t)((e->sharp >> h) & 1u)) % 12;
-                return 36 * a + 49 * dy * dy <= 440 ? KID_NOTE_COL[pc] : KID_INK;
+                if (36 * a + 49 * dy * dy > 440)
+                    return KID_INK;
+                return ty >= KT_HALF && 36 * a + 49 * dy * dy <= 100 ? KID_WHITE : KID_NOTE_COL[pc];   /* half, whole: open */
             }
             if (((e->sharp >> h) & 1u) && kid_char_ink('#', cx - 12, KID_ST_Y(s) - 3, 1, x, y))
                 return KID_INK;
+        }
+        if (ty != KT_WHOLE) {                                         /* the stem, up on the right below the middle */
+            int up = lo + hi < 12, sx = up ? cx + 4 : cx - 4;          /* line, down on the left from it; 3.5 spaces */
+            int32_t y0 = up ? KID_ST_Y(hi) - 20 : KID_ST_Y(hi), y1 = up ? KID_ST_Y(lo) : KID_ST_Y(lo) + 20, f;
+            if (x == sx && y >= y0 && y <= y1)
+                return KID_INK;
+            for (f = 0; f < (ty == KT_16TH ? 2 : ty == KT_8TH ? 1 : 0); f++) {   /* flags: an eighth one, a sixteenth two */
+                int32_t fx = x - sx - 1, fy = up ? y - y0 - 5 * f : y1 - 5 * f - y;
+                if (fx >= 0 && fx <= 3 && fy >= 2 * fx && fy <= 2 * fx + 2)
+                    return KID_INK;
+            }
         }
         ls = (54 - y) % 3 == 0 ? (54 - y) / 3 : 1;                   /* a ledger line: on an even step off the staff */
         if (dx >= -7 && dx <= 7 && !(ls & 1) && ((ls <= 0 && lo <= ls) || (ls >= 12 && hi >= ls)))

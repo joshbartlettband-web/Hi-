@@ -155,8 +155,8 @@ static inline void master_out(int32_t *l, int32_t *r)
     al = *l < 0 ? -*l : *l;
     ar = *r < 0 ? -*r : *r;
     a = al > ar ? al : ar;
-    if (a > lim_env)
-        lim_env += (a - lim_env) >> 2;
+    if (a > lim_env)                  /* (Rainbow mode's lowered ceiling: at once, so no drum hit gets over it) */
+        lim_env = lt < LIM_T ? a : lim_env + ((a - lim_env) >> 2);
     else if (lim_env > lt)
         lim_env -= ((lim_env - lt) >> 12) + 1;
     if (lim_env > lt) {

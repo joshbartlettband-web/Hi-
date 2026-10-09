@@ -11,8 +11,8 @@ at the next power-on.
 
 | Control | What happens |
 | --- | --- |
-| Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own colour, and the friend hops. A music staff drops in at the top and writes the note (see below). |
-| PRESETS | Next or previous friend (40 of them, each with its own picture, sound, home sky and favourite beat). |
+| Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
+| PRESETS | Next or previous friend (45 of them, each with its own picture, sound, home sky and favorite beat). |
 | ALGORITHM | Right: three friends sing (one key plays a chord that is always in key). Left: back to one. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
@@ -27,7 +27,7 @@ at the next power-on.
 | GLO | Tap: FREEZE. The sound freezes in place and the friend turns to ice. |
 | | The top row's effects turn on with a tap and off with another (one at a time; the lit button shows which). HICCUP, BACKWARDS, SLEEPY and FREEZE start again on every new note, so a key pressed after the tap always sounds. |
 | PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
-| SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY. |
+| SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY, HOEDOWN. |
 | ARP | Sparkle: a held key plays up and down by itself. |
 | REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti. |
 | HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
@@ -37,10 +37,12 @@ at the next power-on.
 
 ## The staff
 
-When she plays, a treble clef and five lines drop in at the top of the screen and write her notes as coloured heads (the colour of the
+When she plays, a treble clef and five lines drop in at the top of the screen and write her notes as colored heads (the color of the
 letter in the band), left to right, up to 8 of them; the oldest drops off. Keys played together, or a key with ALGORITHM on (three friends), stack as a chord. A
 black key gets a sharp sign, notes below the staff get their ledger lines, and **8VA / 8VB** (or 15MA / 15MB) shows over or under the
-staff when OCT or KNOB 1 has moved her an octave or two up or down. It goes after 6 seconds of quiet and starts again from the left. The big
+staff when OCT or KNOB 1 has moved her an octave or two up or down. Each note also shows how long it was held, against the beat: a quick tap is a sixteenth (a stem and two flags), then an eighth, a
+quarter (about one beat), a half (an open head, about two beats) and a whole (an open head with no stem). The note grows through them
+while she holds the key, so she can see a long sound become a long note (suggested by u/theskyisfalling1 on r/MVaveFM1). It goes after 6 seconds of quiet and starts again from the left. The big
 letter stays in the band. The clef is the treble clef of the FreeSerif font (GNU FreeFont, GPL-3.0 or later), scaled down to a bitmap in
 `tools/gen_kid_art.py`.
 
@@ -52,22 +54,24 @@ Two guards, both in `kid.c` (`kid_master`):
   down and **OCT+** up. Step 6 is the old "about half" and is where it starts; step 8 lets the MASTER knob go
   all the way, step 1 is very quiet. It is kept when the FM-1 is switched off. Let go of HOME and nothing else happens (no surprise
   friend). A shorter HOME press, and OCT- / OCT+ without HOME, do what they always did.
-- **A limiter that follows it.** The FM-1 already had a peak limiter; in Rainbow mode its ceiling now moves with the volume (7.5 times the
-  MASTER level it is at, never above the old fixed ceiling), a little above what a plain chord over a beat peaks at. So an effect that makes the sound louder
+- **A limiter that follows it.** The FM-1 already had a peak limiter; in Rainbow mode its ceiling now moves with the volume (15 times the
+  MASTER level it is at, never above the old fixed ceiling, and it catches every peak at once), a little above what a plain chord over a beat peaks at. So an effect that makes the sound louder
   (GIANT, FREEZE, echo, a chord on a beat) is held to the level she was already hearing. Outside Rainbow mode the limiter is as it was.
 
-Note colours follow the coloured tubes and bells used in many early music classes: C red, D orange,
-E yellow, F green, G teal, A purple, B pink. Sharps get the colour in between.
+Note colors follow the colored tubes and bells used in many early music classes: C red, D orange,
+E yellow, F green, G teal, A purple, B pink. Sharps get the color in between.
 
 ## The friends
 
 Ducky, Pink Ducky, Cool Ducky, Axolotl, Unicorn, Giraffe, Goo, Goobert, Blue Pup, Red Monster,
 Blue Monster, April (the family dog), Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow,
 Princess Ducky, Red Pup, Yellow Bird, Slimy, Bunny, Panda, Penguin, Owl, Bee, Ladybug, Dino, Whale,
-Octopus, Fish, Turtle, Ice Cream, Cupcake, Rocket, Strawberry, Star.
+Octopus, Fish, Turtle, Ice Cream, Cupcake, Rocket, Strawberry, Star, and five suggested by u/veecheech on r/MVaveFM1:
+T-Rex (a growly bass), Skeleton (a theremin: a sine with a wide vibrato that slides between notes), Cowboy and Cowgirl (twangy
+plucks, and their own beat, HOEDOWN) and Vacuum (the rave "hoover" sound, a joke for the grown-ups). See CREDITS.md.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
-level set so they all play at about the same loudness. Each also has a home sky and a favourite beat
+level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
 (Ghost and Slimy: SPOOKY, a ghost-hunting funk; Frog and Axolotl: REGGAE; Butterfly and Rainbow: LULLABY). Scissors
 plays the drum kit: every key is a different drum.
 
@@ -80,7 +84,7 @@ repository and its website are public.
 
 ## Where it lives
 
-- `tools/gen_kid_art.py`: the 40 pictures, drawn from shapes on a 48 x 48 grid and outlined
+- `tools/gen_kid_art.py`: the 45 pictures, drawn from shapes on a 48 x 48 grid and outlined
   automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
   sheet to look at. The build runs it (`tools/build.py` generate).
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main

@@ -653,6 +653,99 @@ def star():
     return p.done()
 
 
+# friends suggested by r/MVaveFM1's u/veecheech (CREDITS.md): a T-Rex, a skeleton, a cowboy and a cowgirl, a vacuum
+def trex():                                                      # a T-Rex, side on (original design)
+    p = Pic()
+    p.poly([(34, 26), (45, 37), (44, 41), (32, 38)], "dorange")  # tail
+    p.rect(19, 34, 25, 46, "dorange"); p.rect(30, 34, 36, 46, "dorange")   # legs
+    p.ell(21, 46, 5, 2, "dorange"); p.ell(34, 46, 5, 2, "dorange")         # feet
+    p.ball(28, 30, 13, 11, "orange", "dorange")                  # body
+    p.ell(25, 34, 7, 6, "cream")                                 # tummy
+    for x in (24, 30, 36):                                       # stripes on the back
+        p.poly([(x - 2, 20), (x + 2, 20), (x, 25)], "dorange")
+    p.ball(16, 15, 14, 11, "orange", "dorange")                  # big head
+    p.pie(10, 20, 8, 0, 180, "dred")                             # a wide-open roar
+    p.rect(2, 20, 17, 20, "dred")
+    for x in (4, 8, 12, 16):                                     # teeth, top and bottom
+        p.poly([(x - 1, 20), (x + 1, 20), (x, 23)], "white")
+    for x in (6, 10, 14):
+        p.poly([(x - 1, 27), (x + 1, 27), (x, 24)], "white")
+    p.ell(10, 25, 3, 1, "hpink")                                  # tongue
+    p.eye(19, 11, 4)
+    p.rect(14, 5, 24, 6, "dorange")                              # a cross brow (it is pretend-scary)
+    p.ell(6, 10, 1, 1, "dorange")                                # nostril
+    p.ell(15, 30, 3, 2, "dorange"); p.px(12, 31, "white")         # a tiny arm, with a claw
+    return p.done()
+
+
+def skeleton():                                                  # a dapper skeleton (original design)
+    p = Pic()
+    p.rect(13, 31, 35, 45, "black")                              # a black suit with pinstripes
+    for x in (17, 22, 27, 32):
+        p.line([(x, 33), (x, 45)], "dgrey", 1)
+    p.line([(13, 33), (5, 42)], "black", 4); p.line([(35, 33), (43, 42)], "black", 4)   # arms
+    p.ell(5, 43, 2, 2, "white"); p.ell(43, 43, 2, 2, "white")    # bony hands
+    p.poly([(24, 33), (14, 29), (17, 33), (14, 37)], "purple")   # a bat bow tie
+    p.poly([(24, 33), (34, 29), (31, 33), (34, 37)], "purple")
+    p.ell(24, 33, 2, 2, "dpurple")
+    p.ball(24, 15, 15, 14, "white", "dwhite")                    # the skull
+    p.ell(17, 13, 5, 6, "black"); p.ell(31, 13, 5, 6, "black")   # big round eye holes
+    p.ell(16, 11, 1, 2, "white"); p.ell(30, 11, 1, 2, "white")   # .. with a twinkle
+    p.poly([(24, 18), (22, 21), (26, 21)], "black")              # nose
+    p.line([(13, 24), (17, 26), (31, 26), (35, 24)], "black", 1) # a stitched grin
+    for x in (16, 20, 24, 28, 32):
+        p.line([(x, 24), (x, 28)], "black", 1)
+    return p.done()
+
+
+def cowkid(hat, hatd, hair, scarf, shirt, spots=False, braid=False):
+    def f():                                                     # a cowboy or cowgirl (original designs)
+        p = Pic()
+        p.rect(8, 38, 40, 47, shirt)                             # shoulders
+        if spots:
+            for x, y in ((12, 42), (20, 45), (33, 41), (38, 45)):
+                p.ell(x, y, 2, 2, "black")
+        else:
+            for x in (12, 18, 30, 36):                           # a check shirt
+                p.line([(x, 38), (x, 47)], "dorange", 1)
+            p.line([(8, 43), (40, 43)], "dorange", 1)
+        p.poly([(15, 35), (33, 35), (24, 45)], scarf)            # a neckerchief
+        if braid:
+            for y in range(24, 44, 4):                           # a long braid over the shoulder
+                p.ell(39, y, 3, 3, hair)
+            p.ell(39, 45, 2, 2, "yellow")
+        p.ball(24, 25, 13, 12, "tan", "dtan")                    # face
+        p.rect(11, 15, 37, 19, hair)                             # hair under the hat
+        p.eye(19, 24, 3); p.eye(29, 24, 3)
+        p.smile(24, 31, 4)
+        p.cheek(14, 29); p.cheek(34, 29)
+        if braid:
+            for x, y in ((16, 28), (18, 29), (30, 29), (32, 28)):   # freckles
+                p.px(x, y, "dtan")
+        p.ell(24, 14, 22, 3, hat)                                # the brim, wide
+        p.ell(24, 15, 22, 2, hatd)
+        p.poly([(13, 13), (15, 2), (24, 5), (33, 2), (35, 13)], hat)   # the crown, dented on top
+        p.rect(14, 10, 34, 12, hatd)                             # the band
+        return p.done()
+    return f
+
+
+def vacuum():                                                    # an upright vacuum cleaner (original design)
+    p = Pic()
+    p.rect(22, 3, 26, 12, "dgrey"); p.rect(17, 2, 31, 4, "dgrey")   # the handle
+    p.ball(24, 22, 13, 13, "purple", "dpurple")                  # the bag
+    p.ell(24, 24, 9, 8, "lpurple")                               # .. its face
+    p.eye(20, 22, 3); p.eye(28, 22, 3)
+    p.smile(24, 28, 3)
+    p.cheek(17, 27); p.cheek(31, 27)
+    p.rect(8, 36, 40, 42, "silver"); p.rect(8, 41, 40, 42, "dgrey")  # the floor head
+    p.rect(10, 35, 38, 36, "red")                                # a red stripe
+    p.ell(12, 44, 2, 2, "black"); p.ell(36, 44, 2, 2, "black")   # wheels
+    for x, y, r in ((4, 42, 2), (2, 38, 1), (44, 43, 1)):        # dust puffs it is about to eat
+        p.ell(x, y, r, r, "grey")
+    return p.done()
+
+
 # order = the firmware's (kid.c KID_SOUND)
 FRIENDS = [
     ("DUCKY", ducky("yellow", "dyellow")),
@@ -695,6 +788,11 @@ FRIENDS = [
     ("ROCKET", rocket),
     ("STRAWBERRY", strawberry),
     ("STAR", star),
+    ("T-REX", trex),
+    ("SKELETON", skeleton),
+    ("COWBOY", cowkid("brown", "dbrown", "dbrown", "red", "yellow")),
+    ("COWGIRL", cowkid("red", "dred", "orange", "yellow", "white", spots=True, braid=True)),
+    ("VACUUM", vacuum),
 ]
 
 
@@ -757,8 +855,8 @@ def rgb565(c):
 
 def main(out, png=None):
     for name, _ in FRIENDS:                      # the band shows the name: one line at scale 4 or 3, or two at 3
-        if not re.fullmatch(r"[A-Z]+( [A-Z]+)*", name):
-            raise SystemExit(f"{name!r}: capitals and single spaces only (the band's font)")
+        if not re.fullmatch(r"[A-Z-]+( [A-Z-]+)*", name):
+            raise SystemExit(f"{name!r}: capitals, hyphens and single spaces only (the band's font)")
         if len(name) * 18 - 3 > 232 and (" " not in name or len(name) > 15 or
                                           max(len(w) for w in name.split(" ", 1)) * 18 - 3 > 232):
             raise SystemExit(f"{name}: too long for the band, even on two lines")
