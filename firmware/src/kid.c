@@ -66,6 +66,7 @@ typedef struct {
     uint8_t level, sky, beat;
     int8_t vib;                         /* a vibrato of its own (P_LD_PIT; WIGGLE adds to it), 0 none */
     uint8_t glide;                      /* P_GLIDE: notes slide into each other, 0 none */
+    uint8_t dist;                       /* P_DIST: its own drive (a growl), 0 the preset's */
 } kid_sound_t;
 static const kid_sound_t KID_SOUND[KID_N] = {
     {12, "TINE EP", 108, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
@@ -109,7 +110,7 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {0, "PLUCK", 106, KS_HEARTS, KB_SAMBA},           /* STRAWBERRY: ANALOG */
     {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
     /* suggested by r/MVaveFM1's u/veecheech (CREDITS.md) */
-    {12, "FM BASS", 116, KS_FLOWERS, KB_ROCK},        /* T-REX: a growly bass */
+    {0, "SAW", 100, KS_FLOWERS, KB_ROCK, 0, 0, 80},   /* T-REX: a growly bass: a saw, driven hard (DIST) */
     {0, "SINE KEY", 105, KS_STARS, KB_SPOOKY, 12, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
     {9, "PLUCK", 118, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
     {0, "PLUCK", 106, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
@@ -292,6 +293,8 @@ static void kid_sound(void)
     apply_preset_to(t, p);
     t->p[P_LEVEL] = s->level;
     t->p[P_GLIDE] = s->glide;
+    if (s->dist)
+        t->p[P_DIST] = s->dist;
     kid.rev0 = (uint8_t)t->p[P_REV];
     kid.dly0 = (uint8_t)t->p[P_DLY];
     kid_knobs();

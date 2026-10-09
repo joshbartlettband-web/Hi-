@@ -96,6 +96,13 @@ repository and its website are public.
   `main`, tests the browser version, and publishes both to this fork's GitHub Pages site:
   `/webapp/try/` plays it in the browser, `/webapp/installer/` puts it on the FM-1.
 
+## A tip link on the website
+
+The landing page has a "Say thanks" card with a tip button when the repository has a variable called `DONATE_URL`
+(**Settings → Secrets and variables → Actions → Variables tab → New repository variable**), set to an `https://` link such as a
+Ko-fi or Buy Me a Coffee page. Without it, or with anything that is not an `https://` link, the card is left out. Change it any time
+and re-run the workflow (or push anything) to update the site.
+
 ## The name in the hello, and the private installer
 
 The name is not in this repository, and the installer on the public site has none in it: its hello is a plain HI!, the same as the

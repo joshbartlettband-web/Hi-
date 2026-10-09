@@ -225,10 +225,19 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: The landing page (the one link to share)
+        env:
+          DONATE: ${{ vars.DONATE_URL }}     # a repository variable: the tip link (Ko-fi, Buy Me a Coffee ...); none, no tip card
         run: |
           cp -r landing/. site/
           repo="${{ github.repository }}"
           sed -i -e "s|@SITE@|${{ steps.pages.outputs.base_url }}|g" -e "s|@REPO@|$repo|g" site/index.html
+          if printf '%s' "$DONATE" | grep -Eq '^https://[A-Za-z0-9./?=_%:+~#-]+$'; then
+            sed -i "s|@DONATE@|$DONATE|g" site/index.html
+            echo "tip card: on"
+          else
+            perl -0pi -e 's/\s*<!--DONATE-->.*?<!--\/DONATE-->//s' site/index.html
+            echo "tip card: off (no DONATE_URL variable, or not an https:// link)"
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
