@@ -290,6 +290,55 @@ check("PLAY again stops it", ex.web_playing() === 0);
   check("kept over a power-off: the next start has the same VOLUME (1024)", e2.web_master_q12() === 1024);
 }
 
+// WRITE (SAVE): her own song. A key writes a note (a friend in a ball of the note's color) and the column moves on, the
+// same key again takes it out, HOME wipes the column, PLAY plays it back, it is kept over a power-off, REC held 2 s
+// starts a new one, and SAVE goes back to playing
+{
+  const col = (r, g, b) => ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+  const C_RED = col(236, 40, 52), G_TEAL = col(30, 176, 150), A_PUR = col(146, 84, 226);
+  const ball = (c, step) => px(46 + c * 23 + 10, 128 - 6 * step + 9);         // a pixel inside the ball, under the friend
+  const tapb = (b, ms = 60) => { ex.web_buttons(1 << b); render(ms); ex.web_buttons(0); render(250); };
+  const key = (k, ms = 150) => { ex.web_keys(1 << k); render(ms); ex.web_keys(0); render(200); };
+  render(7000);
+  const name = band();
+  tapb(B.SAVE); render(300);
+  shot("write0");
+  check("SAVE: WRITE, a big staff and its word (SAVE lit)", band() !== name && ((ex.web_lit_buttons() >> B.SAVE) & 1) === 1);
+  for (let i = 0; i < 3; i++) { tapb(B.REC, 2300); }                           // (a new song, whatever was there)
+  key(7); key(7); key(14); key(16);                                           // C C G A
+  shot("write1");
+  check("keys write their notes, a column each (C red, C red, G teal, A purple)",
+        ball(0, 0) === C_RED && ball(1, 0) === C_RED && ball(2, 4) === G_TEAL && ball(3, 5) === A_PUR);
+  tapb(B.OCTDN);                                                              // back to column 3 (the A)
+  key(16);
+  check("the same key again takes its note out", ball(3, 5) !== A_PUR);
+  key(14);                                                                    // a G there instead, then column 4
+  tapb(B.OCTDN); tapb(B.HOME);                                                // HOME wipes column 3
+  check("HOME wipes the column", ball(3, 4) !== G_TEAL && ball(2, 4) === G_TEAL);
+  ex.web_keys((1 << 7) | (1 << 11)); render(150); ex.web_keys(0); render(250);   // C and E together: one column
+  check("two keys together: a chord in one column", ball(3, 0) === C_RED && ball(3, 2) !== ball(3, 1));
+  peak = 0;
+  tapb(B.PLAY); render(2200);
+  shot("write2");
+  check(`PLAY: her song plays (peak ${peak.toFixed(3)})`, ex.web_playing() === 1 && peak > 0.05);
+  tapb(B.PLAY); render(5000);
+  const nor = new Uint8Array(mem.buffer, ex.web_nor(), ex.web_nor_size()).slice();
+  const e2 = (await WebAssembly.instantiate(fs.readFileSync(wasmPath), {})).instance.exports;
+  e2._initialize();
+  new Uint8Array(e2.memory.buffer, e2.web_nor(), e2.web_nor_size()).set(nor);
+  e2.web_boot(); e2.web_master(1023);
+  const r2 = (ms) => { for (let k = 0; k < Math.round(ms * 44.1); k += 128) e2.web_render(128); };
+  r2(1500); e2.web_keys(1 << 20); r2(100); e2.web_keys(0); r2(1500); e2.web_buttons(1 << B.SAVE); r2(60); e2.web_buttons(0); r2(600);
+  const p2 = (x, y) => { const v = new Uint16Array(e2.memory.buffer, e2.web_screen(), 240 * 240)[y * 240 + x]; return ((v & 255) << 8) | (v >> 8); };
+  check("kept over a power-off: the next start's WRITE has her song", p2(46 + 10, 128 + 9) === C_RED && p2(46 + 2 * 23 + 10, 128 - 24 + 9) === G_TEAL);
+  tapb(B.REC, 2300);
+  check("REC held 2 s: a new, empty song", ball(0, 0) !== C_RED && ball(2, 4) !== G_TEAL);
+  tapb(B.SAVE); render(1800);
+  check("SAVE again: back to playing (the friend's name, SAVE dark)", !((ex.web_lit_buttons() >> B.SAVE) & 1) && band() !== "");
+  key(12); render(300);
+  check("and the keys play as before", peak > 0.05);
+}
+
 // SEQ: ten beats, each named in the band; the friend's bass line plays with them
 {
   const seen = new Set();

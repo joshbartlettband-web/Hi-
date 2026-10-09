@@ -31,7 +31,7 @@ at the next power-on.
 | ARP | Sparkle: a held key plays up and down by itself. |
 | REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti. |
 | HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
-| SAVE | A confetti party. |
+| SAVE | WRITE: she writes her own song (below). SAVE again goes back to playing. |
 | HOME held 1 s, then OCT- / OCT+ | The grown-ups' VOLUME: the most the MASTER knob can give (below). |
 | MASTER | Volume, up to the VOLUME the grown-ups chose (about half, unless changed). |
 
@@ -45,6 +45,28 @@ quarter (about one beat), a half (an open head, about two beats) and a whole (an
 while she holds the key, so she can see a long sound become a long note (suggested by u/theskyisfalling1 on r/MVaveFM1). It goes after 6 seconds of quiet and starts again from the left. The big
 letter stays in the band. The clef is the treble clef of the FreeSerif font (GNU FreeFont, GPL-3.0 or later), scaled down to a bitmap in
 `tools/gen_kid_art.py`.
+
+## WRITE: her own song
+
+An idea from u/lastapoc on r/MVaveFM1 ("Mario Paint music mode"): SAVE opens a big staff where she writes a song with her
+friends, the way Mario Paint's composer did, and plays it back.
+
+| In WRITE | What happens |
+| --- | --- |
+| Keys | Write a note in the yellow column: the friend she is writing with, in a ball of the note's color. It plays as it lands, and the column moves on when she lets go. Two keys together make a chord (two notes in a column). The same key again takes its note out. |
+| PRESETS | The friend she writes with (shown in the band). A song has a band of up to three friends; a fourth takes the place of the one used least (its notes become the new friend's). |
+| OCT- / OCT+ | The yellow column back and forward (32 columns, 4 pages of 8: the dots). |
+| HOME | Wipes the column (held 1 s it is the grown-ups' VOLUME, as always). |
+| PLAY | Plays her song from the start, in a loop: the column turns green and the friend of each note hops along over it. PLAY again stops. |
+| SEQ | A beat under it: none, then each of the eleven (drums only). |
+| SELECT | Slower or faster. |
+| REC held 2 s | A new, empty song. |
+| SAVE | Back to playing. |
+
+The song is kept when the FM-1 is switched off: in 58 bytes of the settings that no engine uses (`favorites.factory[14]` and
+`[15][0..25]`), so it never touches your projects or the autosave. It is written about 4 seconds after her last change (while
+stopped) and when she leaves WRITE. A column is a beat (a quarter note); each friend plays on its own track (tracks 1 to 3, the
+drums on 4), through Felucca's own sequencer.
 
 ## Volume, for grown-ups
 
@@ -98,7 +120,7 @@ repository and its website are public.
 
 ## A tip link on the website
 
-The landing page has a "Say thanks" card with a tip button when the repository has a variable called `DONATE_URL`
+The landing page has a "Say thanks" card with a tip button when the repository has a variable (or a secret) called `DONATE_URL`
 (**Settings → Secrets and variables → Actions → Variables tab → New repository variable**), set to an `https://` link such as a
 Ko-fi or Buy Me a Coffee page. Without it, or with anything that is not an `https://` link, the card is left out. Change it any time
 and re-run the workflow (or push anything) to update the site.

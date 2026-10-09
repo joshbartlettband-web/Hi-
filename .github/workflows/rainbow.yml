@@ -226,7 +226,8 @@ jobs:
 
       - name: The landing page (the one link to share)
         env:
-          DONATE: ${{ vars.DONATE_URL }}     # a repository variable: the tip link (Ko-fi, Buy Me a Coffee ...); none, no tip card
+          DONATE: ${{ vars.DONATE_URL || secrets.DONATE_URL }}   # the tip link (a repository variable or secret: Ko-fi,
+                                                                 # Buy Me a Coffee ...); none, no tip card
         run: |
           cp -r landing/. site/
           repo="${{ github.repository }}"
