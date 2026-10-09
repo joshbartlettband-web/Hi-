@@ -245,12 +245,13 @@ static const uint8_t KID_FONT[][7] = {
     {0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A}, {0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04},   /* # ! */
     {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},   /* 5 8 */
     {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00}, {0x0E, 0x11, 0x01, 0x06, 0x04, 0x00, 0x04},   /* - ? */
+    {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08}, {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C},   /* 7 9 */
 };
 static int32_t kid_glyph_of(char c)
 {
     if (c >= 'A' && c <= 'Z')
         return c - 'A';
-    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : c == '?' ? 33 : -1;
+    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : c == '?' ? 33 : c == '7' ? 34 : c == '9' ? 35 : -1;
 }
 
 static const int8_t KID_SIN[32] = {0, 25, 49, 71, 90, 106, 117, 125, 127, 125, 117, 106, 90, 71, 49, 25,
@@ -597,14 +598,12 @@ static void kid_staff_add(uint32_t keys, uint32_t now)
         int32_t st = ((int32_t)(n / 12u) - 5) * 7 + IDX[pc];
         if (!((keys >> k) & 1u))
             continue;
-        if (kid.mode == KM_ACCORD && SHARP[pc]) {                 /* ACCORDION: a black key's chord, F3 .. E4 up */
-            n = 53u + (pc - 1u + 7u) % 12u;
-            st = ((int32_t)(n / 12u) - 5) * 7 + IDX[n % 12u];
-            acc = 1;
-        }
-        for (h = 0; h < (kid.chord || acc ? 3u : 1u); h++) {
+        uint8_t an[CHORD_MAX];
+        if (kid.mode == KM_ACCORD && SHARP[pc])                   /* ACCORDION: a black key's chord (seq.c) */
+            acc = accord_chord(&trk[0], k, 0, an);
+        for (h = 0; h < (acc ? acc : kid.chord ? 3u : 1u); h++) {
             uint32_t d = e->n, sh = h || acc ? 0u : SHARP[pc], i;
-            int32_t s = st + (int32_t)h * 2;
+            int32_t s = acc ? ((int32_t)(an[h] / 12u) - 5) * 7 + IDX[an[h] % 12u] : st + (int32_t)h * 2;
             for (i = 0; i < d; i++)
                 if (e->step[i] == s && ((e->sharp >> i) & 1u) == sh)
                     break;
@@ -1517,7 +1516,9 @@ static uint32_t kid_band_word(const char *s, int16_t sc, uint16_t bg, uint32_t s
 static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n)
 {
     static const struct { uint16_t m; const char *q; } T[] = {
-        {0x091, "MAJOR"}, {0x089, "MINOR"}, {0x491, "SEVEN"}, {0x049, "DIM"}, {0x0A1, "SUS"}};
+        {0x091, "MAJOR"}, {0x089, "MINOR"}, {0x491, "SEVEN"}, {0x049, "DIM"}, {0x0A1, "SUS"},
+        {0x891, "MAJ7"}, {0x489, "MIN7"}, {0x815, "MAJ9"}, {0x415, "NINE"}, {0x40D, "MIN9"}, {0x851, "MAJ7#11"},
+        {0x811, "MAJ7"}, {0x411, "SEVEN"}, {0x409, "MIN7"}, {0x841, "MAJ7#11"}};   /* (shells: no 5th; ACCORDION) */
     uint32_t mask = 0, i, j, root = pcs[0], sig = 0x600u, w;
     const char *q = 0;
     char *p = kf.l1;
@@ -1594,11 +1595,11 @@ static uint32_t kid_play_band(uint32_t now)
     }
     if (kid.mode == KM_ACCORD && keyed && ((0x54Au >> ((53u + (uint32_t)kid.key) % 12u)) & 1u) &&
         !ENGINES[eng_idx(trk[0].eng_req)]->keys) {                /* ACCORDION: a black key's chord */
-        uint32_t r = (53u + (uint32_t)kid.key) % 12u - 1u;
-        pcs[0] = (uint8_t)r;
-        pcs[1] = (uint8_t)((r + (r == 9u || r == 2u ? 3u : 4u)) % 12u);
-        pcs[2] = (uint8_t)((r + 7u) % 12u);
-        return kid_chord_band(pcs, 3);
+        uint8_t an[CHORD_MAX];
+        uint32_t na = accord_chord(&trk[0], (uint32_t)kid.key, 0, an);
+        for (k = 0; k < na; k++)
+            pcs[k] = (uint8_t)(an[k] % 12u);
+        return kid_chord_band(pcs, na);
     }
     if (drum_track(&trk[0]))                                      /* (a drum friend: drums, not chords) */
         return 0;

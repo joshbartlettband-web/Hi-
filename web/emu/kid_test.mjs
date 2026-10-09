@@ -403,6 +403,18 @@ check("PLAY again stops it", ex.web_playing() === 0);
   shot("accordion");
   check("ACCORDION: a black key plays its chord (C E G in the band)", bandHas(C_RED) && bandHas(E_YEL) && bandHas(G_TEAL));
   ex.web_keys(0); render(1200);
+  {
+    const PINK = col(242, 86, 176), ORNG = col(255, 140, 26), GRN = col(130, 214, 56), PURP = col(146, 84, 226);
+    ex.web_keys(1 << 20); render(300);                                        // C#5: the second row, a jazz ninth
+    shot("accordion9");
+    check(`ACCORDION, the next row up: a ninth (C E B D, ${ex.web_voices(0)} voices, friend ${ex.web_kid_friend()})`,
+          bandHas(C_RED) && bandHas(E_YEL) && bandHas(PINK) && !bandHas(G_TEAL) && ex.web_voices(0) >= 3);
+    ex.web_keys(0); render(1200);
+    ex.web_keys(1 << 25); render(300);                                        // F#5: fourths on F
+    shot("accordion11");
+    check("ACCORDION, the top key: fourths on F (F B E, and A where the engine has the voices)", bandHas(GRN) && bandHas(PINK) && bandHas(E_YEL));
+    ex.web_keys(0); render(1200);
+  }
   ex.web_keys(1 << 14); render(300);                                          // G: its own note
   check("ACCORDION: a white key plays its own note (G teal, no chord)", bandHas(G_TEAL) && !bandHas(C_RED));
   ex.web_keys(0); render(1500);

@@ -567,27 +567,40 @@ static uint32_t perf_key(uint32_t k)
     return !key_black(k) ? (p < PF_M1 ? p : PF_N) : p < NTRK ? PF_M1 + p : PF_N;
 }
 
+/* ACCORDION (kid.c): black key k's chord, the chord of the white key below it (F#: F, G#: G, A#: A minor, C#: C,
+ * D#: D minor), its notes into out (at most CHORD_MAX), how many. The lowest row (F#3 .. D#4) plays triads; the next
+ * (F#4 .. D#5) jazz ninths, root 3rd 7th 9th (Fmaj9 G9 Am9 Cmaj9 Dm9); the top key (F#5) a stack of fourths on F,
+ * F B E A (Fmaj7#11, the "So What" sound). The roots stay low (F3 .. E4) in every row; oct: song.octave. On
+ * an engine of three voices (PHYS, GRAIN) the four-note chords drop their top note: a jazz shell (root 3rd 7th) */
+static uint32_t accord_chord(const track_t *t, uint32_t k, int32_t oct, uint8_t *out)
+{
+    static const int8_t TRIAD[2][4] = {{0, 4, 7}, {0, 3, 7}}, NINTH[3][4] = {{0, 4, 11, 14}, {0, 4, 10, 14}, {0, 3, 10, 14}};
+    static const int8_t FOURTHS[4] = {0, 6, 11, 16};
+    uint32_t pc = (53u + k) % 12u, r = pc - 1u, i, poly = ENGINES[eng_idx(t->eng_req)]->poly;
+    uint32_t n = k < 12u || (poly && poly < 4u) ? 3u : 4u;
+    int32_t root = 53 + (int32_t)((r + 7u) % 12u) + 12 * oct, minor = r == 9u || r == 2u;
+    const int8_t *iv = k >= 24u ? FOURTHS : k >= 12u ? NINTH[minor ? 2 : r == 7u ? 1 : 0] : TRIAD[minor];
+    for (i = 0; i < n; i++)
+        out[i] = (uint8_t)clamp(root + iv[i], 0, 127);
+    return n;
+}
+
 /* key k plays kb_note[k] on track t: its chord (chord.c; the note alone with CHRD OFF). A note another key
  * holds already sounds: it is not started again (nor sent to MIDI OUT); the key keeps its notes */
 static void key_on(uint32_t k, track_t *t)
 {
     uint32_t n, i, mc = trk_midi_ch(trk_index(t)), pc = (53u + k) % 12u;
-    if (kb_accord && ((0x54Au >> pc) & 1u) && !ENGINES[eng_idx(t->eng_req)]->keys) {   /* ACCORDION: a chord, as */
-        uint32_t r = pc - 1u;                                     /* STRUM picks it (the white key below), root position */
-        int32_t root = 53 + (int32_t)((r + 7u) % 12u) + 12 * song.octave;
-        kb_chord[k][0] = (uint8_t)clamp(root, 0, 127);
-        kb_chord[k][1] = (uint8_t)clamp(root + (pc == 10u || pc == 3u ? 3 : 4), 0, 127);
-        kb_chord[k][2] = (uint8_t)clamp(root + 7, 0, 127);
-        n = 3;
-    } else {
+    uint32_t acc = kb_accord && ((0x54Au >> pc) & 1u) && !ENGINES[eng_idx(t->eng_req)]->keys;   /* ACCORDION: a chord */
+    if (acc)
+        n = accord_chord(t, k, song.octave, kb_chord[k]);
+    else
         n = chord_build(t, kb_note[k], kb_chord[k]);
-    }
     kb_chn[k] = 0;
     for (i = 0; i < n; i++) {
         uint32_t x = kb_chord[k][i];
         if (midi_local_held(t, x))
             continue;
-        input_on(t, x, kb_accord && n == 3u && ((0x54Au >> pc) & 1u) ? 60u : 100u);   /* (ACCORDION's chord: softer) */
+        input_on(t, x, acc ? (n > 3u ? 52u : 60u) : 100u);    /* (ACCORDION's chord: softer, four notes more so) */
         midi_out_event(0x09u | (0x90u | mc) << 8 | x << 16 | 100u << 24);
     }
     kb_chn[k] = (uint8_t)n;
