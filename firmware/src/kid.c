@@ -6,8 +6,9 @@
  *               and the friend hops
  *   PRESETS     the next / previous friend (46, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
- *   ALGORITHM   how the keys play, a step a turn: 1 FRIEND, 3 FRIENDS (a key plays a chord in key), STRUM (an
- *               Omnichord: black keys pick a chord, white keys strum it), GUESS (an ear game: a friend sings a note,
+ *   ALGORITHM   how the keys play, a step a turn, each with a picture: 1 FRIEND, 3 FRIENDS (a key plays a chord in
+ *               key), STRUM (an Omnichord: black keys pick a chord, white keys strum it), ACCORDION (a black key plays
+ *               its chord, white keys their own notes), GUESS (an ear game: a friend sings a note,
  *               she finds it), FOLLOW (songs to learn: the next key lights, SEQ the next song). Keys held together
  *               show their letters in their colours and the chord's name
  *   SELECT      the beat slower / faster
@@ -223,8 +224,9 @@ enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SP
 enum { KB_NAME, KB_NOTE, KB_HINT, KB_CHORD };
 /* ALGORITHM: how the keys play (kid_mode_set). CHOIR: three friends sing a chord; STRUM: an Omnichord (seq.c
  * kb_strum_map); GUESS: an ear game; FOLLOW: songs to learn, the next key lit */
-enum { KM_ONE, KM_CHOIR, KM_STRUM, KM_GUESS, KM_FOLLOW, KM_COUNT };
-static const char *const KID_MODE_NAME[KM_COUNT] = {"1 FRIEND", "3 FRIENDS", "STRUM", "GUESS", "FOLLOW"};
+enum { KM_ONE, KM_CHOIR, KM_STRUM, KM_ACCORD, KM_GUESS, KM_FOLLOW, KM_COUNT };
+static const char *const KID_MODE_NAME[KM_COUNT] = {"1 FRIEND", "3 FRIENDS", "STRUM", "ACCORDION", "GUESS", "FOLLOW"};
+_Static_assert(KID_ICON_N == KM_COUNT, "a picture for each of ALGORITHM's modes (tools/gen_kid_art.py ICONS)");
 
 /* the staff: what she played, as the heads of one entry (a key, or the keys of a chord pressed together) */
 #define KID_ST_N 8                      /* entries on the staff at most */
@@ -522,12 +524,17 @@ static void kid_staff_add(uint32_t keys, uint32_t now)
     }
     e->keys |= keys;
     for (k = 0; k < 27u; k++) {
-        uint32_t n = 53u + k, pc = n % 12u, h;
+        uint32_t n = 53u + k, pc = n % 12u, h, acc = 0;
         int32_t st = ((int32_t)(n / 12u) - 5) * 7 + IDX[pc];
         if (!((keys >> k) & 1u))
             continue;
-        for (h = 0; h < (kid.chord ? 3u : 1u); h++) {
-            uint32_t d = e->n, sh = h ? 0u : SHARP[pc], i;
+        if (kid.mode == KM_ACCORD && SHARP[pc]) {                 /* ACCORDION: a black key's chord, F3 .. E4 up */
+            n = 53u + (pc - 1u + 7u) % 12u;
+            st = ((int32_t)(n / 12u) - 5) * 7 + IDX[n % 12u];
+            acc = 1;
+        }
+        for (h = 0; h < (kid.chord || acc ? 3u : 1u); h++) {
+            uint32_t d = e->n, sh = h || acc ? 0u : SHARP[pc], i;
             int32_t s = st + (int32_t)h * 2;
             for (i = 0; i < d; i++)
                 if (e->step[i] == s && ((e->sharp >> i) & 1u) == sh)
@@ -719,7 +726,7 @@ static void kw_enter(void)
         kw.loaded = 1;
     }
     kw.on = 1;
-    kb_strum = 0;
+    kb_strum = kb_accord = 0;
     kw.col = -1;
     kw.sig = 0;
     kid.key = -1;
@@ -744,6 +751,7 @@ static void kw_leave(void)
     kw_save();
     kw.on = 0;
     kb_strum = kid.mode == KM_STRUM;
+    kb_accord = kid.mode == KM_ACCORD;
     for (s = 0; s < 3u; s++) {
         track_defaults_steps(&trk[s]);
         trk[s].p[P_SDIV] = 2;
@@ -847,6 +855,7 @@ static void kid_mode_set(uint32_t m)
     kid.mode = (uint8_t)(m % KM_COUNT);
     kid.chord = kid.mode == KM_CHOIR;
     kb_strum = kid.mode == KM_STRUM && !kw.on;
+    kb_accord = kid.mode == KM_ACCORD && !kw.on;
     kid.g_state = KG_IDLE;
     kid.g_ms = fm1_ms + 900u;                                     /* (GUESS: the first note in a moment) */
     kid.g_level = kid.g_streak = kid.g_wrong = kid.g_again = 0;
@@ -1274,6 +1283,7 @@ static struct {
     kid_txt_t bt2;                      /* .. its second line (a long name: two lines), sc 0 = none */
     char l1[16], l2[16];
     uint16_t ccol[16];                  /* KB_CHORD: the colour of each of l1's letters */
+    int8_t icon;                        /* ALGORITHM's mode as a picture at the band's left (KID_ICON_*), -1 none */
     int16_t ol;                         /* its outline (px) */
     uint16_t ink, bg, bg2;
     int8_t meter;                       /* dots lit (HINT), -1 none */
@@ -1479,6 +1489,14 @@ static uint32_t kid_play_band(uint32_t now)
         pcs[2] = (uint8_t)((r + 7u) % 12u);
         return kid_chord_band(pcs, 3);
     }
+    if (kid.mode == KM_ACCORD && keyed && ((0x54Au >> ((53u + (uint32_t)kid.key) % 12u)) & 1u) &&
+        !ENGINES[eng_idx(trk[0].eng_req)]->keys) {                /* ACCORDION: a black key's chord */
+        uint32_t r = (53u + (uint32_t)kid.key) % 12u - 1u;
+        pcs[0] = (uint8_t)r;
+        pcs[1] = (uint8_t)((r + (r == 9u || r == 2u ? 3u : 4u)) % 12u);
+        pcs[2] = (uint8_t)((r + 7u) % 12u);
+        return kid_chord_band(pcs, 3);
+    }
     if (kid.mode == KM_CHOIR && keyed && !((0x54Au >> ((53u + (uint32_t)kid.key) % 12u)) & 1u)) {
         static const uint8_t SCALE[7] = {0, 2, 4, 5, 7, 9, 11};  /* three friends: the key's chord in C major */
         uint32_t pc = (53u + (uint32_t)kid.key) % 12u, d;
@@ -1576,7 +1594,7 @@ static uint32_t kid_band_setup(uint32_t now)
             v = (song.g[G_BPM] - 60) / 15;
             kf.txt = song.g[G_BPM] < 100 ? "SLOW" : song.g[G_BPM] > 135 ? "FAST" : "WALK";
             break;
-        case KH_CHORD: kf.txt = KID_MODE_NAME[kid.mode % KM_COUNT]; v = kid.mode * 2; break;
+        case KH_CHORD: kf.txt = KID_MODE_NAME[kid.mode % KM_COUNT]; v = -1; break;   /* (its picture: kid_band_icon) */
         case KH_SPARKLE: v = kid.arp ? 8 : 0; break;
         case KH_BEAT: kf.txt = KID_BEATS[kid.beat % KB_COUNT].name; v = -1; break;
         case KH_VOLUME: v = (int32_t)kid_vol_level(); break;
@@ -1657,9 +1675,44 @@ static int kid_text_at(const kid_txt_t *t, int32_t x, int32_t y, int32_t o)
 
 static int32_t kw_sprite(uint32_t fr, int32_t x, int32_t y, int32_t sz);
 
+/* ALGORITHM's mode as a picture for children who do not read yet: beside its name when the knob turns, and at the band's
+ * left while a mode other than 1 FRIEND is on, the words moved over beside it (none when they would not fit) */
+static uint32_t kid_band_icon(uint32_t sig)
+{
+    int32_t m = -1, w1, w2 = 0;
+    kf.icon = -1;
+    if (kw.on || kid.hello_ms)
+        return sig;
+    if (kf.band == KB_HINT && kid.hint == KH_CHORD) {             /* (no dots under it: the word in the middle) */
+        m = kid.mode;
+        kf.bt.y = (int16_t)(KID_BAND_Y + (56 - 7 * kf.bt.sc) / 2 + 2);
+    }
+    else if (kf.band != KB_HINT && kid.mode != KM_ONE)
+        m = kid.mode;
+    if (m < 0)
+        return sig;
+    w1 = (int32_t)(str_len(kf.bt.s) * 6u) * kf.bt.sc - kf.bt.sc;
+    if (kf.bt2.sc)
+        w2 = (int32_t)(str_len(kf.bt2.s) * 6u) * kf.bt2.sc - kf.bt2.sc;
+    if (w1 > 178 || w2 > 178)
+        return sig;
+    kf.bt.x = (int16_t)(58 + (178 - w1) / 2);
+    if (kf.bt2.sc)
+        kf.bt2.x = (int16_t)(58 + (178 - w2) / 2);
+    kf.icon = (int8_t)m;
+    return sig * 31u + (uint32_t)m + 1u;
+}
+
 static uint16_t kid_band_px(int32_t x, int32_t y)
 {
     int k;
+    if (kf.icon >= 0 && x >= 6 && x < 54 && y >= (int32_t)KID_BAND_Y + 5 && y < (int32_t)KID_BAND_Y + 53) {
+        uint32_t ix = (uint32_t)(x - 6), iy = (uint32_t)(y - ((int32_t)KID_BAND_Y + 5)), b;   /* the mode's picture */
+        b = KID_ICON_PIX[kf.icon % KID_ICON_N][iy * 24u + (ix >> 1)];
+        b = ix & 1u ? b & 15u : b >> 4;
+        if (b)
+            return KID_ICON_PAL[kf.icon % KID_ICON_N][b];
+    }
     if (kw.on && kf.band == KB_NAME && x < 56 && y >= (int32_t)KID_BAND_Y + 5) {    /* WRITE: the stamp friend */
         int32_t p = kw_sprite(kw.band[kw.stamp % 3u], x - 4, y - ((int32_t)KID_BAND_Y + 6), 48);
         if (p >= 0)
@@ -2176,7 +2229,7 @@ static void kw_draw(uint32_t now, uint32_t band)
 
 static void kid_draw(void)
 {
-    uint32_t now = fm1_ms, i, band = kid_band_setup(now), sig = 0, ssig, top = 0;
+    uint32_t now = fm1_ms, i, band = kid_band_icon(kid_band_setup(now)), sig = 0, ssig, top = 0;
     int32_t x0 = 240, y0 = 240, x1 = 0, y1 = 0;
     int anim = kid.scene == KS_STARS || kid.scene == KS_HEARTS || kid.scene == KS_BUBBLES || kid.scene == KS_CONFETTI;
     kid_frame_setup(now);

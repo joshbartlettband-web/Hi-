@@ -82,6 +82,7 @@ enum { QN_OFF, QN_SNAP, QN_WHITE, QN_SEQ };      /* P_QUANT */
  * (F#: F, G#: G, A#: A minor, C#: C, D#: D minor), and plays its root low; the white keys, left to right, play that
  * chord's notes upward from C3, so a hand drawn across them strums it. Read in the audio ISR, set by the main loop */
 static volatile uint8_t kb_strum;                 /* on */
+static volatile uint8_t kb_accord;                /* ACCORDION (kid.c): a black key plays its chord (seq.c key_on), F3 .. E4 */
 static volatile uint8_t kb_strum_root, kb_strum_minor;   /* the chord picked (a pitch class, C major to begin with) */
 static uint32_t kb_strum_map(uint32_t k)
 {
@@ -570,7 +571,17 @@ static uint32_t perf_key(uint32_t k)
  * holds already sounds: it is not started again (nor sent to MIDI OUT); the key keeps its notes */
 static void key_on(uint32_t k, track_t *t)
 {
-    uint32_t n = chord_build(t, kb_note[k], kb_chord[k]), i, mc = trk_midi_ch(trk_index(t));
+    uint32_t n, i, mc = trk_midi_ch(trk_index(t)), pc = (53u + k) % 12u;
+    if (kb_accord && ((0x54Au >> pc) & 1u) && !ENGINES[eng_idx(t->eng_req)]->keys) {   /* ACCORDION: a chord, as */
+        uint32_t r = pc - 1u;                                     /* STRUM picks it (the white key below), root position */
+        int32_t root = 53 + (int32_t)((r + 7u) % 12u) + 12 * song.octave;
+        kb_chord[k][0] = (uint8_t)clamp(root, 0, 127);
+        kb_chord[k][1] = (uint8_t)clamp(root + (pc == 10u || pc == 3u ? 3 : 4), 0, 127);
+        kb_chord[k][2] = (uint8_t)clamp(root + 7, 0, 127);
+        n = 3;
+    } else {
+        n = chord_build(t, kb_note[k], kb_chord[k]);
+    }
     kb_chn[k] = 0;
     for (i = 0; i < n; i++) {
         uint32_t x = kb_chord[k][i];

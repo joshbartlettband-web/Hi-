@@ -320,6 +320,17 @@ check("PLAY again stops it", ex.web_playing() === 0);
   for (const k of [0, 2, 3, 5, 7, 9, 10, 12]) { ex.web_keys(1 << k); render(220); ex.web_keys(0); render(10); }
   check(`STRUM: the white keys strum it (peak ${peak.toFixed(3)})`, peak > 0.02);
   render(1500);
+  algo(1);                                                                    // ACCORDION
+  render(1600);
+  const iconBand = band();
+  check("ACCORDION: its picture in the band with the friend's name", iconBand !== named);
+  ex.web_keys(1 << 8); render(300);                                           // C#: the C chord, held
+  shot("accordion");
+  check("ACCORDION: a black key plays its chord (C E G in the band)", bandHas(C_RED) && bandHas(E_YEL) && bandHas(G_TEAL));
+  ex.web_keys(0); render(1200);
+  ex.web_keys(1 << 14); render(300);                                          // G: its own note
+  check("ACCORDION: a white key plays its own note (G teal, no chord)", bandHas(G_TEAL) && !bandHas(C_RED));
+  ex.web_keys(0); render(1500);
   algo(1);
   render(400);
   peak = 0; render(1200);
@@ -343,7 +354,7 @@ check("PLAY again stops it", ex.web_playing() === 0);
   check("a wrong key: nothing moves on", ((ex.web_lit_keys() >> 14) & 1) === 1);
   tapb(B.SEQ); render(200);
   check("SEQ: the next song (MARY starts on E)", ((ex.web_lit_keys() >> 11) & 1) === 1);
-  algo(-1); algo(-1); algo(-1); algo(-1); render(1500);
+  algo(-1); algo(-1); algo(-1); algo(-1); algo(-1); render(1500);
 }
 
 // WRITE (SAVE): her own song. A key writes a note (a friend in a ball of the note's color) and the column moves on, the

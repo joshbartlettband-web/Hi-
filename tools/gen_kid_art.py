@@ -766,6 +766,83 @@ def spacehero():                                                 # a space hero 
     return p.done()
 
 
+# ALGORITHM's modes, as pictures for children who do not read yet (kid.c KID_ICON_*, in the order of KM_*)
+def icon_one():                                                  # one friend: a smiling face
+    p = Pic()
+    p.ball(24, 24, 18, 18, "yellow", "dyellow")
+    p.eye(17, 20, 4); p.eye(31, 20, 4)
+    p.smile(24, 31, 6)
+    p.cheek(12, 29); p.cheek(36, 29)
+    return p.done()
+
+
+def icon_choir():                                                # three friends singing, notes over them
+    p = Pic()
+    for x, y, c, d in ((12, 30, "pink", "dpink"), (36, 30, "lblue", "mblue"), (24, 34, "yellow", "dyellow")):
+        p.ball(x, y, 9, 9, c, d)
+        p.dot_eye(x - 4, y - 2); p.dot_eye(x + 4, y - 2)
+        p.ell(x, y + 5, 3, 3, "black")                           # singing: an open mouth
+    for x, y in ((14, 8), (32, 6)):                              # notes
+        p.ell(x, y + 8, 3, 2, "purple"); p.rect(x + 2, y, x + 3, y + 8, "purple"); p.rect(x + 2, y, x + 6, y + 1, "purple")
+    return p.done()
+
+
+def icon_strum():                                                # a harp with its strings
+    p = Pic()
+    p.poly([(8, 44), (12, 4), (18, 4), (14, 44)], "gold")       # the pillar
+    p.poly([(12, 4), (40, 26), (42, 32), (14, 10)], "gold")      # the neck, curving down
+    p.rect(10, 42, 42, 46, "dorange")                            # the base
+    p.poly([(36, 28), (44, 30), (44, 44), (38, 44)], "dorange")  # the sound box
+    for i in range(6):                                           # strings, each its color
+        x = 16 + i * 4
+        p.line([(x, 8 + i * 3), (x, 41)], ["red", "orange", "yellow", "green", "blue", "purple"][i], 1)
+    p.ell(30, 12, 2, 2, "white"); p.ell(36, 8, 1, 1, "white")    # sparkles
+    return p.done()
+
+
+def icon_accordion():                                            # an accordion: two boxes, the bellows between
+    p = Pic()
+    p.rect(2, 12, 12, 40, "red"); p.rect(2, 12, 12, 14, "dred")   # the left box, its buttons
+    for y in (18, 24, 30):
+        p.ell(7, y, 2, 2, "white")
+    for i in range(6):                                           # the bellows: folds, light and dark
+        x = 13 + i * 4
+        p.poly([(x, 10), (x + 2, 14), (x + 2, 38), (x, 42)], "lpurple" if i % 2 else "purple")
+        p.poly([(x + 2, 14), (x + 4, 10), (x + 4, 42), (x + 2, 38)], "purple" if i % 2 else "dpurple")
+    p.rect(37, 12, 46, 40, "red"); p.rect(37, 12, 46, 14, "dred")   # the right box: piano keys
+    for y in range(16, 40, 4):
+        p.rect(39, y, 46, y + 2, "white")
+    p.rect(2, 40, 46, 42, "dred")
+    return p.done()
+
+
+def icon_guess():                                                # a speech bubble: a note and a question
+    p = Pic()
+    p.ell(24, 20, 21, 17, "white")
+    p.poly([(12, 32), (20, 34), (8, 44)], "white")               # its tail
+    p.ell(14, 26, 4, 3, "blue"); p.rect(17, 10, 18, 26, "blue"); p.rect(17, 10, 23, 12, "blue")   # a note
+    p.ell(33, 14, 6, 6, "orange"); p.ell(33, 14, 3, 3, "white")  # a "?"
+    p.rect(27, 12, 30, 16, "white")
+    p.rect(32, 19, 35, 25, "orange")
+    p.ell(33, 30, 2, 2, "orange")
+    return p.done()
+
+
+def icon_follow():                                               # piano keys, one lit, an arrow down to it
+    p = Pic()
+    p.rect(2, 22, 46, 46, "white")
+    for x in range(8, 46, 8):                                    # the white keys' edges
+        p.line([(x, 22), (x, 46)], "dgrey", 1)
+    p.rect(17, 22, 22, 46, "yellow")                             # the lit key
+    for x in (6, 14, 30, 38):                                    # black keys
+        p.rect(x, 22, x + 4, 36, "black")
+    p.poly([(19, 18), (12, 10), (16, 10), (16, 2), (22, 2), (22, 10), (26, 10)], "green")   # an arrow
+    return p.done()
+
+
+ICONS = [icon_one, icon_choir, icon_strum, icon_accordion, icon_guess, icon_follow]
+
+
 # order = the firmware's (kid.c KID_SOUND)
 FRIENDS = [
     ("DUCKY", ducky("yellow", "dyellow")),
@@ -918,6 +995,31 @@ def main(out, png=None):
     for d in data:
         lines.append("    {" + ",".join(str(b) for b in d) + "},")
     lines.append("};")
+    icons = []
+    for f in ICONS:
+        im, cols, idx = f().im, [], []
+        for y in range(N):
+            for x in range(N):
+                q = im.getpixel((x, y))
+                if not q[3]:
+                    idx.append(0)
+                    continue
+                if q[:3] not in cols:
+                    cols.append(q[:3])
+                idx.append(cols.index(q[:3]) + 1)
+        if len(cols) > 15:
+            raise SystemExit(f"{f.__name__}: {len(cols)} colours, 15 at most")
+        icons.append(([0] + [rgb565(c) for c in cols] + [0] * (15 - len(cols)),
+                      bytes((idx[i] << 4) | idx[i + 1] for i in range(0, len(idx), 2))))
+    lines.append(f"#define KID_ICON_N {len(icons)}")
+    lines.append("static const uint16_t KID_ICON_PAL[KID_ICON_N][16] = {")
+    for pal, _ in icons:
+        lines.append("    {" + ", ".join(f"0x{v:04X}" for v in pal) + "},")
+    lines.append("};")
+    lines.append(f"static const uint8_t KID_ICON_PIX[KID_ICON_N][{N * N // 2}] = {{")
+    for _, d in icons:
+        lines.append("    {" + ",".join(str(b) for b in d) + "},")
+    lines.append("};")
     lines.append(f"#define KID_CLEF_W {len(CLEF[0])}")
     lines.append(f"#define KID_CLEF_H {len(CLEF)}")
     lines.append(f"static const uint16_t KID_CLEF[{len(CLEF)}] = {{    /* bit 15 the left column */")
@@ -934,6 +1036,11 @@ def main(out, png=None):
             ImageDraw.Draw(sheet).rectangle([x, y, x + N * 4 - 1, y + N * 4 - 1], outline=(90, 160, 220))
             sheet.paste(big, (x, y), big)
         sheet.save(png)
+        row = Image.new("RGB", (len(ICONS) * (N * 4 + 8), N * 4 + 8), (150, 110, 230))
+        for i, f in enumerate(ICONS):
+            big = f().im.resize((N * 4, N * 4), Image.NEAREST)
+            row.paste(big, (i * (N * 4 + 8) + 4, 4), big)
+        row.save(png.replace(".png", "-icons.png"))
 
 
 if __name__ == "__main__":
