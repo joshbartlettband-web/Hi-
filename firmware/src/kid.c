@@ -4,7 +4,7 @@
  *   Keys        play the friend's sound; the band shows the note's letter, big, in its colour (C red, D orange,
  *               E yellow, F green, G teal, A purple, B pink, as the coloured bells and tubes of music classes),
  *               and the friend hops
- *   PRESETS     the next / previous friend (50, each a picture, a sound, a home sky and a favourite beat:
+ *   PRESETS     the next / previous friend (58, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
  *   ALGORITHM   how the keys play, a step a turn, each with a picture: 1 FRIEND, 3 FRIENDS (a key plays a chord in
  *               key), STRUM (an Omnichord: black keys pick a chord, white keys strum it), ACCORDION (a black key plays
@@ -23,7 +23,8 @@
  *   PLAY        the beat: drums (track 4) and a bass line in key (track 2), the friend dances to it; SEQ: the next
  *               of eleven beats
  *   ARP         sparkle: a held key plays up and down
- *   REC         the next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti
+ *   REC         the next sky (rainbow, stars, hearts, bubbles, flowers, confetti, clouds, snow, leaves, desert), with
+ *               confetti
  *   HOME        a surprise friend
  *   SAVE        WRITE: she writes her own song on a big staff, each note a friend (kw_*, below); SAVE again, back
  *   THE STAFF   a treble clef drops in at the top when she plays, and writes her notes as coloured noteheads, up to 8,
@@ -31,6 +32,8 @@
  *               note's value by how long it was held against the beat (a sixteenth .. a whole, growing while held);
  *               it goes after 6 s of quiet. The big letter stays in the band
  *   HOME held 1 s, then OCT- / OCT+   the grown-ups' VOLUME: how loud MASTER can go (8 steps, kept over power-off)
+ *   HOME held 1 s, then PRESETS   the grown-ups' LOOK-ALIKES: left hides the friends drawn after TV and film
+ *               characters, right shows them (kept over power-off)
  * MASTER is capped at that level (the default is about half) for small ears, and the output limiter's ceiling
  * follows it, so an effect cannot make the toy louder than a plain note (kid_master). Everything else (USB, MIDI,
  * the editor, the web installer) works as in the full Felucca.
@@ -46,7 +49,9 @@
 
 #define KID_BAND_Y 184u                 /* the band at the bottom (the name, the note, a knob's word) */
 #define KID_GROUND 182                  /* the friend stands here */
-#define KID_VOL_BYTE (favorites.factory[15][26])   /* the VOLUME level, ^ 6 (0 = 6, the default; settings_persist.c) */
+#define KID_VOL_BYTE (favorites.factory[15][26])   /* the VOLUME level, ^ 6 (0 = 6, the default; settings_persist.c), in
+                                                    * bits 0..6; bit 7: the look-alikes hidden (KID_LOOKALIKE) */
+#define KID_HIDE_BIT 0x80u
 #define KID_VOL_DEF 6u
 #define KID_VOL_HOLD_MS 1000u           /* HOME held this long opens the VOLUME (then OCT- / OCT+) */
 #define KID_LIM_X2 30u                  /* the limiter's ceiling is song.master_q12 * 15 (a plain chord over the beat peaks
@@ -58,7 +63,8 @@ static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4
 #define KID_HELLO_MS 4000u              /* the hello at power-up, at most this long (any key or knob ends it) */
 #define KID_SLEEP_MS 3000u              /* SLEEPY: winds down, dozes, then wakes up by itself after this */
 
-enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_COUNT };
+enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_CLOUDS, KS_SNOW, KS_LEAVES, KS_DESERT,
+       KS_COUNT };
 enum { KB_DANCE, KB_MARCH, KB_SPOOKY, KB_ROCK, KB_DISCO, KB_HIPHOP, KB_TRAIN, KB_SAMBA, KB_REGGAE, KB_LULLABY,
        KB_HOEDOWN, KB_COUNT };
 
@@ -73,7 +79,21 @@ typedef struct {
     uint8_t glide;                      /* P_GLIDE: notes slide into each other, 0 none */
     uint8_t dist;                       /* P_DIST: its own drive (a growl), 0 the preset's */
     uint8_t kit;                        /* DRUM: its KIT + 1 (eng_drum.c DK_*: 5 = 80, 6 = 10, 7 = 66, 8 = 55), 0 STD */
+    const int16_t *tw;                  /* its own tweaks on the preset: parameter, value, .., -1; 0 none */
 } kid_sound_t;
+
+/* the Prophet-style friends' tweaks: the Sequential Prophet-5's classic sounds (its brass, sync lead, strings, bass,
+ * bells, clav and leads), made with Felucca's own engines and presets (Melodee's PROPHET engine was the nudge) */
+static const int16_t TW_ELEPHANT[] = {P_E1, 9, P_E4, 36, P_E5, 22, P_ED_FLT, 52, P_ATK, 24, P_DEC, 72, P_SUS, 88, -1};
+static const int16_t TW_RACECAR[] = {P_E1, 4, P_ATK, 30, P_DEC, 80, P_SUS, 90,   /* the sync sweep: the envelope */
+                                     P_M1SRC, MS_ENV, P_M1DST, MD_E1 + 1, P_M1AMT, 22, -1};   /* raises osc 2 */
+static const int16_t TW_JELLYFISH[] = {P_ATK, 50, P_E4, 64, -1};
+static const int16_t TW_BEAR[] = {P_E0, 0, P_E1, 7, P_E2, 64, P_E4, 40, P_E5, 40, P_E6, 25, P_ED_FLT, 50,
+                                  P_DEC, 58, P_SUS, 45, -1};
+static const int16_t TW_SNOWMAN[] = {P_E0, 12, P_E1, 17, P_E4, 0, P_E5, 110, P_DEC, 95, P_REL, 85, -1};
+static const int16_t TW_CRAB[] = {P_E0, 1, P_E1, 0, P_E4, 50, P_E5, 45, P_ED_FLT, 55, P_DEC, 72, P_REL, 36, -1};
+static const int16_t TW_WOLF[] = {P_E4, 34, P_E5, 55, P_ED_FLT, 40, P_ATK, 55, P_SUS, 110, P_REL, 60, -1};
+static const int16_t TW_CAMEL[] = {P_E1, 22, P_E4, 62, P_E5, 18, P_E6, 25, P_ATK, 8, -1};
 static const kid_sound_t KID_SOUND[KID_N] = {
     {12, "TINE EP", 97, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
     {7, "SOFT FLUTE", 104, KS_HEARTS, KB_DISCO},      /* PINK DUCKY: WHEEL */
@@ -127,6 +147,15 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {10, "DRUM KIT", 105, KS_FLOWERS, KB_MARCH, 0, 0, 0, 8},     /* TOY DRUM: the 55 kit, small and tight */
     {10, "DRUM KIT", 101, KS_HEARTS, KB_SAMBA, 0, 0, 0, 7},       /* BONGO: the 66 kit, congas */
     {10, "DRUM KIT", 106, KS_STARS, KB_ROCK, 0, 0, 0, 6},        /* MONKEY: the 10 kit, a cymbal on the bell */
+    /* Prophet-style (TW_*) */
+    {0, "BRASS", 100, KS_DESERT, KB_MARCH, 0, 0, 0, 0, TW_ELEPHANT},      /* ELEPHANT: poly brass, a trumpet */
+    {6, "SYNC LEAD", 96, KS_CLOUDS, KB_ROCK, 0, 8, 0, 0, TW_RACECAR},    /* RACE CAR: the sync sweep, zoom */
+    {0, "STRINGS", 93, KS_BUBBLES, KB_LULLABY, 3, 0, 0, 0, TW_JELLYFISH},   /* JELLYFISH: strings, floating */
+    {0, "SQR BASS", 118, KS_LEAVES, KB_HIPHOP, 0, 0, 0, 0, TW_BEAR},     /* BEAR: a punchy saw bass */
+    {6, "RING BELL", 101, KS_SNOW, KB_DISCO, 0, 0, 0, 0, TW_SNOWMAN},    /* SNOWMAN: glassy bells (ring, like poly-mod) */
+    {0, "PLUCK", 117, KS_BUBBLES, KB_REGGAE, 0, 0, 0, 0, TW_CRAB},       /* CRAB: a snappy clav */
+    {0, "SAW LEAD", 97, KS_STARS, KB_SPOOKY, 10, 30, 0, 0, TW_WOLF},     /* WOLF: a howl, swelling and sliding */
+    {0, "SAW LEAD", 96, KS_DESERT, KB_TRAIN, 5, 18, 0, 0, TW_CAMEL},     /* CAMEL: a big, loping lead */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -226,7 +255,8 @@ static int32_t kid_glyph_of(char c)
 static const int8_t KID_SIN[32] = {0, 25, 49, 71, 90, 106, 117, 125, 127, 125, 117, 106, 90, 71, 49, 25,
                                    0, -25, -49, -71, -90, -106, -117, -125, -127, -125, -117, -106, -90, -71, -49, -25};
 
-enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SPARKLE, KH_BEAT, KH_VOLUME, KH_NEWSONG, KH_SONG };
+enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SPARKLE, KH_BEAT, KH_VOLUME, KH_NEWSONG, KH_SONG,
+       KH_LOOK };
 enum { KB_NAME, KB_NOTE, KB_HINT, KB_CHORD };
 /* ALGORITHM: how the keys play (kid_mode_set). CHOIR: three friends sing a chord; STRUM: an Omnichord (seq.c
  * kb_strum_map); GUESS: an ear game; FOLLOW: songs to learn, the next key lit */
@@ -303,6 +333,40 @@ static struct {
     uint8_t hop_fr;                     /* the friend hopping along (the playing column's) */
 } kw = {.col = -1};
 
+/* the friends drawn after characters from TV and films (original drawings, but a parent may not want them): the
+ * grown-ups' LOOK-ALIKES hides them (kid_look_toggle) */
+static const uint8_t KID_LOOKALIKE[] = {
+    8, 21,                              /* BLUE PUP, RED PUP */
+    9, 10,                              /* RED MONSTER, BLUE MONSTER */
+    14, 23,                             /* WEB HERO, SLIMY */
+    41, 42, 43, 45,                     /* SKELETON, COWBOY, COWGIRL, SPACE HERO */
+};
+
+static int kid_fr_ok(uint32_t fr)       /* friend fr may be picked now */
+{
+    uint32_t i;
+    if (!(KID_VOL_BYTE & KID_HIDE_BIT))
+        return 1;
+    for (i = 0; i < sizeof KID_LOOKALIKE; i++)
+        if (KID_LOOKALIKE[i] == fr % KID_N)
+            return 0;
+    return 1;
+}
+
+static uint32_t kid_fr_step(uint32_t fr, int32_t d)   /* the next friend that may be picked, d = 1 / -1 */
+{
+    uint32_t i;
+    for (i = 0; i < KID_N; i++) {
+        fr = (uint32_t)(((int32_t)(fr % KID_N) + (d > 0 ? 1 : (int32_t)KID_N - 1)) % (int32_t)KID_N);
+        if (kid_fr_ok(fr))
+            break;
+    }
+    return fr;
+}
+
+static void kw_hide_band(void);
+static void kw_stamp(uint32_t fr);
+
 /* ---------------------------------------------------------------- sound */
 static void kid_knobs(void)                       /* the knobs' state into the friend's track (track 1) */
 {
@@ -347,6 +411,8 @@ static void kid_sound_to(track_t *t, uint32_t fr)
     if (s->kit)
         t->p[P_E0] = (int16_t)(s->kit - 1u);
     t->p[P_LD_PIT] = s->vib;
+    for (i = 0; s->tw && s->tw[i] >= 0; i += 2)
+        t->p[s->tw[i]] = s->tw[i + 1];
 }
 
 static void kid_sound(void)
@@ -402,6 +468,8 @@ static void kid_beat_load(void)
 static void kid_friend(uint32_t f)
 {
     kid.fr = (uint8_t)(f % KID_N);
+    if (!kid_fr_ok(kid.fr))
+        kid.fr = (uint8_t)kid_fr_step(kid.fr, 1);
     kid_sound();
     kid.scene = KID_SOUND[kid.fr].sky;
     if (kid.beat != KID_SOUND[kid.fr].beat) {
@@ -431,7 +499,7 @@ static void kid_fx_set(uint32_t want)
 /* the grown-ups' VOLUME, 1 .. 8 */
 static uint32_t kid_vol_level(void)
 {
-    uint32_t l = (uint32_t)KID_VOL_BYTE ^ 6u;
+    uint32_t l = ((uint32_t)KID_VOL_BYTE & 0x7Fu) ^ 6u;
     return l >= 1u && l <= 8u ? l : KID_VOL_DEF;
 }
 
@@ -510,9 +578,32 @@ static void kid_size(int32_t d)
 static void kid_vol_step(int32_t d)
 {
     uint32_t l = (uint32_t)clamp((int32_t)kid_vol_level() + d, 1, 8);
-    KID_VOL_BYTE = (uint8_t)(l ^ 6u);
+    KID_VOL_BYTE = (uint8_t)((l ^ 6u) | (KID_VOL_BYTE & KID_HIDE_BIT));
     settings_save();
     kid_hint(KH_VOLUME);
+}
+
+/* the grown-ups' LOOK-ALIKES (PRESETS with HOME held 1 s, left hides, right shows; u/ReallyLongLake's idea): the
+ * friends drawn after characters from TV and films hidden or shown, kept over power-off. Hidden, PRESETS, HOME's
+ * surprise and WRITE's stamp pass them by */
+static void kid_look_set(int hide)
+{
+    if (!(KID_VOL_BYTE & KID_HIDE_BIT) != !hide) {
+        KID_VOL_BYTE ^= KID_HIDE_BIT;
+        settings_save();
+    }
+    if (!kid_fr_ok(kid.fr)) {
+        if (kw.on) {
+            kid.fr = (uint8_t)kid_fr_step(kid.fr, 1);
+            kw_hide_band();
+            kw_stamp(kid.fr);
+        } else {
+            kid_friend(kid_fr_step(kid.fr, 1));
+        }
+    } else if (kw.on) {
+        kw_hide_band();
+    }
+    kid_hint(KH_LOOK);
 }
 
 /* the staff gets the keys pressed now (a bit a key: key k plays MIDI 53 + k, F3 .. G5 at OCT 0), with a chord's
@@ -612,6 +703,8 @@ static void kw_pack(void)
         kw_bits_put(&at, (((a >> 5) % 3u * 3u + (b >> 5) % 3u) * 28u + (a & 31u)) * 28u + (b & 31u), 13);
     }
 }
+
+_Static_assert(KID_N <= 62, "WRITE keeps a band friend in 6 bits (kw_pack): at most 62 friends");
 
 static void kw_unpack(void)
 {
@@ -732,6 +825,28 @@ static void kw_stamp(uint32_t fr)
     kw_changed();
 }
 
+/* the band's friends that are hidden (LOOK-ALIKES) give way to the next ones shown: their notes stay, in a new voice */
+static void kw_hide_band(void)
+{
+    uint32_t s, k;
+    for (s = 0; s < 3u; s++)
+        if (kw.band[s] != 0xFFu && !kid_fr_ok(kw.band[s])) {
+            uint32_t f = kid_fr_step(kw.band[s], 1);
+            for (k = 0; k < 3u; k++)                              /* (one a track: past the band's others) */
+                if (kw.band[k] == f && k != s) {
+                    f = kid_fr_step(f, 1);
+                    k = (uint32_t)-1;
+                }
+            kw.band[s] = (uint8_t)f;
+            if (kw.on) {
+                kw_track_sound(s);
+                kw_changed();
+            } else {
+                kw.dirty = 1;                                     /* (kw_enter writes the song into the tracks) */
+            }
+        }
+}
+
 static void kw_enter(void)
 {
     uint32_t s;
@@ -744,6 +859,7 @@ static void kw_enter(void)
             song.g[G_BPM] = bpm;                                  /* (a new song: the tempo she had) */
         kw.loaded = 1;
     }
+    kw_hide_band();
     kw.on = 1;
     kb_strum = kb_accord = 0;
     kw.col = -1;
@@ -1172,13 +1288,16 @@ static void kid_input(void)
         }
         kid_game(lo);
     }
-    if ((s = panel_enc(EN_PRESET)) != 0) {
+    if ((s = panel_enc(EN_PRESET)) != 0 && kid.vol_open) {   /* HOME held 1 s: the grown-ups' LOOK-ALIKES */
+        any = 1u;
+        kid_look_set(s < 0);
+    } else if (s != 0) {
         any = 1u;
         if (kw.on) {                              /* WRITE: the friend she writes with */
-            kid.fr = (uint8_t)(((int32_t)kid.fr + (s > 0 ? 1 : (int32_t)KID_N - 1)) % (int32_t)KID_N);
+            kid.fr = (uint8_t)kid_fr_step(kid.fr, s);
             kw_stamp(kid.fr);
         } else {
-            kid_friend((uint32_t)((int32_t)kid.fr + (s > 0 ? 1 : (int32_t)KID_N - 1)));
+            kid_friend(kid_fr_step(kid.fr, s));
         }
     }
     if ((s = panel_enc(EN_ALGO)) != 0 && !kw.on) {   /* how the keys play: a step a turn */
@@ -1362,7 +1481,10 @@ static void kid_frame_setup(uint32_t now)
     static const uint16_t NIGHT_T = RGB(18, 22, 70), NIGHT_B = RGB(96, 60, 150);
     uint32_t y, k, ne = kid.echo ? 1u + (kid.echo - 1u) / 3u : 0u, n = 0, fx = kid.fx;
     int32_t s = KID_SIZES[clamp(kid.oct + 2, 0, 4)], h, jx = 0, sway = kid_sway(now);
-    uint16_t top = kid_mix(DAY_T, NIGHT_T, kid.night * 32u), bot = kid_mix(DAY_B, NIGHT_B, kid.night * 32u);
+    uint16_t dt = kid.scene == KS_DESERT ? RGB(255, 156, 110) : kid.scene == KS_SNOW ? RGB(168, 204, 240) : DAY_T;
+    uint16_t db = kid.scene == KS_DESERT ? RGB(255, 222, 150) : kid.scene == KS_SNOW ? RGB(236, 242, 252) : DAY_B;
+    uint16_t top = kid_mix(dt, NIGHT_T, kid.night * 32u), bot = kid_mix(db, NIGHT_B, kid.night * 32u);   /* (the desert:
+                                                  * a sunset sky; snow: a pale one) */
     const uint16_t *pal = KID_PAL[kid.fr % KID_N];
     kid_inst_t tmp[6];
     kf.t = now;
@@ -1581,11 +1703,11 @@ static uint32_t kid_play_band(uint32_t now)
 static uint32_t kid_band_setup(uint32_t now)
 {
     uint32_t sig, len, w;
-    int vol = kid.hint == KH_VOLUME && now - kid.hint_ms < 1500u;     /* (the grown-ups' VOLUME comes before all) */
+    int vol = (kid.hint == KH_VOLUME || kid.hint == KH_LOOK) && now - kid.hint_ms < 1500u;     /* (the grown-ups' VOLUME comes before all) */
     int hint = kid.hint != KH_NONE && now - kid.hint_ms < 1500u;
     kf.meter = -1;
     kf.ol = 2;
-    if (kw.on && !(hint && (kid.hint == KH_SPEED || kid.hint == KH_NIGHT || kid.hint == KH_VOLUME))) {
+    if (kw.on && !(hint && (kid.hint == KH_SPEED || kid.hint == KH_NIGHT || kid.hint == KH_VOLUME || kid.hint == KH_LOOK))) {
         /* WRITE: the friend she writes with, and a word */
         kf.band = KB_NAME;
         kf.txt = hint && kid.hint == KH_BEAT ? (kw.beat ? KID_BEATS[(kw.beat - 1u) % KB_COUNT].name : "NO BEAT") :
@@ -1630,7 +1752,7 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.bg2 = kid_mix(kf.bg, RGB(0, 0, 0), 60u);
         sig = 0x400u | kid.fxk;
     } else if (kid.hint != KH_NONE && now - kid.hint_ms < 1500u) {
-        static const char *const WORD[] = {"", "", "DAY", "ECHO", "WIGGLE", "", "", "SPARKLE", "", "VOLUME", "", ""};
+        static const char *const WORD[] = {"", "", "DAY", "ECHO", "WIGGLE", "", "", "SPARKLE", "", "VOLUME", "", "", ""};
         int32_t v = 0;
         kf.band = KB_HINT;
         kf.txt = WORD[kid.hint];
@@ -1648,10 +1770,11 @@ static uint32_t kid_band_setup(uint32_t now)
         case KH_BEAT: kf.txt = KID_BEATS[kid.beat % KB_COUNT].name; v = -1; break;
         case KH_VOLUME: v = (int32_t)kid_vol_level(); break;
         case KH_SONG: kf.txt = KID_SONGS[kid.f_song % KID_NSONGS].name; v = -1; break;
+        case KH_LOOK: kf.txt = KID_VOL_BYTE & KID_HIDE_BIT ? "LOOK-ALIKES OFF" : "LOOK-ALIKES ON"; v = -1; break;
         default: break;
         }
         kf.meter = (int8_t)clamp(v, -1, 8);
-        kf.bt.sc = 3;
+        kf.bt.sc = kid.hint == KH_LOOK ? 2 : 3;
         kf.ink = KID_WHITE;
         kf.bg = RGB(150, 110, 230);
         kf.bg2 = RGB(120, 84, 200);
@@ -1859,6 +1982,104 @@ static int32_t kid_scene_px(uint32_t scene, int32_t x, int32_t y)   /* the scene
             return KID_RAINBOW[(h >> 8) % 7u == 2u ? 6u : (h >> 8) % 7u];
         if (dx == 0 && dy > 0 && dy < 14)
             return RGB(36, 130, 64);
+        break;
+    }
+    case KS_CLOUDS: {                                             /* puffy clouds, drifting by */
+        int32_t xx = x + (int32_t)(t / 70u), cx = xx / 96, cy = y / 56, bx, by, k;
+        if (y >= 150)
+            break;
+        h = kid_hash((uint32_t)cx + 41u, (uint32_t)cy);
+        if ((h & 3u) == 0u)
+            break;
+        bx = cx * 96 + 30 + (int32_t)(h % 30u);
+        by = cy * 56 + 24 + (int32_t)((h >> 6) % 14u);
+        for (k = -1; k <= 1; k++) {                               /* three puffs and a flat bottom */
+            int32_t r = k ? 11 : 15, dx = xx - (bx + k * 15), dy = y - (by - (k ? 0 : 5));
+            if (dx * dx + dy * dy <= r * r && y <= by + 8)
+                return y >= by + 5 ? kid_mix(KID_WHITE, kf.sky[y], 70u) : KID_WHITE;
+        }
+        break;
+    }
+    case KS_SNOW: {                                               /* snowy hills, little pines, and falling snow */
+        int32_t hy = 150 + KID_SIN[((x + 20) / 9) & 31] * 7 / 127, yy, cx, cy, fx, fy, dx, dy, tx;
+        cx = x / 44;                                              /* a pine on some of the hills */
+        h = kid_hash((uint32_t)cx + 53u, 9u);
+        tx = cx * 44 + 10 + (int32_t)(h % 24u);
+        if ((h >> 5) % 3u != 0u) {
+            int32_t ty = 150 + KID_SIN[((tx + 20) / 9) & 31] * 7 / 127, top = ty - 30, w;
+            if (y >= top && y < ty - 4) {
+                w = (y - top) * 9 / 26 + ((y - top) % 9) / 2;
+                if (x - tx <= w && tx - x <= w)
+                    return y < top + 6 || (y - top) % 9 == 0 ? KID_WHITE : RGB(36, 130, 64);
+            }
+            if (y >= ty - 4 && y < ty + 2 && x - tx <= 1 && tx - x <= 1)
+                return RGB(120, 76, 40);
+        }
+        if (y >= hy)
+            return y < hy + 2 ? RGB(186, 210, 240) : kid_mix(KID_WHITE, RGB(200, 222, 248), (uint32_t)(y - hy) * 5u);
+        yy = y - (int32_t)(t / 38u) + (1 << 26);                  /* the flakes fall: the field moves down */
+        cx = x / 22;
+        cy = yy / 22;
+        h = kid_hash((uint32_t)cx + 61u, (uint32_t)cy);
+        if ((h & 1u) == 0u)
+            break;
+        fx = cx * 22 + 4 + (int32_t)(h % 14u) + KID_SIN[(cy * 7 + (int32_t)(t / 110u)) & 31] * 3 / 127;
+        fy = cy * 22 + 4 + (int32_t)((h >> 5) % 14u);
+        dx = x - fx < 0 ? fx - x : x - fx;
+        dy = yy - fy < 0 ? fy - yy : yy - fy;
+        if ((h >> 10) & 1u ? (dx + dy <= 1) : ((dx == 0 && dy <= 2) || (dy == 0 && dx <= 2) || (dx == dy && dx == 1)))
+            return KID_WHITE;
+        break;
+    }
+    case KS_LEAVES: {                                             /* autumn hills, and leaves drifting down */
+        static const uint8_t LEAF[7] = {0x08, 0x1C, 0x3E, 0x7F, 0x3E, 0x1C, 0x08};
+        static const uint16_t LC[4] = {RGB(236, 92, 36), RGB(255, 176, 30), RGB(200, 52, 40), RGB(170, 110, 40)};
+        int32_t hy = 152 + KID_SIN[((x + 60) / 8) & 31] * 6 / 127, yy, cx, cy, lx, ly;
+        if (y >= hy)
+            return y < hy + 3 ? RGB(150, 120, 40) : kid_mix(RGB(206, 170, 70), RGB(150, 140, 60), (uint32_t)(y - hy) * 6u);
+        yy = y - (int32_t)(t / 30u) + (1 << 26);                  /* (twice size: a leaf is 14 x 18) */
+        lx = x + KID_SIN[((yy / 40) * 5 + (int32_t)(t / 140u)) & 31] * 6 / 127 + 40;   /* (swaying as it falls) */
+        cx = lx / 40;
+        cy = yy / 40;
+        h = kid_hash((uint32_t)cx + 71u, (uint32_t)cy);
+        if ((h & 3u) == 0u)
+            break;
+        lx = (lx - cx * 40 - 4 - (int32_t)(h % 20u)) >> 1;
+        ly = (yy - cy * 40 - 4 - (int32_t)((h >> 5) % 18u)) >> 1;
+        if (lx >= 0 && lx < 7 && ly >= 0 && ly < 9) {
+            if (ly >= 7)                                           /* the stem */
+                return lx == 3 ? RGB(120, 76, 40) : -1;
+            if ((LEAF[ly] >> (6 - lx)) & 1u)
+                return lx == 3 && ly >= 2 ? kid_mix(LC[(h >> 9) & 3u], RGB(0, 0, 0), 50u) : LC[(h >> 9) & 3u];
+        }
+        break;
+    }
+    case KS_DESERT: {                                             /* mesas far off, dunes, and cacti */
+        int32_t dy0 = 156 + KID_SIN[((x + 40) / 10) & 31] * 6 / 127, cx, tx, ty, dx, ry;
+        cx = x / 70;                                              /* a cactus on some of the dunes */
+        h = kid_hash((uint32_t)cx + 83u, 3u);
+        tx = cx * 70 + 14 + (int32_t)(h % 40u);
+        ty = 156 + KID_SIN[((tx + 40) / 10) & 31] * 6 / 127;
+        if ((h >> 6) % 3u != 0u) {
+            dx = x - tx;
+            ry = ty - y;
+            if ((dx >= -3 && dx <= 3 && ry >= 0 && ry < 34) ||                        /* the trunk, two arms */
+                (dx >= -11 && dx <= -8 && ry >= 14 && ry < 26) || (dx >= -11 && dx <= -3 && ry >= 14 && ry < 17) ||
+                (dx >= 8 && dx <= 11 && ry >= 18 && ry < 28) || (dx >= 3 && dx <= 11 && ry >= 18 && ry < 21))
+                return dx == -1 || dx == 2 || dx == -10 || dx == 10 ? RGB(46, 140, 70) : RGB(70, 180, 90);
+            if (dx * dx + (ry - 34) * (ry - 34) <= 9 && ry >= 34)
+                return RGB(70, 180, 90);
+        }
+        if (y >= dy0)
+            return y < dy0 + 2 ? RGB(214, 150, 70) : kid_mix(RGB(250, 200, 110), RGB(232, 170, 90), (uint32_t)(y - dy0) * 6u);
+        cx = x / 120;                                             /* the mesas: flat tops, steep sides */
+        h = kid_hash((uint32_t)cx + 97u, 1u);
+        {
+            int32_t mx = cx * 120 + 20 + (int32_t)(h % 40u), mw = 22 + (int32_t)((h >> 6) % 20u), mt = 112 + (int32_t)((h >> 11) % 18u);
+            int32_t side = (y - mt) / 2;
+            if (y >= mt && x >= mx - side && x <= mx + mw + side)
+                return kid_mix(RGB(206, 110, 80), kf.sky[y], 60u + kid.night * 12u);
+        }
         break;
     }
     default:

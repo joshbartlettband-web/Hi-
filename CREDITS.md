@@ -22,9 +22,16 @@ Thank you to the people who suggested these on r/MVaveFM1:
 | u/nutty_cartoon | An ear game: a note plays, find the key | **GUESS** (ALGORITHM), gentle: TRY AGAIN with no sound of its own |
 | u/nutty_cartoon | Simple songs to learn by following lit keys | **FOLLOW** (ALGORITHM): eight old songs, the next key lit |
 | u/theskyisfalling1 | Show the note value on the staff by how long a key is held, so kids learn rhythm too | The staff writes sixteenths, eighths, quarters, halves and wholes, and a held note grows while the key is down |
+| u/ReallyLongLake | A secret setting that turns off the characters based on TV and film ones | **LOOK-ALIKES** (HOME held 1 s, then PRESETS left / right): hides or shows them, kept over power-off |
 
 The characters are original drawings in the spirit of the suggestions, not copies. They are credited on the website and on the
 installer page too.
+
+## Melodee
+
+The eight Prophet-style friends (Elephant to Camel) were nudged by [Melodee](https://github.com/keremimo/melodee), Kerem Kilic's
+Felucca fork with a PROPHET engine for Sequential Prophet-5 programs. No Melodee code and none of Sequential's programs are used:
+the sounds are Felucca's own engines, tweaked toward the Prophet's classic patches.
 
 ## Also
 

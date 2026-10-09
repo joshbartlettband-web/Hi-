@@ -12,7 +12,7 @@ at the next power-on.
 | Control | What happens |
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
-| PRESETS | Next or previous friend (50 of them, each with its own picture, sound, home sky and favorite beat). |
+| PRESETS | Next or previous friend (58 of them, each with its own picture, sound, home sky and favorite beat). |
 | ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, ACCORDION, GUESS, FOLLOW. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
@@ -29,10 +29,11 @@ at the next power-on.
 | PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
 | SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY, HOEDOWN. |
 | ARP | Sparkle: a held key plays up and down by itself. |
-| REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti), with confetti. |
+| REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti, clouds, snow, autumn leaves, desert), with confetti. |
 | HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
 | SAVE | WRITE: she writes her own song (below). SAVE again goes back to playing. |
 | HOME held 1 s, then OCT- / OCT+ | The grown-ups' VOLUME: the most the MASTER knob can give (below). |
+| HOME held 1 s, then PRESETS | The grown-ups' LOOK-ALIKES: left hides the friends drawn after TV and film characters, right shows them (below). |
 | MASTER | Volume, up to the VOLUME the grown-ups chose (about half, unless changed). |
 
 ## ALGORITHM: how the keys play
@@ -114,6 +115,15 @@ Two guards, both in `kid.c` (`kid_master`):
   MASTER level it is at, never above the old fixed ceiling, and it catches every peak at once), a little above what a plain chord over a beat peaks at. So an effect that makes the sound louder
   (GIANT, FREEZE, echo, a chord on a beat) is held to the level she was already hearing. Outside Rainbow mode the limiter is as it was.
 
+## Look-alikes, for grown-ups
+
+Some friends are drawn after characters from TV and films: Blue Pup and Red Pup, Red Monster and Blue Monster, Web Hero, Slimy,
+Skeleton, Cowboy, Cowgirl and Space Hero. They are original drawings, but a parent may not want them (an idea from u/ReallyLongLake on
+r/MVaveFM1). Hold **HOME for 1 second** and, while it is still down, turn **PRESETS left**: the band says LOOK-ALIKES OFF, and from
+then on PRESETS, HOME's surprise friend and WRITE skip them (a song written with one of them plays it with the next friend instead).
+Turn **PRESETS right** the same way to bring them back. The choice is kept when the FM-1 is switched off (the top bit of the VOLUME's
+byte). The list is `KID_LOOKALIKE` in `firmware/src/kid.c`.
+
 Note colors follow the colored tubes and bells used in many early music classes: C red, D orange,
 E yellow, F green, G teal, A purple, B pink. Sharps get the color in between.
 
@@ -127,6 +137,12 @@ T-Rex (a growly bass), Skeleton (a theremin: a sine with a wide vibrato that sli
 plucks, and their own beat, HOEDOWN) Vacuum (the rave "hoover" sound, a joke for the grown-ups) and Space Hero (three buzzy saws that swoop into each note). See CREDITS.md.
 Then four more drum kits, every key a different drum like Scissors, each one of Felucca's model kits: Beat Bot (the 80 kit, a
 classic drum machine), Toy Drum (the 55 kit), Bongo (the 66 kit, congas) and Monkey (the 10 kit, a cymbal on the bell).
+Then eight with the Sequential Prophet-5's classic sounds, made with Felucca's own engines (the nudge was Melodee's PROPHET
+engine, another Felucca fork; none of Sequential's own programs are used): Elephant (poly brass), Race Car (the sync lead's sweep:
+TRIO's SYNC with the envelope moving the second oscillator), Jellyfish (strings), Bear (a punchy saw bass), Snowman (glassy ring-mod
+bells, like the Prophet's Poly-Mod), Crab (a snappy clav), Wolf (a howl that swells and slides) and Camel (a big, loping lead). Their
+tweaks on top of the presets are the `TW_*` lists in `kid.c`. Four new skies came with them: clouds, snow, autumn leaves and a
+desert at sunset.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
@@ -142,7 +158,7 @@ repository and its website are public.
 
 ## Where it lives
 
-- `tools/gen_kid_art.py`: the 50 pictures, drawn from shapes on a 48 x 48 grid and outlined
+- `tools/gen_kid_art.py`: the 58 pictures, drawn from shapes on a 48 x 48 grid and outlined
   automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
   sheet to look at. The build runs it (`tools/build.py` generate).
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main

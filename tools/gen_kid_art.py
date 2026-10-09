@@ -899,6 +899,135 @@ def icon_follow():                                               # piano keys, o
     return p.done()
 
 
+# the Prophet-style friends (sounds after the Sequential Prophet-5's classic patches, made on Felucca's engines)
+def elephant():                                                  # brass: an elephant's trumpet
+    p = Pic()
+    p.ell(9, 22, 7, 11, "grey"); p.ell(39, 22, 7, 11, "grey")    # big ears
+    p.ell(9, 22, 4, 8, "lpink"); p.ell(39, 22, 4, 8, "lpink")
+    p.ball(24, 22, 14, 14, "grey", "dgrey")                      # head
+    p.rect(21, 28, 27, 40, "grey")                               # the trunk, curling up at the end
+    p.ell(26, 41, 5, 3, "grey"); p.ell(31, 38, 3, 3, "grey")
+    for y in (31, 34, 37):                                       # its wrinkles
+        p.line([(22, y), (26, y)], "dgrey", 1)
+    p.px(31, 37, "dgrey")
+    p.poly([(15, 32), (19, 30), (17, 38)], "cream"); p.poly([(33, 32), (29, 30), (31, 38)], "cream")   # tusks
+    p.eye(18, 20, 3); p.eye(30, 20, 3)
+    p.cheek(13, 27); p.cheek(35, 27)
+    for x in (14, 24, 34):                                       # a tuft of hair
+        p.line([(x, 8), (24, 11)], "dgrey", 1)
+    return p.done()
+
+
+def racecar():                                                   # the sync lead's zoom: a race car and its driver, side on
+    p = Pic()                                                    # (no face on the car: that is someone else's film)
+    p.poly([(2, 30), (8, 22), (20, 20), (26, 12), (36, 12), (40, 20), (46, 22), (46, 34), (2, 34)], "teal")
+    p.poly([(28, 14), (35, 14), (38, 20), (25, 20)], "glass")    # the window
+    p.ell(31, 17, 4, 4, "yellow")                                # the driver: a helmet with a visor
+    p.rect(30, 16, 34, 18, "navy"); p.px(33, 16, "white")
+    p.rect(2, 27, 46, 29, "white")                               # a racing stripe
+    p.ell(15, 25, 4, 3, "white"); p.ell(15, 25, 2, 1, "teal")    # a number ring
+    p.rect(42, 14, 46, 16, "navy"); p.rect(43, 16, 44, 22, "navy")   # the spoiler
+    p.rect(2, 24, 4, 26, "yellow")                               # a headlight
+    p.ball(12, 36, 7, 7, "black", "dgrey"); p.ball(36, 36, 7, 7, "black", "dgrey")   # wheels
+    p.ell(12, 36, 3, 3, "silver"); p.ell(36, 36, 3, 3, "silver")
+    return p.done()
+
+
+def jellyfish():                                                 # strings: a slow, floating jellyfish
+    p = Pic()
+    for i, x in enumerate((12, 18, 24, 30, 36)):                 # wavy tentacles
+        dx = 2 if i % 2 else -2
+        p.line([(x, 26), (x + dx, 33), (x, 39), (x + dx, 45)], "pink" if i % 2 else "lpurple", 2)
+    p.pie(24, 26, 18, 180, 360, "lpurple")                       # the bell
+    p.ell(24, 26, 18, 3, "purple")
+    for x in (12, 20, 28, 36):                                   # the frilly hem
+        p.ell(x, 27, 3, 2, "lpurple")
+    p.ell(16, 14, 4, 3, "white")                                 # shine
+    p.eye(18, 20, 3); p.eye(30, 20, 3)
+    p.smile(24, 24, 2)
+    p.cheek(12, 22); p.cheek(36, 22)
+    return p.done()
+
+
+def bear():                                                      # bass: a big, round bear
+    p = Pic()
+    p.ball(10, 10, 6, 6, "brown", "dbrown"); p.ball(38, 10, 6, 6, "brown", "dbrown")   # ears
+    p.ell(10, 10, 3, 3, "tan"); p.ell(38, 10, 3, 3, "tan")
+    p.ball(24, 26, 19, 18, "brown", "dbrown")                    # head
+    p.ell(24, 33, 9, 7, "tan")                                   # muzzle
+    p.ell(24, 29, 4, 3, "black")                                 # nose
+    p.px(23, 28, "white")
+    p.line([(24, 32), (24, 35)], "black", 1)
+    p.smile(24, 36, 3)
+    p.eye(15, 22, 3); p.eye(33, 22, 3)
+    p.cheek(11, 30); p.cheek(37, 30)
+    return p.done()
+
+
+def snowman():                                                   # glassy bells: a snowman
+    p = Pic()
+    p.ball(24, 38, 13, 9, "white", "dwhite")                     # body
+    p.ball(24, 21, 9, 8, "white", "dwhite")                      # head
+    p.rect(15, 11, 33, 13, "black"); p.rect(18, 4, 30, 12, "black")   # a top hat
+    p.rect(18, 9, 30, 10, "red")
+    p.rect(15, 28, 33, 31, "red"); p.rect(28, 29, 32, 37, "red")  # a scarf
+    p.rect(29, 35, 32, 37, "dred")
+    p.eye(20, 19, 2); p.eye(28, 19, 2)
+    p.poly([(23, 22), (25, 21), (33, 24)], "orange")              # a carrot nose
+    p.smile(24, 26, 2)
+    p.ell(24, 35, 1, 1, "black"); p.ell(24, 40, 1, 1, "black")    # coal buttons
+    p.line([(12, 35), (3, 29)], "dbrown", 2); p.line([(36, 35), (45, 29)], "dbrown", 2)   # stick arms
+    return p.done()
+
+
+def crab():                                                      # clav: a snappy crab
+    p = Pic()
+    for x in (8, 13, 35, 40):                                    # legs
+        p.line([(x + (6 if x < 24 else -6), 34), (x, 42)], "dred", 2)
+    p.ball(24, 32, 16, 10, "red", "dred")                        # body
+    p.line([(19, 24), (17, 14)], "dred", 2); p.line([(29, 24), (31, 14)], "dred", 2)   # eye stalks
+    p.eye(17, 12, 3); p.eye(31, 12, 3)
+    p.line([(12, 30), (8, 24)], "dred", 2); p.line([(36, 30), (40, 24)], "dred", 2)   # arms
+    p.ball(7, 20, 5, 5, "red", "dred"); p.ball(41, 20, 5, 5, "red", "dred")   # claws, open
+    p.poly([(3, 14), (7, 19), (2, 19)], ""); p.poly([(45, 14), (41, 19), (46, 19)], "")
+    p.smile(24, 34, 4)
+    p.cheek(15, 33); p.cheek(33, 33)
+    return p.done()
+
+
+def wolf():                                                      # a howl: a wolf, nose to the moon
+    p = Pic()
+    p.poly([(9, 2), (19, 14), (6, 18)], "grey"); p.poly([(39, 2), (29, 14), (42, 18)], "grey")   # ears
+    p.poly([(11, 8), (16, 14), (9, 15)], "lpink"); p.poly([(37, 8), (32, 14), (39, 15)], "lpink")
+    p.ball(24, 26, 17, 15, "grey", "dgrey")                      # head
+    p.poly([(7, 30), (24, 44), (41, 30), (24, 34)], "dwhite")    # a ruff
+    p.ell(24, 33, 9, 7, "cream")                                 # muzzle
+    p.pie(24, 34, 5, 0, 180, "black")                            # howling: an open "ooo"
+    p.ell(24, 36, 2, 1, "hpink")
+    p.ell(24, 28, 3, 2, "black")                                 # nose
+    p.line([(13, 20), (19, 22)], "dgrey", 1); p.line([(35, 20), (29, 22)], "dgrey", 1)
+    p.eye(17, 23, 3); p.eye(31, 23, 3)
+    return p.done()
+
+
+def camel():                                                     # a big, loping lead: a camel
+    p = Pic()
+    p.rect(13, 34, 16, 46, "dtan"); p.rect(19, 34, 22, 46, "dtan")   # legs
+    p.rect(30, 34, 33, 46, "dtan"); p.rect(36, 34, 39, 46, "dtan")
+    p.ball(26, 30, 15, 8, "tan", "dtan")                         # body
+    p.ball(20, 22, 6, 6, "tan", "dtan"); p.ball(32, 22, 6, 6, "tan", "dtan")   # two humps
+    p.rect(30, 26, 33, 32, "red"); p.rect(19, 26, 22, 32, "red")  # a blanket with a stripe
+    p.rect(16, 27, 36, 30, "red"); p.rect(16, 28, 36, 28, "yellow")
+    p.poly([(10, 30), (4, 14), (8, 12), (14, 28)], "tan")        # neck
+    p.ball(8, 10, 6, 5, "tan", "dtan")                           # head
+    p.ell(4, 12, 3, 3, "tan"); p.px(2, 11, "dbrown")             # snout, a nostril
+    p.ell(10, 5, 2, 2, "tan")                                    # an ear
+    p.dot_eye(8, 9)
+    p.smile(5, 14, 1)
+    p.line([(42, 28), (44, 36)], "dtan", 2)                      # tail
+    return p.done()
+
+
 ICONS = [icon_one, icon_choir, icon_strum, icon_accordion, icon_guess, icon_follow]
 
 
@@ -954,6 +1083,14 @@ FRIENDS = [
     ("TOY DRUM", toydrum),
     ("BONGO", bongo),
     ("MONKEY", monkey),
+    ("ELEPHANT", elephant),
+    ("RACE CAR", racecar),
+    ("JELLYFISH", jellyfish),
+    ("BEAR", bear),
+    ("SNOWMAN", snowman),
+    ("CRAB", crab),
+    ("WOLF", wolf),
+    ("CAMEL", camel),
 ]
 
 

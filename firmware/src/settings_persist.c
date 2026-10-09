@@ -45,8 +45,8 @@ static int settings_import(persist_t *p, int n)
     }
     if ((p->favorites.factory[15][27] ^ 3u) > 4u)  /* SCREEN OFF (1.1.5, ui.c ui_scr): stored ^ 3, unknown = 0 (30 MIN) */
         p->favorites.factory[15][27] = 0;
-    if (((p->favorites.factory[15][26] ^ 6u) - 1u) > 7u)   /* Rainbow mode's VOLUME (kid.c): stored ^ 6 = 1 .. 8, unknown = 0 (6) */
-        p->favorites.factory[15][26] = 0;
+    if ((((p->favorites.factory[15][26] & 0x7Fu) ^ 6u) - 1u) > 7u)   /* Rainbow mode's VOLUME (kid.c): stored ^ 6 = 1 .. 8, */
+        p->favorites.factory[15][26] &= 0x80u;                          /* unknown = 0 (6); the top bit: look-alikes hidden */
     p->magic = PERSIST_MAGIC;
     p->palette = palette_to_stored(palette_from_stored(p->palette));
     settings.magic = SETTINGS_MAGIC;

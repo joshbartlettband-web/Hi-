@@ -41,6 +41,7 @@ const shot = (name) => {
   fs.writeFileSync(`${outDir}/kid_${name}.ppm`, Buffer.concat([Buffer.from("P6 240 240 255\n"), b]));
 };
 const WHITE = 0xFFFF;
+const NF = 58;                                                               // the friends (kid_art.h KID_N)
 const KID_Y = (step) => 54 - 3 * step;
 const FXB = [B.FX, B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO];
 
@@ -132,7 +133,7 @@ check("PRESETS: another friend (the band shows its name)", band() !== name0);
 // every friend sounds, and about as loud as the others: loudness (the energy over a phrase, the lows filtered out as the
 // ear hears them, about), not peaks: a pluck and an organ with the same peak are far apart to the ear
 const levels = [], peaks = [];
-for (let f = 0; f < 50; f++) {
+for (let f = 0; f < NF; f++) {
   let e = 0, n = 0, px = 0, py = 0;
   peak = 0;
   for (const k of [12, 14, 16]) {
@@ -150,13 +151,13 @@ for (let f = 0; f < 50; f++) {
   render(400);
 }
 const lo = Math.min(...levels), hi = Math.max(...levels), pmin = Math.min(...peaks), pmax = Math.max(...peaks);
-check(`all 50 friends sound, alike to the ear (within ${(hi - lo).toFixed(1)} dB; peaks ${pmin.toFixed(3)} .. ${pmax.toFixed(3)})`, pmin > 0.04 && hi - lo < 7);
+check(`all ${NF} friends sound, alike to the ear (within ${(hi - lo).toFixed(1)} dB; peaks ${pmin.toFixed(3)} .. ${pmax.toFixed(3)})`, pmin > 0.04 && hi - lo < 7);
 check("MASTER all the way up stays at about half (no friend peaks over 0.3)", pmax < 0.3);
 
 // 3 FRIENDS: every friend sings the whole chord, the mono ones too (their legato is for 1 FRIEND); a drum friend, one drum
 const DRUMS = new Set([12, 46, 47, 48, 49]), thin = [], chordLv = [];
 ex.web_enc(EN.ALGO, 3); render(100);
-for (let f = 0; f < 50; f++) {
+for (let f = 0; f < NF; f++) {
   const fr = ex.web_kid_friend();
   ex.web_keys(1 << 12); render(120);
   const v = ex.web_voices(0);
@@ -318,6 +319,37 @@ check("PLAY again stops it", ex.web_playing() === 0);
   e2.web_master(1023);
   for (let k = 0; k < 400; k++) e2.web_render(128);
   check("kept over a power-off: the next start has the same VOLUME (1024)", e2.web_master_q12() === 1024);
+}
+
+// the grown-ups' LOOK-ALIKES (u/ReallyLongLake): HOME held 1 s and PRESETS left hides the friends drawn after TV and film
+// characters (PRESETS passes them by, kept over a power-off, VOLUME untouched), PRESETS right shows them again
+{
+  const LOOK = new Set([8, 21, 9, 10, 14, 23, 41, 42, 43, 45]), f0 = ex.web_kid_friend();
+  const tour = (e) => { const seen = new Set(); for (let i = 0; i < NF + 10; i++) { e.web_enc(EN.PRESETS, 1); for (let k = 0; k < 140; k++) e.web_render(128); seen.add(e.web_kid_friend()); } return seen; };
+  ex.web_buttons(1 << B.HOME); render(1300);
+  ex.web_enc(EN.PRESETS, -1); render(200);
+  shot("lookalikes");
+  const word = band();
+  ex.web_buttons(0); render(2600);
+  check("HOME held, PRESETS left: the band said so, no friend changed by the turn", word !== band());
+  let seen = tour(ex);
+  check(`hidden: PRESETS visits ${seen.size} friends, none of the look-alikes`, seen.size === NF - LOOK.size && ![...seen].some((f) => LOOK.has(f)));
+  const nor = new Uint8Array(mem.buffer, ex.web_nor(), ex.web_nor_size()).slice();
+  const e3 = (await WebAssembly.instantiate(fs.readFileSync(wasmPath), {})).instance.exports;
+  e3._initialize();
+  new Uint8Array(e3.memory.buffer, e3.web_nor(), e3.web_nor_size()).set(nor);
+  e3.web_boot(); e3.web_master(1023);
+  for (let k = 0; k < 400; k++) e3.web_render(128);
+  e3.web_keys(1); for (let k = 0; k < 40; k++) e3.web_render(128); e3.web_keys(0);
+  seen = tour(e3);
+  check("kept over a power-off, and the VOLUME with it (1024)", ![...seen].some((f) => LOOK.has(f)) && e3.web_master_q12() === 1024);
+  ex.web_buttons(1 << B.HOME); render(1300);
+  ex.web_enc(EN.PRESETS, 1); render(200);
+  ex.web_buttons(0); render(2600);
+  seen = tour(ex);
+  check(`HOME held, PRESETS right: all ${NF} again`, seen.size === NF);
+  for (let i = 0; i < NF && ex.web_kid_friend() !== f0; i++) { ex.web_enc(EN.PRESETS, 1); render(30); }
+  render(1500);
 }
 
 // keys held together: their letters in their colors and the chord's name (u/nutty_cartoon); ALGORITHM's modes:
