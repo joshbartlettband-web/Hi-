@@ -482,6 +482,13 @@ EXPORT uint32_t web_playing(void) { return song.playing; }
 EXPORT int32_t web_lim_t(void) { return lim_t; }
 EXPORT uint32_t web_kid_guess(void) { return kid.g_target; }
 EXPORT uint32_t web_kid_friend(void) { return kid.fr; }
+EXPORT uint32_t web_voices(uint32_t t)                  /* (kid_test.mjs: a track's sounding voices) */
+{
+    uint32_t i, n = 0;
+    for (i = 0; i < NVOICE; i++)
+        n += trk[t % NTRK].v[i].active && trk[t % NTRK].v[i].stage != 4u;
+    return n;
+}
 EXPORT uint32_t web_step(uint32_t t, uint32_t c)        /* (kid_test.mjs: a step's first note, its drum hits << 8) */
 {
     const step_t *s = &trk[t % NTRK].step[c % NSTEP];

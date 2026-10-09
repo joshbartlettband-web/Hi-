@@ -40,7 +40,7 @@ at the next power-on.
 | Setting | What the keys do |
 | --- | --- |
 | 1 FRIEND | Each key plays its note. |
-| 3 FRIENDS | Each key plays a chord that is always in key (C major), and three friends sing. The band shows the chord: its letters in their colors and its name. |
+| 3 FRIENDS | Each key plays a chord that is always in key (C major), and three friends sing. The band shows the chord: its letters in their colors and its name. Friends whose sound is one note at a time (a lead or a bass, like VACUUM or T-REX) sing the whole chord here, and in STRUM and ACCORDION too; in 1 FRIEND they keep their one-note slide. |
 | STRUM | Like an Omnichord (an idea from u/veecheech, after dxsloop's arp mode). A black key picks a chord, the one on the white key just below it: F#: F, G#: G, A#: A minor, C#: C, D#: D minor (C to begin with), and plays its root low. The white keys, left to right, play that chord's notes upward, so a hand drawn across them strums it. The band shows the chord. (Not with the drum friends, whose keys are drums.) |
 | ACCORDION | A black key plays a whole chord while it is held (the same chords as STRUM: F, G, A minor, C, D minor, from F3 up), and the white keys play their own notes, so one hand can play a tune over the chords. The band shows the chord and the staff writes it. |
 | GUESS | An ear game (an idea from u/nutty_cartoon). A friend sings a note and the band shows ?. The right key: YES! and confetti. Another key: TRY AGAIN, with no sound of its own, and the friend sings the note again; after two tries the right key blinks. It starts with C and G and adds a note after three right in a row (C G E D A F B, then high C). PLAY: hear it again. |

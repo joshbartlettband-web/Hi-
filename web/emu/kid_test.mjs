@@ -153,6 +153,24 @@ const lo = Math.min(...levels), hi = Math.max(...levels), pmin = Math.min(...pea
 check(`all 50 friends sound, alike to the ear (within ${(hi - lo).toFixed(1)} dB; peaks ${pmin.toFixed(3)} .. ${pmax.toFixed(3)})`, pmin > 0.04 && hi - lo < 7);
 check("MASTER all the way up stays at about half (no friend peaks over 0.3)", pmax < 0.3);
 
+// 3 FRIENDS: every friend sings the whole chord, the mono ones too (their legato is for 1 FRIEND); a drum friend, one drum
+const DRUMS = new Set([12, 46, 47, 48, 49]), thin = [], chordLv = [];
+ex.web_enc(EN.ALGO, 3); render(100);
+for (let f = 0; f < 50; f++) {
+  const fr = ex.web_kid_friend();
+  ex.web_keys(1 << 12); render(120);
+  const v = ex.web_voices(0);
+  ex.web_keys(0); render(500);
+  if (!DRUMS.has(fr) && v < 3) thin.push(`${fr}:${v}`);
+  ex.web_enc(EN.PRESETS, 1); render(400);
+}
+check(`3 FRIENDS: every friend sings three notes${thin.length ? " (not: " + thin.join(" ") + ")" : ""}`, thin.length === 0);
+ex.web_enc(EN.ALGO, -3); render(100);
+ex.web_keys(1 << 12); render(120);
+const mono1 = ex.web_voices(0);
+ex.web_keys(0); render(500);
+check("1 FRIEND: one note a key (a mono friend keeps its slide)", mono1 >= 1);
+
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(1500);
 check("PLAY: the beat runs", ex.web_playing() === 1);
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(200);

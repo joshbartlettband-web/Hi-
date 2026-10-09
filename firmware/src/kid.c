@@ -277,6 +277,7 @@ static struct {
     uint8_t bass_ready;
     int8_t key;                         /* the key whose letter shows, -1 none */
     uint8_t rev0, dly0;                 /* the friend's sound's own sends (the echo adds to them) */
+    uint8_t voice0;                     /* the friend's sound's own voice mode (a mono friend: LEGATO) */
     uint8_t full;                       /* draw everything next frame */
     uint32_t hint_ms, key_ms, hop_ms, party_ms, exit_ms, play_ms, bg_ms;
     uint32_t hello_ms;                  /* the power-up hello since (fm1_ms | 1), 0 none */
@@ -314,6 +315,9 @@ static void kid_knobs(void)                       /* the knobs' state into the f
     t->p[P_LD_PIT] = (int16_t)clamp(KID_SOUND[kid.fr % KID_N].vib + kid.wiggle * 5, -64, 63);
     t->p[P_LRATE] = 74;
     t->p[P_CHRD] = kid.chord && !drum_track(t) ? CH_DIA3 : CH_OFF;   /* (a drum friend: one drum a key) */
+    t->p[P_VOICE] = kid.chord || kid.mode == KM_STRUM || kid.mode == KM_ACCORD ? V_POLY : kid.voice0;   /* (a mono
+                                                  * friend sings one note at a time: its chords, strums and squeezes
+                                                  * need its voices; 1 FRIEND keeps its legato slide) */
     t->p[P_LEVEL] = (int16_t)clamp(KID_SOUND[kid.fr % KID_N].level - (t->p[P_CHRD] ? 5 : 0), 0, 127);   /* (three voices:
                                                   * 2.5 dB down, about as loud as one: the loudness audit, RAINBOW.md) */
     t->p[P_AMODE] = kid.arp ? 3 : 0;              /* UPDN */
@@ -351,6 +355,7 @@ static void kid_sound(void)
     kid_sound_to(t, kid.fr);
     kid.rev0 = (uint8_t)t->p[P_REV];
     kid.dly0 = (uint8_t)t->p[P_DLY];
+    kid.voice0 = (uint8_t)t->p[P_VOICE];
     kid_knobs();
 }
 
