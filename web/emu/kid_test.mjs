@@ -290,6 +290,62 @@ check("PLAY again stops it", ex.web_playing() === 0);
   check("kept over a power-off: the next start has the same VOLUME (1024)", e2.web_master_q12() === 1024);
 }
 
+// keys held together: their letters in their colors and the chord's name (u/nutty_cartoon); ALGORITHM's modes:
+// STRUM (u/veecheech: black keys pick a chord, white keys strum it), GUESS (an ear game, gentle) and FOLLOW (songs to learn,
+// the next key lit) (u/nutty_cartoon)
+{
+  const col = (r, g, b) => ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+  const C_RED = col(236, 40, 52), E_YEL = col(255, 218, 36), G_TEAL = col(30, 176, 150), B_PINK = col(242, 86, 176), D_OR = col(255, 140, 26);
+  const tapb = (b) => { ex.web_buttons(1 << b); render(60); ex.web_buttons(0); render(250); };
+  const algo = (d) => { ex.web_enc(EN.ALGO, d); render(200); };
+  render(7000);
+  ex.web_keys((1 << 7) | (1 << 11) | (1 << 14)); render(300);
+  shot("chord");
+  check("C, E and G together: their letters in their colors (C red, E yellow, G teal)", bandHas(C_RED) && bandHas(E_YEL) && bandHas(G_TEAL));
+  const named = band();
+  ex.web_keys(0); render(1200);
+  ex.web_keys((1 << 9) | (1 << 12) | (1 << 16)); render(300);     // D F A: D minor
+  check("another chord, another name (D F A)", band() !== named && bandHas(D_OR));
+  ex.web_keys(0); render(1500);
+  while (ex.web_kid_friend() === 12) { ex.web_enc(EN.PRESETS, 1); render(400); }   // (not SCISSORS: its keys are drums)
+  render(1500);
+  algo(1); algo(1);
+  check("ALGORITHM two steps: STRUM", band() !== named);
+  render(1600);
+  peak = 0;
+  ex.web_keys(1 << 15); render(250); ex.web_keys(0); render(100);              // G#: the G chord
+  shot("strum");
+  check("STRUM: a black key picks its chord (G: G teal, B pink, D orange in the band)", bandHas(G_TEAL) && bandHas(B_PINK) && bandHas(D_OR));
+  peak = 0;
+  for (const k of [0, 2, 3, 5, 7, 9, 10, 12]) { ex.web_keys(1 << k); render(220); ex.web_keys(0); render(10); }
+  check(`STRUM: the white keys strum it (peak ${peak.toFixed(3)})`, peak > 0.02);
+  render(1500);
+  algo(1);
+  render(400);
+  peak = 0; render(1200);
+  shot("guess");
+  check(`GUESS: a friend sings a note by itself (peak ${peak.toFixed(3)}) and the band asks`, peak > 0.05);
+  const t = ex.web_kid_guess();
+  const wrong = t === 7 ? 14 : 7;
+  ex.web_keys(1 << wrong); render(150); ex.web_keys(0); render(200);
+  check("a wrong key: TRY AGAIN in the band (no sound of its own)", bandHas(col(236, 120, 40)));
+  render(2500);
+  ex.web_keys(1 << t); render(150); ex.web_keys(0); render(200);
+  check("the right key: YES! and confetti", bandHas(col(56, 170, 80)));
+  render(2500);
+  algo(1);
+  render(400);
+  check("FOLLOW: the first note's key lights (TWINKLE: C)", ((ex.web_lit_keys() >> 7) & 1) === 1);
+  ex.web_keys(1 << 7); render(150); ex.web_keys(0); render(200);
+  ex.web_keys(1 << 7); render(150); ex.web_keys(0); render(300);
+  check("pressed twice: the next note (G) lights", ((ex.web_lit_keys() >> 14) & 1) === 1 && !((ex.web_lit_keys() >> 7) & 1));
+  ex.web_keys(1 << 2); render(150); ex.web_keys(0); render(300);
+  check("a wrong key: nothing moves on", ((ex.web_lit_keys() >> 14) & 1) === 1);
+  tapb(B.SEQ); render(200);
+  check("SEQ: the next song (MARY starts on E)", ((ex.web_lit_keys() >> 11) & 1) === 1);
+  algo(-1); algo(-1); algo(-1); algo(-1); render(1500);
+}
+
 // WRITE (SAVE): her own song. A key writes a note (a friend in a ball of the note's color) and the column moves on, the
 // same key again takes it out, HOME wipes the column, PLAY plays it back, it is kept over a power-off, REC held 2 s
 // starts a new one, and SAVE goes back to playing

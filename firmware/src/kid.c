@@ -6,7 +6,10 @@
  *               and the friend hops
  *   PRESETS     the next / previous friend (45, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
- *   ALGORITHM   right: three friends sing (a key plays a chord in key), left: one
+ *   ALGORITHM   how the keys play, a step a turn: 1 FRIEND, 3 FRIENDS (a key plays a chord in key), STRUM (an
+ *               Omnichord: black keys pick a chord, white keys strum it), GUESS (an ear game: a friend sings a note,
+ *               she finds it), FOLLOW (songs to learn: the next key lights, SEQ the next song). Keys held together
+ *               show their letters in their colours and the chord's name
  *   SELECT      the beat slower / faster
  *   KNOB 1      big / small: the octave (low notes, a big friend; high notes, a small one); OCT- / OCT+ too
  *   KNOB 2      day / night: the sky, the sun and the moon, and the sound gets darker (FX filter)
@@ -203,20 +206,24 @@ static const uint8_t KID_FONT[][7] = {
     {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, {0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E},   /* 1 3 */
     {0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A}, {0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04},   /* # ! */
     {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},   /* 5 8 */
-    {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00},                                                 /* - */
+    {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00}, {0x0E, 0x11, 0x01, 0x06, 0x04, 0x00, 0x04},   /* - ? */
 };
 static int32_t kid_glyph_of(char c)
 {
     if (c >= 'A' && c <= 'Z')
         return c - 'A';
-    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : -1;
+    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : c == '?' ? 33 : -1;
 }
 
 static const int8_t KID_SIN[32] = {0, 25, 49, 71, 90, 106, 117, 125, 127, 125, 117, 106, 90, 71, 49, 25,
                                    0, -25, -49, -71, -90, -106, -117, -125, -127, -125, -117, -106, -90, -71, -49, -25};
 
-enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SPARKLE, KH_BEAT, KH_VOLUME, KH_NEWSONG };
-enum { KB_NAME, KB_NOTE, KB_HINT };
+enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SPARKLE, KH_BEAT, KH_VOLUME, KH_NEWSONG, KH_SONG };
+enum { KB_NAME, KB_NOTE, KB_HINT, KB_CHORD };
+/* ALGORITHM: how the keys play (kid_mode_set). CHOIR: three friends sing a chord; STRUM: an Omnichord (seq.c
+ * kb_strum_map); GUESS: an ear game; FOLLOW: songs to learn, the next key lit */
+enum { KM_ONE, KM_CHOIR, KM_STRUM, KM_GUESS, KM_FOLLOW, KM_COUNT };
+static const char *const KID_MODE_NAME[KM_COUNT] = {"1 FRIEND", "3 FRIENDS", "STRUM", "GUESS", "FOLLOW"};
 
 /* the staff: what she played, as the heads of one entry (a key, or the keys of a chord pressed together) */
 #define KID_ST_N 8                      /* entries on the staff at most */
@@ -239,6 +246,12 @@ enum { KT_16TH, KT_8TH, KT_4TH, KT_HALF, KT_WHOLE };
 
 static struct {
     uint8_t on, ready, fr, scene, beat, chord, arp, night, echo, wiggle;
+    uint8_t mode;                       /* KM_* (chord: mode is CHOIR) */
+    uint32_t chord_keys, chord_ms;      /* the keys of the last chord she held (2 or more), when */
+    uint8_t g_level, g_target, g_wrong, g_streak, g_state, g_again, g_note;   /* GUESS */
+    uint32_t g_ms, g_yes_ms, g_try_ms;
+    uint8_t f_song, f_pos;              /* FOLLOW: the song, the note she is on */
+    uint32_t f_done_ms;
     int8_t oct;                         /* -2 .. 2: song.octave; the friend's size follows */
     int8_t acc;                         /* KNOB 1: detents toward the next octave */
     uint8_t hint, home_down;
@@ -294,7 +307,7 @@ static void kid_knobs(void)                       /* the knobs' state into the f
     t->p[P_CHRD] = kid.chord ? CH_DIA3 : CH_OFF;
     t->p[P_AMODE] = kid.arp ? 3 : 0;              /* UPDN */
     t->p[P_ARATE] = 2;                            /* 1/16 */
-    song.octave = kid.oct;
+    song.octave = kid.mode >= KM_GUESS ? 0 : kid.oct;   /* (GUESS, FOLLOW: the keys where the notes are) */
 }
 
 /* friend fr's sound into track t */
@@ -437,11 +450,13 @@ static int autosave_boot(int allowed);           /* (project.c) */
 /* HOME + SAVE held: the full Felucca, with the music of the last session (the autosave, which the toy never
  * writes: main.c skips autosave_poll while Rainbow mode is on) */
 static void kw_leave(void);
+static void kid_mode_set(uint32_t m);
 
 static void kid_leave(void)
 {
     if (kw.on)
         kw_leave();
+    kid_mode_set(KM_ONE);                         /* (the keys back to their own notes: STRUM off) */
     kid.on = 0;
     kid_fx_set(0);
     perf_k[0] = 0;
@@ -703,6 +718,7 @@ static void kw_enter(void)
         kw.loaded = 1;
     }
     kw.on = 1;
+    kb_strum = 0;
     kw.col = -1;
     kw.sig = 0;
     kid.key = -1;
@@ -726,6 +742,7 @@ static void kw_leave(void)
         transport_req = 2;
     kw_save();
     kw.on = 0;
+    kb_strum = kid.mode == KM_STRUM;
     for (s = 0; s < 3u; s++) {
         track_defaults_steps(&trk[s]);
         trk[s].p[P_SDIV] = 2;
@@ -777,6 +794,137 @@ static void kw_clear(void)
     kw_changed();
 }
 
+/* ---------------------------------------------------------------- ALGORITHM: how the keys play */
+/* FOLLOW's songs (old ones, free to use), a note a letter and its octave; each fits the keys at OCT 0 (F3 .. G5) */
+typedef struct { const char *name, *notes; } kid_song_t;
+static const kid_song_t KID_SONGS[] = {
+    {"TWINKLE", "C4 C4 G4 G4 A4 A4 G4 F4 F4 E4 E4 D4 D4 C4 G4 G4 F4 F4 E4 E4 D4 G4 G4 F4 F4 E4 E4 D4 "
+                "C4 C4 G4 G4 A4 A4 G4 F4 F4 E4 E4 D4 D4 C4"},
+    {"MARY", "E4 D4 C4 D4 E4 E4 E4 D4 D4 D4 E4 G4 G4 E4 D4 C4 D4 E4 E4 E4 E4 D4 D4 E4 D4 C4"},
+    {"HOT CROSS BUNS", "E4 D4 C4 E4 D4 C4 C4 C4 C4 C4 D4 D4 D4 D4 E4 D4 C4"},
+    {"ROW YOUR BOAT", "C4 C4 C4 D4 E4 E4 D4 E4 F4 G4 C5 C5 C5 G4 G4 G4 E4 E4 E4 C4 C4 C4 G4 F4 E4 D4 C4"},
+    {"OLD MACDONALD", "G4 G4 G4 D4 E4 E4 D4 B4 B4 A4 A4 G4 D4 G4 G4 G4 D4 E4 E4 D4 B4 B4 A4 A4 G4"},
+    {"FRERE JACQUES", "C4 D4 E4 C4 C4 D4 E4 C4 E4 F4 G4 E4 F4 G4 G4 A4 G4 F4 E4 C4 G4 A4 G4 F4 E4 C4 C4 G3 C4 C4 G3 C4"},
+    {"LONDON BRIDGE", "G4 A4 G4 F4 E4 F4 G4 D4 E4 F4 E4 F4 G4 G4 A4 G4 F4 E4 F4 G4 D4 G4 E4 C4"},
+    {"ODE TO JOY", "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4 D4 D4 E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4 C4 C4"},
+};
+#define KID_NSONGS (sizeof KID_SONGS / sizeof KID_SONGS[0])
+
+static uint32_t kid_song_key(uint32_t song_i, uint32_t i)       /* note i of a song as a key (0 .. 26), 99 past its end */
+{
+    static const uint8_t PC[7] = {9, 11, 0, 2, 4, 5, 7};          /* A .. G */
+    const char *s = KID_SONGS[song_i % KID_NSONGS].notes;
+    while (*s) {
+        if (*s >= 'A' && *s <= 'G') {
+            if (!i--)
+                return (uint32_t)(12 * (s[1] - '0' + 1) + PC[*s - 'A']) - 53u;
+            s++;
+        }
+        s++;
+    }
+    return 99u;
+}
+
+/* GUESS: the notes it asks, the first two far apart; a level more after three right in a row */
+static const uint8_t KID_GUESS_KEY[8] = {7, 14, 11, 9, 16, 12, 18, 19};   /* C4 G4 E4 D4 A4 F4 B4 C5 */
+enum { KG_IDLE, KG_SING, KG_WAIT };
+
+static void kid_sing(uint32_t key, int on)                       /* the friend sings (or stops) a note itself */
+{
+    fm1_irq_off();
+    if (on)
+        trk_note_on(&trk[0], 53u + key, 100);
+    else
+        trk_note_off(&trk[0], 53u + key);
+    fm1_irq_on();
+}
+
+static void kid_mode_set(uint32_t m)
+{
+    if (kid.mode == KM_GUESS && kid.g_state == KG_SING)
+        kid_sing(kid.g_note, 0);
+    kid.mode = (uint8_t)(m % KM_COUNT);
+    kid.chord = kid.mode == KM_CHOIR;
+    kb_strum = kid.mode == KM_STRUM && !kw.on;
+    kid.g_state = KG_IDLE;
+    kid.g_ms = fm1_ms + 900u;                                     /* (GUESS: the first note in a moment) */
+    kid.g_level = kid.g_streak = kid.g_wrong = kid.g_again = 0;
+    kid.f_pos = 0;
+    kid.f_done_ms = 0;
+    kid_knobs();
+}
+
+/* every frame: GUESS asks, listens and answers; FOLLOW moves on. lo: the lowest key pressed just now, -1 none */
+static void kid_game(int32_t lo)
+{
+    uint32_t now = fm1_ms;
+    if (kid.mode == KM_GUESS) {
+        uint32_t pool = 2u + kid.g_level;
+        if (kid.g_state == KG_IDLE && (int32_t)(now - kid.g_ms) >= 0) {
+            if (!kid.g_again) {                                   /* a new note, not the one before */
+                uint32_t t = KID_GUESS_KEY[rng() % pool];
+                while (t == kid.g_target && pool > 1u)
+                    t = KID_GUESS_KEY[rng() % pool];
+                kid.g_target = (uint8_t)t;
+                kid.g_wrong = 0;
+            }
+            kid.g_again = 0;
+            kid.g_note = kid.g_target;
+            kid_sing(kid.g_note, 1);
+            kid.hop_ms = now;
+            kid.g_state = KG_SING;
+            kid.g_ms = now;
+        } else if (kid.g_state == KG_SING && now - kid.g_ms > 700u) {
+            kid_sing(kid.g_note, 0);
+            kid.g_state = KG_WAIT;
+        }
+        if (lo >= 0 && kid.g_state != KG_IDLE) {
+            if (kid.g_state == KG_SING)
+                kid_sing(kid.g_note, 0);
+            if ((uint32_t)lo == kid.g_target) {                   /* right: confetti, and the next one */
+                kid.g_yes_ms = now | 1u;
+                kid.g_try_ms = 0;
+                kid.party_ms = now | 1u;
+                if (++kid.g_streak >= 3u && kid.g_level < 6u) {
+                    kid.g_level++;
+                    kid.g_streak = 0;
+                }
+                kid.g_ms = now + 1700u;
+            } else {                                              /* not yet: no sound of its own, the note again */
+                kid.g_try_ms = now | 1u;
+                kid.g_yes_ms = 0;
+                kid.g_streak = 0;
+                kid.g_wrong++;
+                kid.g_again = 1;
+                kid.g_ms = now + 1100u;
+            }
+            kid.g_state = KG_IDLE;
+        }
+    } else if (kid.mode == KM_FOLLOW) {
+        if (kid.f_done_ms && now - kid.f_done_ms > 3000u) {      /* the song again from the start */
+            kid.f_done_ms = 0;
+            kid.f_pos = 0;
+            kid.st_n = 0;
+        }
+        if (lo >= 0 && !kid.f_done_ms && (uint32_t)lo == kid_song_key(kid.f_song, kid.f_pos)) {
+            kid.f_pos++;
+            if (kid_song_key(kid.f_song, kid.f_pos) == 99u) {     /* the whole song: a party */
+                kid.f_done_ms = now | 1u;
+                kid.party_ms = now | 1u;
+            }
+        }
+    }
+}
+
+static int32_t kid_lit_key(uint32_t now)                         /* the key to light (GUESS's hint, FOLLOW's next), -1 */
+{
+    if (kid.mode == KM_FOLLOW && !kid.f_done_ms)
+        return (int32_t)kid_song_key(kid.f_song, kid.f_pos);
+    if (kid.mode == KM_GUESS && kid.g_wrong >= 2u && (now / 250u) & 1u)
+        return kid.g_target;
+    return -1;
+}
+
 static void kid_input(void)
 {
     uint32_t pressed = fm1_input_edges(0), notes = fm1_input_note_edges(), held = fm1_in.buttons, id, k;
@@ -810,6 +958,14 @@ static void kid_input(void)
             }
         switch (b) {
         case B_PLAY:
+            if (kid.mode == KM_GUESS && !kw.on) { /* GUESS: the note again */
+                if (kid.g_state == KG_SING)
+                    kid_sing(kid.g_note, 0);
+                kid.g_again = kid.g_state != KG_IDLE || kid.g_again;
+                kid.g_state = KG_IDLE;
+                kid.g_ms = fm1_ms;
+                break;
+            }
             if (song.playing || chain_busy()) {
                 transport_req = 2;
             } else {
@@ -825,6 +981,14 @@ static void kid_input(void)
             kid_hint(KH_SPARKLE);
             break;
         case B_SEQ:
+            if (kid.mode == KM_FOLLOW && !kw.on) {   /* FOLLOW: the next song */
+                kid.f_song = (uint8_t)((kid.f_song + 1u) % KID_NSONGS);
+                kid.f_pos = 0;
+                kid.f_done_ms = 0;
+                kid.st_n = 0;
+                kid_hint(KH_SONG);
+                break;
+            }
             if (kw.on) {                          /* WRITE: no beat, then each of them */
                 kw.beat = (uint8_t)((kw.beat + 1u) % (KB_COUNT + 1u));
                 if (kw.beat)
@@ -952,7 +1116,8 @@ static void kid_input(void)
             kid.key = (int8_t)k;
             kid.key_ms = fm1_ms;
             kid.hop_ms = fm1_ms;
-            kid_staff_add(notes, fm1_ms);
+            if (kid.mode != KM_STRUM)             /* (STRUM: the keys are not their own notes) */
+                kid_staff_add(notes, fm1_ms);
         }
     } else if (!kw.on && kid.key >= 0 && ((fm1_in.notes >> kid.key) & 1u)) {
         kid.key_ms = fm1_ms;                      /* (held: it stays) */
@@ -961,6 +1126,22 @@ static void kid_input(void)
             ;
         kid.key = (int8_t)k;
         kid.key_ms = fm1_ms;
+    }
+    if (!kw.on) {
+        uint32_t c = fm1_in.notes, nk = 0;
+        int32_t lo = -1;
+        for (k = 0; k < 27u; k++) {
+            nk += (c >> k) & 1u;
+            if (lo < 0 && ((notes >> k) & 1u))
+                lo = (int32_t)k;
+        }
+        if (nk >= 2u) {                           /* keys held together: their chord's letters and name */
+            kid.chord_keys = c;
+            kid.chord_ms = fm1_ms;
+        } else if (notes) {
+            kid.chord_ms = 0;
+        }
+        kid_game(lo);
     }
     if ((s = panel_enc(EN_PRESET)) != 0) {
         any = 1u;
@@ -971,10 +1152,9 @@ static void kid_input(void)
             kid_friend((uint32_t)((int32_t)kid.fr + (s > 0 ? 1 : (int32_t)KID_N - 1)));
         }
     }
-    if ((s = panel_enc(EN_ALGO)) != 0 && !kw.on) {
+    if ((s = panel_enc(EN_ALGO)) != 0 && !kw.on) {   /* how the keys play: a step a turn */
         any = 1u;
-        kid.chord = s > 0;
-        kid_knobs();
+        kid_mode_set((uint32_t)clamp((int32_t)kid.mode + (s > 0 ? 1 : -1), 0, KM_COUNT - 1));
         kid_hint(KH_CHORD);
     }
     if ((s = panel_enc(EN_SELECT)) != 0) {
@@ -1028,7 +1208,7 @@ static void kid_leds(void)
     led_put(nl, panel.btn[B_ARP], kid.arp && !kw.on);
     led_put(nl, panel.btn[B_SAVE], kw.on);        /* (WRITE: SAVE lit) */
     for (k = 0; k < 27u; k++) {
-        led_put(nl, 14u + k, (int)((fm1_in.notes >> k) & 1u));
+        led_put(nl, 14u + k, (int)((fm1_in.notes >> k) & 1u) || (int32_t)k == kid_lit_key(fm1_ms));
         led_put(nd, 14u + k, 1);
     }
     for (k = 0; k < NB; k++)
@@ -1092,6 +1272,7 @@ static struct {
     kid_txt_t bt;                       /* the band's text */
     kid_txt_t bt2;                      /* .. its second line (a long name: two lines), sc 0 = none */
     char l1[16], l2[16];
+    uint16_t ccol[16];                  /* KB_CHORD: the colour of each of l1's letters */
     int16_t ol;                         /* its outline (px) */
     uint16_t ink, bg, bg2;
     int8_t meter;                       /* dots lit (HINT), -1 none */
@@ -1202,6 +1383,138 @@ static void kid_frame_setup(uint32_t now)
 }
 
 /* the band's content for this frame; returns its signature (a change redraws it) */
+static uint32_t kid_band_word(const char *s, int16_t sc, uint16_t bg, uint32_t sig)   /* a word alone in the band */
+{
+    uint32_t w = str_len(s) * 6u * (uint32_t)sc - (uint32_t)sc;
+    kf.band = KB_NAME;
+    kf.txt = kf.bt.s = s;
+    kf.bt.sc = sc;
+    kf.bt.x = (int16_t)((240 - (int32_t)w) / 2);
+    kf.bt.y = (int16_t)(KID_BAND_Y + (56 - 7 * sc) / 2 + 2);
+    kf.bt2.sc = 0;
+    kf.ol = sc >= 6 ? 3 : 2;
+    kf.ink = KID_WHITE;
+    kf.bg = bg;
+    kf.bg2 = kid_mix(bg, RGB(0, 0, 0), 60u);
+    return sig;
+}
+
+/* a chord in the band: its letters in their colours (low to high), and its name under them when it has one */
+static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n)
+{
+    static const struct { uint16_t m; const char *q; } T[] = {
+        {0x091, "MAJOR"}, {0x089, "MINOR"}, {0x491, "SEVEN"}, {0x049, "DIM"}, {0x0A1, "SUS"}};
+    uint32_t mask = 0, i, j, root = pcs[0], sig = 0x600u, w;
+    const char *q = 0;
+    char *p = kf.l1;
+    for (i = 0; i < n; i++)
+        mask |= 1u << pcs[i];
+    for (i = 0; i < n && !q; i++) {                               /* (any of its notes can be the root: inversions) */
+        uint32_t rel = ((mask >> pcs[i]) | (mask << (12u - pcs[i]))) & 0xFFFu;
+        for (j = 0; j < sizeof T / sizeof T[0]; j++)
+            if (rel == T[j].m) {
+                q = T[j].q;
+                root = pcs[i];
+                break;
+            }
+    }
+    for (i = 0; i < n && p < kf.l1 + 12; i++) {
+        const char *l = KID_NOTE[pcs[i]];
+        if (i)
+            *p++ = ' ';
+        for (; *l; l++, p++) {
+            *p = *l;
+            kf.ccol[p - kf.l1] = KID_NOTE_COL[pcs[i]];
+        }
+        sig = sig * 31u + pcs[i];
+    }
+    *p = 0;
+    kf.band = KB_CHORD;
+    kf.txt = kf.bt.s = kf.l1;
+    kf.bt.sc = (int16_t)(str_len(kf.l1) * 24u - 4u <= 232u ? 4 : 3);
+    w = str_len(kf.l1) * 6u * (uint32_t)kf.bt.sc - (uint32_t)kf.bt.sc;
+    kf.bt.x = (int16_t)((240 - (int32_t)w) / 2);
+    kf.bt.y = (int16_t)(q ? KID_BAND_Y + 4 : KID_BAND_Y + 15);
+    kf.bt2.sc = 0;
+    if (q) {
+        str_cpy(kf.l2, KID_NOTE[root], sizeof kf.l2);
+        p = kf.l2 + str_len(kf.l2);
+        *p++ = ' ';
+        str_cpy(p, q, sizeof kf.l2 - (uint32_t)(p - kf.l2));
+        kf.bt2.s = kf.l2;
+        kf.bt2.sc = 3;
+        kf.bt2.x = (int16_t)((240 - (int32_t)(str_len(kf.l2) * 18u - 3u)) / 2);
+        kf.bt2.y = KID_BAND_Y + 34;
+        sig = sig * 31u + root * 7u + (uint32_t)(q[1]);
+    }
+    kf.ol = 2;
+    kf.ink = KID_WHITE;
+    kf.bg = kid_mix(KID_NOTE_COL[root], KID_WHITE, 170u);
+    kf.bg2 = kid_mix(KID_NOTE_COL[root], KID_WHITE, 90u);
+    return sig;
+}
+
+/* ALGORITHM's modes in the band: 0 = nothing of theirs now (the usual band) */
+static uint32_t kid_play_band(uint32_t now)
+{
+    int keyed = kid.key >= 0 && now - kid.key_ms < 900u;
+    uint8_t pcs[6];
+    uint32_t n = 0, k;
+    if (kid.hint != KH_NONE && now - kid.hint_ms < 1500u && !(keyed && kid.key_ms - kid.hint_ms < 0x80000000u))
+        return 0;                                                 /* (a knob's word, unless a key came after it) */
+    if (kid.mode == KM_GUESS) {
+        if (kid.g_yes_ms && (now | 1u) - kid.g_yes_ms < 1300u)
+            return kid_band_word("YES!", 6, RGB(56, 170, 80), 0x701u);
+        if (kid.g_try_ms && (now | 1u) - kid.g_try_ms < 1500u)
+            return kid_band_word("TRY AGAIN", 4, RGB(236, 120, 40), 0x702u);
+        if (!keyed)
+            return kid_band_word("?", 7, RGB(150, 110, 230), 0x703u);
+        return 0;
+    }
+    if (kid.mode == KM_STRUM && keyed && !ENGINES[eng_idx(trk[0].eng_req)]->keys) {   /* the chord she strums */
+        uint32_t r = kb_strum_root;
+        pcs[0] = (uint8_t)r;
+        pcs[1] = (uint8_t)((r + (kb_strum_minor ? 3u : 4u)) % 12u);
+        pcs[2] = (uint8_t)((r + 7u) % 12u);
+        return kid_chord_band(pcs, 3);
+    }
+    if (kid.mode == KM_CHOIR && keyed && !((0x54Au >> ((53u + (uint32_t)kid.key) % 12u)) & 1u)) {
+        static const uint8_t SCALE[7] = {0, 2, 4, 5, 7, 9, 11};  /* three friends: the key's chord in C major */
+        uint32_t pc = (53u + (uint32_t)kid.key) % 12u, d;
+        for (d = 0; SCALE[d] != pc; d++)
+            ;
+        for (k = 0; k < 3u; k++)
+            pcs[k] = SCALE[(d + 2u * k) % 7u];
+        return kid_chord_band(pcs, 3);
+    }
+    if (keyed && kid.chord_ms && now - kid.chord_ms < 900u) {     /* keys pressed together: their chord */
+        uint32_t seen = 0;
+        for (k = 0; k < 27u && n < 5u; k++)
+            if ((kid.chord_keys >> k) & 1u) {
+                uint32_t pc = (53u + k) % 12u;
+                if (!((seen >> pc) & 1u)) {
+                    seen |= 1u << pc;
+                    pcs[n++] = (uint8_t)pc;
+                }
+            }
+        if (n >= 2u)
+            return kid_chord_band(pcs, n);
+    }
+    if (kid.mode == KM_FOLLOW && !keyed) {                        /* the next note: its letter, waiting */
+        uint32_t nk = kid_song_key(kid.f_song, kid.f_pos), pc;
+        if (kid.f_done_ms)
+            return kid_band_word("YAY!", 6, RGB(56, 170, 80), 0x704u);
+        pc = (53u + nk) % 12u;
+        kid_band_word(KID_NOTE[pc], 7, kid_mix(KID_NOTE_COL[pc], KID_WHITE, 170u), 0);
+        kf.ink = KID_NOTE_COL[pc];
+        kf.bg2 = kid_mix(KID_NOTE_COL[pc], KID_WHITE, 90u);
+        kf.ol = 3;
+        kf.bt.y = KID_BAND_Y + 5;
+        return 0x800u | nk << 4 | kid.f_pos << 12;
+    }
+    return 0;
+}
+
 static uint32_t kid_band_setup(uint32_t now)
 {
     uint32_t sig, len, w;
@@ -1219,6 +1532,8 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.bg = RGB(150, 110, 230);
         kf.bg2 = RGB(120, 84, 200);
         sig = 0x500u ^ (uint32_t)(uintptr_t)kf.txt * 7u ^ (uint32_t)kw.band[kw.stamp % 3u] << 24;
+    } else if (!vol && !kw.on && (sig = kid_play_band(now)) != 0) {   /* (ALGORITHM's modes, a chord: all set) */
+        return sig;
     } else if (!vol && kid.key >= 0 && now - kid.key_ms < 900u) {      /* a note: its letter, big (the effect's word, if one is on) */
         uint32_t pc = (53u + (uint32_t)kid.key) % 12u;    /* key 0 is F (seq.c kb_map: 53 + k) */
         kf.band = KB_NOTE;
@@ -1247,7 +1562,7 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.bg2 = kid_mix(kf.bg, RGB(0, 0, 0), 60u);
         sig = 0x400u | kid.fxk;
     } else if (kid.hint != KH_NONE && now - kid.hint_ms < 1500u) {
-        static const char *const WORD[] = {"", "", "DAY", "ECHO", "WIGGLE", "", "", "SPARKLE", "", "VOLUME"};
+        static const char *const WORD[] = {"", "", "DAY", "ECHO", "WIGGLE", "", "", "SPARKLE", "", "VOLUME", "", ""};
         int32_t v = 0;
         kf.band = KB_HINT;
         kf.txt = WORD[kid.hint];
@@ -1260,10 +1575,11 @@ static uint32_t kid_band_setup(uint32_t now)
             v = (song.g[G_BPM] - 60) / 15;
             kf.txt = song.g[G_BPM] < 100 ? "SLOW" : song.g[G_BPM] > 135 ? "FAST" : "WALK";
             break;
-        case KH_CHORD: kf.txt = kid.chord ? "3 FRIENDS" : "1 FRIEND"; v = kid.chord ? 8 : 0; break;
+        case KH_CHORD: kf.txt = KID_MODE_NAME[kid.mode % KM_COUNT]; v = kid.mode * 2; break;
         case KH_SPARKLE: v = kid.arp ? 8 : 0; break;
         case KH_BEAT: kf.txt = KID_BEATS[kid.beat % KB_COUNT].name; v = -1; break;
         case KH_VOLUME: v = (int32_t)kid_vol_level(); break;
+        case KH_SONG: kf.txt = KID_SONGS[kid.f_song % KID_NSONGS].name; v = -1; break;
         default: break;
         }
         kf.meter = (int8_t)clamp(v, -1, 8);
@@ -1271,7 +1587,7 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.ink = KID_WHITE;
         kf.bg = RGB(150, 110, 230);
         kf.bg2 = RGB(120, 84, 200);
-        sig = 0x200u | (uint32_t)kid.hint << 4 | (uint32_t)(v + 1) << 12 | (uint32_t)kid.beat << 20;
+        sig = 0x200u | (uint32_t)kid.hint << 4 | (uint32_t)(v + 1) << 12 | (uint32_t)kid.beat << 20 | (uint32_t)kid.f_song << 26;
     } else {
         kf.band = KB_NAME;
         kf.txt = KID_NAME[kid.fr % KID_N];
@@ -1351,6 +1667,8 @@ static uint16_t kid_band_px(int32_t x, int32_t y)
     k = kid_text_at(&kf.bt, x, y, kf.ol);
     if (!k && kf.bt2.sc)
         k = kid_text_at(&kf.bt2, x, y, kf.ol);
+    if (k == 1 && kf.band == KB_CHORD && kid_text_at(&kf.bt, x, y, kf.ol) == 1)   /* (a chord: each letter its colour) */
+        return kf.ccol[((x - kf.bt.x) / (6 * kf.bt.sc)) % 16];
     if (k)
         return k == 1 ? kf.ink : KID_INK;
     if (kf.meter >= 0 && y >= (int32_t)KID_BAND_Y + 38) {         /* the meter: 8 dots */

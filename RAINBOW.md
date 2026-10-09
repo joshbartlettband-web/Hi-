@@ -13,7 +13,7 @@ at the next power-on.
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
 | PRESETS | Next or previous friend (45 of them, each with its own picture, sound, home sky and favorite beat). |
-| ALGORITHM | Right: three friends sing (one key plays a chord that is always in key). Left: back to one. |
+| ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, GUESS, FOLLOW. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
 | KNOB 2 | Day to night. The sky darkens, the sun sets, the moon comes out, and the sound gets softer and darker. |
@@ -34,6 +34,19 @@ at the next power-on.
 | SAVE | WRITE: she writes her own song (below). SAVE again goes back to playing. |
 | HOME held 1 s, then OCT- / OCT+ | The grown-ups' VOLUME: the most the MASTER knob can give (below). |
 | MASTER | Volume, up to the VOLUME the grown-ups chose (about half, unless changed). |
+
+## ALGORITHM: how the keys play
+
+| Setting | What the keys do |
+| --- | --- |
+| 1 FRIEND | Each key plays its note. |
+| 3 FRIENDS | Each key plays a chord that is always in key (C major), and three friends sing. The band shows the chord: its letters in their colors and its name. |
+| STRUM | Like an Omnichord (an idea from u/veecheech, after dxsloop's arp mode). A black key picks a chord, the one on the white key just below it: F#: F, G#: G, A#: A minor, C#: C, D#: D minor (C to begin with), and plays its root low. The white keys, left to right, play that chord's notes upward, so a hand drawn across them strums it. The band shows the chord. (Not with Scissors, whose keys are drums.) |
+| GUESS | An ear game (an idea from u/nutty_cartoon). A friend sings a note and the band shows ?. The right key: YES! and confetti. Another key: TRY AGAIN, with no sound of its own, and the friend sings the note again; after two tries the right key blinks. It starts with C and G and adds a note after three right in a row (C G E D A F B, then high C). PLAY: hear it again. |
+| FOLLOW | Songs to learn (u/nutty_cartoon). The next note's key lights and the band shows its letter; she plays the song at her own pace, and a wrong key changes nothing. At the end, a party, and it starts again. SEQ picks the song: Twinkle Twinkle, Mary Had a Little Lamb, Hot Cross Buns, Row Your Boat, Old MacDonald, Frere Jacques, London Bridge, Ode to Joy (all old and free). |
+
+In every setting, keys held together show their letters in their colors and, when it has one, the chord's name (MAJOR, MINOR,
+SEVEN, DIM, SUS), whatever their order (u/nutty_cartoon). GUESS and FOLLOW keep the keys at their own notes (OCT 0).
 
 ## The staff
 

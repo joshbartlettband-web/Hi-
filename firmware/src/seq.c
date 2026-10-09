@@ -78,11 +78,39 @@ static int32_t scale_snap(const track_t *t, int32_t n)
 
 enum { QN_OFF, QN_SNAP, QN_WHITE, QN_SEQ };      /* P_QUANT */
 
+/* Rainbow mode's STRUM (kid.c, as an Omnichord does it): a black key picks a chord, the one on the white key just below it
+ * (F#: F, G#: G, A#: A minor, C#: C, D#: D minor), and plays its root low; the white keys, left to right, play that
+ * chord's notes upward from C3, so a hand drawn across them strums it. Read in the audio ISR, set by the main loop */
+static volatile uint8_t kb_strum;                 /* on */
+static volatile uint8_t kb_strum_root, kb_strum_minor;   /* the chord picked (a pitch class, C major to begin with) */
+static uint32_t kb_strum_map(uint32_t k)
+{
+    uint32_t n = 53u + k, pc = n % 12u, i, w, tone, third, cnt = 0;
+    if ((0x54Au >> pc) & 1u) {                    /* a black key: the chord of the white key below, its root low */
+        kb_strum_root = (uint8_t)(pc - 1u);
+        kb_strum_minor = (uint8_t)(pc == 10u || pc == 3u);          /* (A#: A minor, D#: D minor) */
+        return 41u + (pc - 1u + 7u) % 12u;                           /* F2 .. E3 */
+    }
+    for (w = 0, i = 0; i < k; i++)                /* the white keys left of this one */
+        w += !((0x54Au >> ((53u + i) % 12u)) & 1u);
+    third = kb_strum_minor ? 3u : 4u;
+    for (tone = 48u; tone < 120u; tone++) {       /* the chord's notes from C3 up: the w-th */
+        uint32_t d = (tone + 12u - kb_strum_root) % 12u;
+        if ((d == 0u || d == third || d == 7u) && cnt++ == w)
+            break;
+    }
+    while (tone > 100u)
+        tone -= 12u;
+    return tone;
+}
+
 static uint32_t kb_map(const track_t *t, uint32_t k)
 {
     static const int8_t DEGREE[12] = {0, -1, 1, -1, 2, 3, -1, 4, -1, 5, -1, 6};
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];   /* (the engine it switches to) */
     int32_t n;
+    if (kb_strum && !e->keys)
+        return kb_strum_map(k);
     if (e->keys && (n = e->keys(t, k)) >= 0)           /* the engine's own key map (DRUM's GM map, slices) */
         return (uint32_t)n;
     n = 53 + (int32_t)k;
