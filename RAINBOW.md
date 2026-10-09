@@ -33,7 +33,7 @@ at the next power-on.
 | HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
 | SAVE | WRITE: she writes her own song (below). SAVE again goes back to playing. |
 | HOME held 1 s, then OCT- / OCT+ | The grown-ups' VOLUME: the most the MASTER knob can give (below). |
-| HOME held 1 s, then PRESETS | The grown-ups' LOOK-ALIKES: left hides the friends drawn after TV and film characters, right shows them (below). |
+| HOME held 1 s, then PRESETS | The grown-ups' LOOK-ALIKES: left swaps the friends drawn after TV and film characters for original stand-ins, right brings them back (below). |
 | MASTER | Volume, up to the VOLUME the grown-ups chose (about half, unless changed). |
 
 ## ALGORITHM: how the keys play
@@ -117,12 +117,27 @@ Two guards, both in `kid.c` (`kid_master`):
 
 ## Look-alikes, for grown-ups
 
-Some friends are drawn after characters from TV and films: Blue Pup and Red Pup, Red Monster and Blue Monster, Web Hero, Slimy,
-Skeleton, Cowboy, Cowgirl and Space Hero. They are original drawings, but a parent may not want them (an idea from u/ReallyLongLake on
-r/MVaveFM1). Hold **HOME for 1 second** and, while it is still down, turn **PRESETS left**: the band says LOOK-ALIKES OFF, and from
-then on PRESETS, HOME's surprise friend and WRITE skip them (a song written with one of them plays it with the next friend instead).
-Turn **PRESETS right** the same way to bring them back. The choice is kept when the FM-1 is switched off (the top bit of the VOLUME's
-byte). The list is `KID_LOOKALIKE` in `firmware/src/kid.c`.
+Some friends are drawn after characters from TV and films. They are original drawings, but a parent may not want them (an idea from
+u/ReallyLongLake on r/MVaveFM1). Hold **HOME for 1 second** and, while it is still down, turn **PRESETS left**: the band says
+LOOK-ALIKES OFF, and each of them is replaced by an original stand-in with the same sound, sky and beat, so nothing is lost:
+
+| Look-alike | Stand-in |
+| --- | --- |
+| Blue Pup | Spotty Pup |
+| Red Pup | Fox |
+| Red Monster | Fuzzy (one eye, little horns) |
+| Blue Monster | Big Blue (short horns, two teeth) |
+| Web Hero | Spider |
+| Slimy | Pumpkin |
+| Yellow Bird | Chick |
+| Skeleton | Bat |
+| Cowboy | Horse |
+| Cowgirl | Cactus (in a cowboy hat) |
+| Space Hero | Alien |
+
+Turn **PRESETS right** the same way to bring the originals back. The choice is kept when the FM-1 is switched off (the top bit of the
+VOLUME's byte). Songs in WRITE are untouched; their notes just show the stand-ins. The list is `STAND_INS` in
+`tools/gen_kid_art.py` (the generator writes `KID_ALT`, used by `kid_art` in `firmware/src/kid.c`).
 
 Note colors follow the colored tubes and bells used in many early music classes: C red, D orange,
 E yellow, F green, G teal, A purple, B pink. Sharps get the color in between.

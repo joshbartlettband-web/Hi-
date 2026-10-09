@@ -1028,6 +1028,175 @@ def camel():                                                     # a big, loping
     return p.done()
 
 
+# the stand-ins: original friends shown in place of the look-alikes when the grown-ups' LOOK-ALIKES is off (kid.c),
+# with the same sound, sky and beat
+def spottypup():                                                 # a white pup with a brown patch and floppy ears
+    p = Pic()
+    p.ell(9, 22, 6, 12, "brown"); p.ell(39, 22, 6, 12, "brown")  # floppy ears
+    p.ball(24, 26, 17, 16, "white", "dwhite")                    # head
+    p.ell(31, 22, 7, 6, "tan")                                   # a patch round one eye
+    p.ell(24, 36, 9, 6, "cream")
+    p.eye(17, 23, 4); p.eye(31, 23, 4)
+    p.ell(24, 32, 3, 2, "black")
+    p.smile(24, 37, 3)
+    p.ell(24, 41, 2, 2, "hpink")
+    p.ell(15, 33, 2, 1, "dbrown"); p.ell(36, 33, 1, 1, "dbrown")  # freckles
+    return p.done()
+
+
+def fox():                                                       # a fox: black-tipped ears, a white chin
+    p = Pic()
+    p.poly([(5, 0), (19, 13), (4, 18)], "orange"); p.poly([(43, 0), (29, 13), (44, 18)], "orange")
+    p.poly([(5, 0), (9, 4), (4, 6)], "black"); p.poly([(43, 0), (39, 4), (44, 6)], "black")
+    p.ball(24, 24, 18, 14, "orange", "dorange")                  # head
+    p.poly([(6, 26), (24, 43), (42, 26), (24, 32)], "white")     # white cheeks to a pointed chin
+    p.eye(16, 21, 3); p.eye(32, 21, 3)
+    p.ell(24, 36, 3, 2, "black")
+    p.smile(24, 40, 2)
+    return p.done()
+
+
+def fuzzy():                                                     # a one-eyed fuzzy monster with little horns
+    p = Pic()
+    p.poly([(12, 10), (15, 3), (19, 9)], "cream"); p.poly([(29, 9), (33, 3), (36, 10)], "cream")   # horns
+    for x, y in ((6, 20), (8, 34), (40, 20), (40, 34), (14, 40), (34, 40), (24, 41)):   # fur tufts
+        p.ell(x, y, 4, 4, "red")
+    p.ball(24, 26, 18, 18, "red", "dred")
+    p.ell(24, 19, 9, 9, "white"); p.ell(24, 21, 5, 6, "black"); p.rect(21, 17, 23, 19, "white")   # the one big eye
+    p.pie(24, 31, 9, 0, 180, "black")                            # a toothy grin
+    p.rect(19, 31, 21, 33, "white"); p.rect(27, 31, 29, 33, "white")
+    p.cheek(11, 30); p.cheek(37, 30)
+    return p.done()
+
+
+def bigblue():                                                   # a tall blue monster with curly horns
+    p = Pic()
+    p.poly([(12, 15), (7, 3), (19, 11)], "cream")                # short horns
+    p.poly([(36, 15), (41, 3), (29, 11)], "cream")
+    p.ball(24, 28, 17, 18, "mblue", "blue")
+    for x in (18, 24, 30):                                       # a shaggy fringe
+        p.poly([(x - 4, 11), (x + 4, 11), (x, 18)], "navy")
+    p.ell(24, 40, 10, 5, "lblue")                                # tummy
+    p.eye(17, 22, 4); p.eye(31, 22, 4)
+    p.rect(14, 15, 20, 16, "navy"); p.rect(28, 15, 34, 16, "navy")   # bushy brows
+    p.pie(24, 30, 8, 0, 180, "navy")                             # a wide grin, two teeth
+    p.rect(19, 30, 21, 32, "white"); p.rect(27, 30, 29, 32, "white")
+    return p.done()
+
+
+def spider():                                                    # a friendly spider: round, eight legs, two big eyes
+    p = Pic()
+    for y, dx in ((18, 0), (25, 2), (32, 2), (39, 0)):          # legs
+        p.line([(14, y - 4), (6 - dx, y - 8), (2, y)], "dpurple", 2)
+        p.line([(34, y - 4), (42 + dx, y - 8), (46, y)], "dpurple", 2)
+    p.ball(24, 28, 14, 14, "purple", "dpurple")
+    p.ell(18, 21, 4, 3, "lpurple")
+    p.eye(19, 26, 4); p.eye(29, 26, 4)
+    p.smile(24, 35, 3)
+    p.cheek(13, 33); p.cheek(35, 33)
+    p.line([(24, 14), (24, 2)], "silver", 1)                     # its thread
+    return p.done()
+
+
+def pumpkin():                                                   # a smiling pumpkin (the spooky beat, not scary)
+    p = Pic()
+    p.rect(22, 3, 26, 11, "dgreen")                              # stem and a leaf
+    p.ell(31, 7, 5, 3, "green")
+    for x, c in ((13, "dorange"), (35, "dorange"), (18, "orange"), (30, "orange"), (24, "orange")):
+        p.ell(x, 28, 10, 15, c)
+    p.line([(18, 15), (18, 41)], "dorange", 1); p.line([(30, 15), (30, 41)], "dorange", 1)
+    p.poly([(14, 22), (20, 22), (17, 17)], "yellow"); p.poly([(28, 22), (34, 22), (31, 17)], "yellow")   # eyes
+    p.poly([(11, 30), (37, 30), (31, 37), (17, 37)], "yellow")   # a big grin
+    p.rect(21, 30, 23, 32, "orange"); p.rect(26, 35, 28, 37, "orange")
+    return p.done()
+
+
+def chick():                                                     # a baby chick, just hatched
+    p = Pic()
+    p.ball(24, 22, 14, 13, "yellow", "dyellow")
+    p.ell(14, 10, 2, 4, "yellow"); p.ell(19, 8, 2, 4, "yellow")  # a tuft
+    p.ell(9, 24, 4, 6, "dyellow"); p.ell(39, 24, 4, 6, "dyellow")   # little wings
+    p.eye(18, 20, 3); p.eye(30, 20, 3)
+    p.poly([(21, 25), (27, 25), (24, 29)], "orange")
+    p.cheek(13, 27); p.cheek(35, 27)
+    p.pie(24, 34, 15, 0, 180, "cream")                           # in its eggshell
+    p.poly([(9, 34), (14, 30), (19, 34), (24, 30), (29, 34), (34, 30), (39, 34)], "cream")
+    p.ell(16, 40, 2, 1, "tan"); p.ell(31, 42, 2, 1, "tan")
+    return p.done()
+
+
+def bat():                                                       # a little bat, wings out
+    p = Pic()
+    p.poly([(16, 20), (2, 12), (5, 22), (2, 32), (9, 28), (12, 34), (18, 30)], "purple")   # wings
+    p.poly([(32, 20), (46, 12), (43, 22), (46, 32), (39, 28), (36, 34), (30, 30)], "purple")
+    p.poly([(15, 14), (18, 4), (22, 13)], "dpurple"); p.poly([(26, 13), (30, 4), (33, 14)], "dpurple")   # ears
+    p.ball(24, 25, 11, 12, "dpurple", "navy")
+    p.ell(24, 30, 6, 5, "lpurple")
+    p.eye(20, 22, 3); p.eye(28, 22, 3)
+    p.poly([(21, 29), (23, 29), (22, 32)], "white"); p.poly([(25, 29), (27, 29), (26, 32)], "white")   # tiny fangs
+    p.cheek(16, 28); p.cheek(32, 28)
+    return p.done()
+
+
+def horse():                                                     # a horse's head with a mane
+    p = Pic()
+    for y in range(4, 36, 6):                                    # the mane
+        p.ell(34, y + 4, 5, 4, "dbrown")
+    p.poly([(15, 4), (19, 12), (13, 12)], "brown"); p.poly([(27, 3), (31, 12), (24, 12)], "brown")   # ears
+    p.ball(22, 18, 12, 11, "brown", "dbrown")                    # head
+    p.ball(20, 34, 10, 10, "brown", "dbrown")                    # long nose
+    p.ell(19, 38, 8, 6, "tan")
+    p.ell(15, 38, 1, 1, "dbrown"); p.ell(23, 38, 1, 1, "dbrown")   # nostrils
+    p.rect(17, 6, 22, 14, "white")                               # a blaze
+    p.eye(14, 18, 3); p.eye(28, 18, 3)
+    p.smile(19, 42, 2)
+    return p.done()
+
+
+def cactus():                                                    # a cactus in a cowboy hat
+    p = Pic()
+    p.ball(24, 32, 8, 15, "green", "dgreen")                     # trunk
+    p.rect(7, 22, 12, 34, "green"); p.ell(9, 22, 3, 3, "green"); p.rect(10, 31, 18, 35, "green")   # arms
+    p.rect(36, 18, 41, 30, "green"); p.ell(38, 18, 3, 3, "green"); p.rect(30, 27, 38, 31, "green")
+    p.rect(14, 44, 34, 46, "dtan")                               # sand
+    p.rect(10, 12, 38, 14, "brown"); p.ell(24, 10, 9, 6, "brown")   # the hat
+    p.rect(15, 11, 33, 12, "red")
+    p.ell(31, 18, 3, 3, "pink"); p.ell(31, 18, 1, 1, "yellow")    # a flower on the brim
+    p.eye(20, 24, 3); p.eye(28, 24, 3)
+    p.smile(24, 31, 3)
+    for x, y in ((18, 37), (30, 40), (22, 43), (11, 28), (38, 24)):   # prickles
+        p.px(x, y, "lgreen")
+    return p.done()
+
+
+def alien():                                                     # a little green alien with antennae
+    p = Pic()
+    p.line([(17, 12), (12, 4)], "dlime", 2); p.line([(31, 12), (36, 4)], "dlime", 2)
+    p.ell(12, 4, 3, 3, "pink"); p.ell(36, 4, 3, 3, "pink")
+    p.ball(24, 24, 16, 14, "lime", "dlime")                      # head
+    p.ell(16, 23, 5, 6, "black"); p.ell(32, 23, 5, 6, "black")   # big eyes
+    p.rect(14, 20, 15, 21, "white"); p.rect(30, 20, 31, 21, "white")
+    p.smile(24, 31, 2)
+    p.rect(13, 37, 35, 45, "silver")                             # a silver suit
+    p.rect(13, 37, 35, 38, "lblue")
+    p.ell(24, 41, 3, 3, "pink")
+    return p.done()
+
+
+STAND_INS = {                    # the look-alike's name: the stand-in's name and picture
+    "BLUE PUP": ("SPOTTY PUP", spottypup),
+    "RED PUP": ("FOX", fox),
+    "RED MONSTER": ("FUZZY", fuzzy),
+    "BLUE MONSTER": ("BIG BLUE", bigblue),
+    "WEB HERO": ("SPIDER", spider),
+    "SLIMY": ("PUMPKIN", pumpkin),
+    "YELLOW BIRD": ("CHICK", chick),
+    "SKELETON": ("BAT", bat),
+    "COWBOY": ("HORSE", horse),
+    "COWGIRL": ("CACTUS", cactus),
+    "SPACE HERO": ("ALIEN", alien),
+}
+
 ICONS = [icon_one, icon_choir, icon_strum, icon_accordion, icon_guess, icon_follow]
 
 
@@ -1152,14 +1321,18 @@ def rgb565(c):
 
 
 def main(out, png=None):
-    for name, _ in FRIENDS:                      # the band shows the name: one line at scale 4 or 3, or two at 3
+    names = [n for n, _ in FRIENDS]
+    for k in STAND_INS:
+        if k not in names:
+            raise SystemExit(f"STAND_INS: {k} is not a friend")
+    for name, _ in FRIENDS + list(STAND_INS.values()):   # the band shows the name: one line at scale 4 or 3, or two at 3
         if not re.fullmatch(r"[A-Z-]+( [A-Z-]+)*", name):
             raise SystemExit(f"{name!r}: capitals, hyphens and single spaces only (the band's font)")
         if len(name) * 18 - 3 > 232 and (" " not in name or len(name) > 15 or
                                           max(len(w) for w in name.split(" ", 1)) * 18 - 3 > 232):
             raise SystemExit(f"{name}: too long for the band, even on two lines")
     pics = []
-    for name, f in FRIENDS:
+    for name, f in FRIENDS + list(STAND_INS.values()):  # (the stand-ins after the friends: KID_N .. KID_NART - 1)
         try:
             pics.append((name, f().im))
         except SystemExit as e:
@@ -1167,10 +1340,13 @@ def main(out, png=None):
     hello = re.sub(r"[^A-Z ]", "", os.environ.get("KID_NAME", "").upper()).strip()[:10]
     hello = hello + "!" if hello else ""
     lines = ["/* generated by tools/gen_kid_art.py: Rainbow mode's friends */",
-             f"#define KID_N {len(pics)}", f"#define KID_PW {N}",
-             "static const char *const KID_NAME[KID_N] = {" + ", ".join(f'"{n}"' for n, _ in pics) + "};",
+             f"#define KID_N {len(FRIENDS)}", f"#define KID_NART {len(pics)}", f"#define KID_PW {N}",
+             "static const char *const KID_NAME[KID_NART] = {" + ", ".join(f'"{n}"' for n, _ in pics) + "};",
+             "/* a look-alike's stand-in (its picture and name, KID_N ..), 0 none: the grown-ups' LOOK-ALIKES (kid.c) */",
+             "static const uint8_t KID_ALT[KID_N] = {" + ", ".join(
+                 str(len(FRIENDS) + list(STAND_INS).index(n)) if n in STAND_INS else "0" for n in names) + "};",
              f'#define KID_HELLO_NAME "{hello}"', f"#define KID_HELLO_SC {5 if len(hello) <= 8 else 4}",
-             "static const uint16_t KID_PAL[KID_N][16] = {"]
+             "static const uint16_t KID_PAL[KID_NART][16] = {"]
     data = []
     for name, im in pics:
         cols = []
@@ -1191,7 +1367,7 @@ def main(out, png=None):
         lines.append("    {" + ", ".join(f"0x{v:04X}" for v in pal) + "},")
         data.append(bytes((idx[i] << 4) | idx[i + 1] for i in range(0, len(idx), 2)))
     lines.append("};")
-    lines.append(f"static const uint8_t KID_PIX[KID_N][{N * N // 2}] = {{")
+    lines.append(f"static const uint8_t KID_PIX[KID_NART][{N * N // 2}] = {{")
     for d in data:
         lines.append("    {" + ",".join(str(b) for b in d) + "},")
     lines.append("};")
@@ -1226,7 +1402,7 @@ def main(out, png=None):
     lines.append("    " + ", ".join(f"0x{sum(1 << (15 - x) for x, c in enumerate(r) if c == '#'):04X}" for r in CLEF))
     lines.append("};")
     open(out, "w").write("\n".join(lines) + "\n")
-    print(f"kid art: {len(pics)} friends, {sum(len(d) for d in data)} B of pixels")
+    print(f"kid art: {len(FRIENDS)} friends and {len(STAND_INS)} stand-ins, {sum(len(d) for d in data)} B of pixels")
     if png:
         cols = 5
         sheet = Image.new("RGB", (cols * (N * 4 + 8), ((len(pics) + cols - 1) // cols) * (N * 4 + 8)), (120, 200, 255))

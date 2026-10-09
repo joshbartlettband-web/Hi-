@@ -32,8 +32,8 @@
  *               note's value by how long it was held against the beat (a sixteenth .. a whole, growing while held);
  *               it goes after 6 s of quiet. The big letter stays in the band
  *   HOME held 1 s, then OCT- / OCT+   the grown-ups' VOLUME: how loud MASTER can go (8 steps, kept over power-off)
- *   HOME held 1 s, then PRESETS   the grown-ups' LOOK-ALIKES: left hides the friends drawn after TV and film
- *               characters, right shows them (kept over power-off)
+ *   HOME held 1 s, then PRESETS   the grown-ups' LOOK-ALIKES: left shows original stand-ins for the friends drawn
+ *               after TV and film characters (the same sounds), right the originals (kept over power-off)
  * MASTER is capped at that level (the default is about half) for small ears, and the output limiter's ceiling
  * follows it, so an effect cannot make the toy louder than a plain note (kid_master). Everything else (USB, MIDI,
  * the editor, the web installer) works as in the full Felucca.
@@ -50,7 +50,7 @@
 #define KID_BAND_Y 184u                 /* the band at the bottom (the name, the note, a knob's word) */
 #define KID_GROUND 182                  /* the friend stands here */
 #define KID_VOL_BYTE (favorites.factory[15][26])   /* the VOLUME level, ^ 6 (0 = 6, the default; settings_persist.c), in
-                                                    * bits 0..6; bit 7: the look-alikes hidden (KID_LOOKALIKE) */
+                                                    * bits 0..6; bit 7: the look-alikes' stand-ins shown (kid_art) */
 #define KID_HIDE_BIT 0x80u
 #define KID_VOL_DEF 6u
 #define KID_VOL_HOLD_MS 1000u           /* HOME held this long opens the VOLUME (then OCT- / OCT+) */
@@ -333,39 +333,13 @@ static struct {
     uint8_t hop_fr;                     /* the friend hopping along (the playing column's) */
 } kw = {.col = -1};
 
-/* the friends drawn after characters from TV and films (original drawings, but a parent may not want them): the
- * grown-ups' LOOK-ALIKES hides them (kid_look_toggle) */
-static const uint8_t KID_LOOKALIKE[] = {
-    8, 21,                              /* BLUE PUP, RED PUP */
-    9, 10,                              /* RED MONSTER, BLUE MONSTER */
-    14, 23,                             /* WEB HERO, SLIMY */
-    41, 42, 43, 45,                     /* SKELETON, COWBOY, COWGIRL, SPACE HERO */
-};
-
-static int kid_fr_ok(uint32_t fr)       /* friend fr may be picked now */
+/* the picture and name friend fr shows: a look-alike's stand-in (KID_ALT: an original friend with the same sound, sky and
+ * beat) while the grown-ups' LOOK-ALIKES is off, else its own */
+static uint32_t kid_art(uint32_t fr)
 {
-    uint32_t i;
-    if (!(KID_VOL_BYTE & KID_HIDE_BIT))
-        return 1;
-    for (i = 0; i < sizeof KID_LOOKALIKE; i++)
-        if (KID_LOOKALIKE[i] == fr % KID_N)
-            return 0;
-    return 1;
+    fr %= KID_N;
+    return (KID_VOL_BYTE & KID_HIDE_BIT) && KID_ALT[fr] ? KID_ALT[fr] : fr;
 }
-
-static uint32_t kid_fr_step(uint32_t fr, int32_t d)   /* the next friend that may be picked, d = 1 / -1 */
-{
-    uint32_t i;
-    for (i = 0; i < KID_N; i++) {
-        fr = (uint32_t)(((int32_t)(fr % KID_N) + (d > 0 ? 1 : (int32_t)KID_N - 1)) % (int32_t)KID_N);
-        if (kid_fr_ok(fr))
-            break;
-    }
-    return fr;
-}
-
-static void kw_hide_band(void);
-static void kw_stamp(uint32_t fr);
 
 /* ---------------------------------------------------------------- sound */
 static void kid_knobs(void)                       /* the knobs' state into the friend's track (track 1) */
@@ -468,8 +442,6 @@ static void kid_beat_load(void)
 static void kid_friend(uint32_t f)
 {
     kid.fr = (uint8_t)(f % KID_N);
-    if (!kid_fr_ok(kid.fr))
-        kid.fr = (uint8_t)kid_fr_step(kid.fr, 1);
     kid_sound();
     kid.scene = KID_SOUND[kid.fr].sky;
     if (kid.beat != KID_SOUND[kid.fr].beat) {
@@ -583,26 +555,15 @@ static void kid_vol_step(int32_t d)
     kid_hint(KH_VOLUME);
 }
 
-/* the grown-ups' LOOK-ALIKES (PRESETS with HOME held 1 s, left hides, right shows; u/ReallyLongLake's idea): the
- * friends drawn after characters from TV and films hidden or shown, kept over power-off. Hidden, PRESETS, HOME's
- * surprise and WRITE's stamp pass them by */
+/* the grown-ups' LOOK-ALIKES (PRESETS with HOME held 1 s, left off, right on; u/ReallyLongLake's idea): the friends
+ * drawn after characters from TV and films, or their stand-ins (kid_art), kept over power-off */
 static void kid_look_set(int hide)
 {
     if (!(KID_VOL_BYTE & KID_HIDE_BIT) != !hide) {
         KID_VOL_BYTE ^= KID_HIDE_BIT;
         settings_save();
     }
-    if (!kid_fr_ok(kid.fr)) {
-        if (kw.on) {
-            kid.fr = (uint8_t)kid_fr_step(kid.fr, 1);
-            kw_hide_band();
-            kw_stamp(kid.fr);
-        } else {
-            kid_friend(kid_fr_step(kid.fr, 1));
-        }
-    } else if (kw.on) {
-        kw_hide_band();
-    }
+    kid.full = 1;
     kid_hint(KH_LOOK);
 }
 
@@ -825,28 +786,6 @@ static void kw_stamp(uint32_t fr)
     kw_changed();
 }
 
-/* the band's friends that are hidden (LOOK-ALIKES) give way to the next ones shown: their notes stay, in a new voice */
-static void kw_hide_band(void)
-{
-    uint32_t s, k;
-    for (s = 0; s < 3u; s++)
-        if (kw.band[s] != 0xFFu && !kid_fr_ok(kw.band[s])) {
-            uint32_t f = kid_fr_step(kw.band[s], 1);
-            for (k = 0; k < 3u; k++)                              /* (one a track: past the band's others) */
-                if (kw.band[k] == f && k != s) {
-                    f = kid_fr_step(f, 1);
-                    k = (uint32_t)-1;
-                }
-            kw.band[s] = (uint8_t)f;
-            if (kw.on) {
-                kw_track_sound(s);
-                kw_changed();
-            } else {
-                kw.dirty = 1;                                     /* (kw_enter writes the song into the tracks) */
-            }
-        }
-}
-
 static void kw_enter(void)
 {
     uint32_t s;
@@ -859,7 +798,6 @@ static void kw_enter(void)
             song.g[G_BPM] = bpm;                                  /* (a new song: the tempo she had) */
         kw.loaded = 1;
     }
-    kw_hide_band();
     kw.on = 1;
     kb_strum = kb_accord = 0;
     kw.col = -1;
@@ -1294,10 +1232,10 @@ static void kid_input(void)
     } else if (s != 0) {
         any = 1u;
         if (kw.on) {                              /* WRITE: the friend she writes with */
-            kid.fr = (uint8_t)kid_fr_step(kid.fr, s);
+            kid.fr = (uint8_t)(((int32_t)kid.fr + (s > 0 ? 1 : (int32_t)KID_N - 1)) % (int32_t)KID_N);
             kw_stamp(kid.fr);
         } else {
-            kid_friend(kid_fr_step(kid.fr, s));
+            kid_friend((uint32_t)((int32_t)kid.fr + (s > 0 ? 1 : (int32_t)KID_N - 1)));
         }
     }
     if ((s = panel_enc(EN_ALGO)) != 0 && !kw.on) {   /* how the keys play: a step a turn */
@@ -1471,7 +1409,7 @@ static void kid_inst(kid_inst_t *in, int32_t cx, int32_t w, int32_t h, int32_t h
     in->x = (int16_t)clamp(cx - w / 2, in->wig, 240 - w - in->wig);           /* never off the screen's sides */
     in->y = (int16_t)clamp(KID_GROUND - h - hop, 0, KID_GROUND - h);         /* .. nor its top */
     in->flip = (kid.fx >> KX_BACK) & 1u;
-    in->pix = KID_PIX[kid.fr % KID_N];
+    in->pix = KID_PIX[kid_art(kid.fr)];
     in->pal = pal;
 }
 
@@ -1485,7 +1423,7 @@ static void kid_frame_setup(uint32_t now)
     uint16_t db = kid.scene == KS_DESERT ? RGB(255, 222, 150) : kid.scene == KS_SNOW ? RGB(236, 242, 252) : DAY_B;
     uint16_t top = kid_mix(dt, NIGHT_T, kid.night * 32u), bot = kid_mix(db, NIGHT_B, kid.night * 32u);   /* (the desert:
                                                   * a sunset sky; snow: a pale one) */
-    const uint16_t *pal = KID_PAL[kid.fr % KID_N];
+    const uint16_t *pal = KID_PAL[kid_art(kid.fr)];
     kid_inst_t tmp[6];
     kf.t = now;
     kf.ph = now / 45u;
@@ -1781,7 +1719,7 @@ static uint32_t kid_band_setup(uint32_t now)
         sig = 0x200u | (uint32_t)kid.hint << 4 | (uint32_t)(v + 1) << 12 | (uint32_t)kid.beat << 20 | (uint32_t)kid.f_song << 26;
     } else {
         kf.band = KB_NAME;
-        kf.txt = KID_NAME[kid.fr % KID_N];
+        kf.txt = KID_NAME[kid_art(kid.fr)];
         kf.bt.sc = str_len(kf.txt) * 24u - 4u <= 228u ? 4 : 3;
         kf.ink = KID_WHITE;
         kf.bg = kid.night >= 5u ? RGB(40, 110, 70) : RGB(96, 200, 90);
@@ -2349,9 +2287,9 @@ static int32_t kw_sprite(uint32_t fr, int32_t x, int32_t y, int32_t sz)   /* fri
     uint32_t rx = (uint32_t)(x * KID_PW / sz), ry = (uint32_t)(y * KID_PW / sz), b;
     if (x < 0 || y < 0 || x >= sz || y >= sz)
         return -1;
-    b = KID_PIX[fr % KID_N][ry * (KID_PW / 2) + (rx >> 1)];
+    b = KID_PIX[kid_art(fr)][ry * (KID_PW / 2) + (rx >> 1)];
     b = rx & 1u ? b & 15u : b >> 4;
-    return b ? (int32_t)KID_PAL[fr % KID_N][b] : -1;
+    return b ? (int32_t)KID_PAL[kid_art(fr)][b] : -1;
 }
 
 static uint16_t kw_px(int32_t x, int32_t y)
@@ -2510,7 +2448,7 @@ static void kid_draw(void)
         } else {
             if (now - kid.hop_ms > 700u)
                 kid.hop_ms = now;                                 /* the friend hops along, small, under the name */
-            kid_inst(&kf.in[0], 120, 72, 72, kid_hop(now), KID_PAL[kid.fr % KID_N]);
+            kid_inst(&kf.in[0], 120, 72, 72, kid_hop(now), KID_PAL[kid_art(kid.fr)]);
             kf.n = 1;
             kid_paint(0, 0, 240, 240);
             return;

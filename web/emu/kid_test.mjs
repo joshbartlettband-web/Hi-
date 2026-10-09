@@ -321,19 +321,26 @@ check("PLAY again stops it", ex.web_playing() === 0);
   check("kept over a power-off: the next start has the same VOLUME (1024)", e2.web_master_q12() === 1024);
 }
 
-// the grown-ups' LOOK-ALIKES (u/ReallyLongLake): HOME held 1 s and PRESETS left hides the friends drawn after TV and film
-// characters (PRESETS passes them by, kept over a power-off, VOLUME untouched), PRESETS right shows them again
+// the grown-ups' LOOK-ALIKES (u/ReallyLongLake): HOME held 1 s and PRESETS left shows original stand-ins for the friends drawn
+// after TV and film characters (their own picture and name, the same sound), kept over a power-off with the VOLUME untouched;
+// PRESETS right brings the look-alikes back. Every friend stays on PRESETS either way
 {
-  const LOOK = new Set([8, 21, 9, 10, 14, 23, 41, 42, 43, 45]), f0 = ex.web_kid_friend();
-  const tour = (e) => { const seen = new Set(); for (let i = 0; i < NF + 10; i++) { e.web_enc(EN.PRESETS, 1); for (let k = 0; k < 140; k++) e.web_render(128); seen.add(e.web_kid_friend()); } return seen; };
+  const f0 = ex.web_kid_friend(), go = (e, f) => { for (let i = 0; i < NF && e.web_kid_friend() !== f; i++) { e.web_enc(EN.PRESETS, 1); for (let k = 0; k < 10; k++) e.web_render(128); } for (let k = 0; k < 600; k++) e.web_render(128); };
+  const fb = (e) => new Uint16Array(e.memory.buffer, e.web_screen(), 240 * 240).slice(190 * 240, 236 * 240).join(",");
+  const tour = (e) => { const seen = new Set(); for (let i = 0; i < NF + 4; i++) { e.web_enc(EN.PRESETS, 1); for (let k = 0; k < 40; k++) e.web_render(128); seen.add(e.web_kid_friend()); } return seen; };
+  go(ex, 14);                                                                  // WEB HERO
+  const name = band();
   ex.web_buttons(1 << B.HOME); render(1300);
   ex.web_enc(EN.PRESETS, -1); render(200);
   shot("lookalikes");
   const word = band();
   ex.web_buttons(0); render(2600);
-  check("HOME held, PRESETS left: the band said so, no friend changed by the turn", word !== band());
-  let seen = tour(ex);
-  check(`hidden: PRESETS visits ${seen.size} friends, none of the look-alikes`, seen.size === NF - LOOK.size && ![...seen].some((f) => LOOK.has(f)));
+  shot("standin");
+  check("HOME held, PRESETS left: the band says so, then WEB HERO shows its stand-in's name", word !== name && band() !== name && band() !== word && ex.web_kid_friend() === 14);
+  check(`..every friend is still on PRESETS (${NF})`, tour(ex).size === NF);
+  go(ex, 14);
+  peak = 0; ex.web_keys(1 << 12); render(300); ex.web_keys(0); render(400);
+  check(`..and the stand-in sings (the same sound, peak ${peak.toFixed(3)})`, peak > 0.02);
   const nor = new Uint8Array(mem.buffer, ex.web_nor(), ex.web_nor_size()).slice();
   const e3 = (await WebAssembly.instantiate(fs.readFileSync(wasmPath), {})).instance.exports;
   e3._initialize();
@@ -341,14 +348,20 @@ check("PLAY again stops it", ex.web_playing() === 0);
   e3.web_boot(); e3.web_master(1023);
   for (let k = 0; k < 400; k++) e3.web_render(128);
   e3.web_keys(1); for (let k = 0; k < 40; k++) e3.web_render(128); e3.web_keys(0);
-  seen = tour(e3);
-  check("kept over a power-off, and the VOLUME with it (1024)", ![...seen].some((f) => LOOK.has(f)) && e3.web_master_q12() === 1024);
+  for (let k = 0; k < 600; k++) e3.web_render(128);
+  go(e3, 14);
+  for (let k = 0; k < 1000; k++) e3.web_render(128);
+  render(2900);
+  check("kept over a power-off (the stand-in's name), and the VOLUME with it (1024)", fb(e3) === band() && e3.web_master_q12() === 1024);
+  go(ex, 0);
+  const duck = band();
   ex.web_buttons(1 << B.HOME); render(1300);
   ex.web_enc(EN.PRESETS, 1); render(200);
   ex.web_buttons(0); render(2600);
-  seen = tour(ex);
-  check(`HOME held, PRESETS right: all ${NF} again`, seen.size === NF);
-  for (let i = 0; i < NF && ex.web_kid_friend() !== f0; i++) { ex.web_enc(EN.PRESETS, 1); render(30); }
+  check("a friend that is no look-alike is the same either way (DUCKY)", band() === duck);
+  go(ex, 14);
+  check("HOME held, PRESETS right: WEB HERO is back", band() === name);
+  go(ex, f0);
   render(1500);
 }
 
