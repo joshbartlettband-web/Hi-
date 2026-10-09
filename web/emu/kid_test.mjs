@@ -414,6 +414,25 @@ check("PLAY again stops it", ex.web_playing() === 0);
     shot("accordion11");
     check("ACCORDION, the top key: fourths on F (F B E, and A where the engine has the voices)", bandHas(GRN) && bandHas(PINK) && bandHas(E_YEL));
     ex.web_keys(0); render(1200);
+    // ARP in ACCORDION: once, SPARKLE TUNE (the chord steady on track 3, the tune arpeggiated); twice, SPARKLE ALL; three times, off
+    const arp = () => { ex.web_buttons(1 << B.ARP); render(80); ex.web_buttons(0); render(150); };
+    const words = band();
+    arp();
+    const tuneWord = band();
+    ex.web_keys((1 << 8) | (1 << 19) | (1 << 23)); render(150);            // C#4 (C) with C5 and E5
+    let steady = true;
+    for (let i = 0; i < 6; i++) { render(60); if (ex.web_voices(2) < 3) steady = false; }
+    check(`ARP in ACCORDION: SPARKLE TUNE, the chord holds (${ex.web_voices(2)} voices on its own track) under the tune`, steady && tuneWord !== words);
+    ex.web_keys(0); render(800);
+    arp();
+    const allWord = band();
+    ex.web_keys(1 << 8); render(400);
+    check("..twice: SPARKLE ALL, the chord sparkles too (on the friend's track)", ex.web_voices(2) === 0 && allWord !== tuneWord);
+    ex.web_keys(0); render(800);
+    arp();
+    ex.web_keys(1 << 8); render(300);
+    check("..three times: off, the chord plain again", ex.web_voices(0) >= 3 && ex.web_voices(2) === 0);
+    ex.web_keys(0); render(1200);
   }
   ex.web_keys(1 << 14); render(300);                                          // G: its own note
   check("ACCORDION: a white key plays its own note (G teal, no chord)", bandHas(G_TEAL) && !bandHas(C_RED));

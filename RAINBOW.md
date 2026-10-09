@@ -28,7 +28,7 @@ at the next power-on.
 | | The top row's effects turn on with a tap and off with another (one at a time; the lit button shows which). HICCUP, BACKWARDS, SLEEPY and FREEZE start again on every new note, so a key pressed after the tap always sounds. |
 | PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
 | SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY, HOEDOWN. |
-| ARP | Sparkle: a held key plays up and down by itself. |
+| ARP | Sparkle: a held key plays up and down by itself. In ACCORDION it has three settings, one a press: SPARKLE TUNE (the white keys sparkle while the black keys' chords hold steady), SPARKLE ALL (the chords sparkle too) and off. |
 | REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti, clouds, snow, autumn leaves, desert), with confetti. |
 | HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
 | SAVE | WRITE: she writes her own song (below). SAVE again goes back to playing. |
@@ -77,7 +77,10 @@ letter in the band), left to right, up to 8 of them; the oldest drops off. Keys 
 black key gets a sharp sign, notes below the staff get their ledger lines, and **8VA / 8VB** (or 15MA / 15MB) shows over or under the
 staff when OCT or KNOB 1 has moved her an octave or two up or down. Each note also shows how long it was held, against the beat: a quick tap is a sixteenth (a stem and two flags), then an eighth, a
 quarter (about one beat), a half (an open head, about two beats) and a whole (an open head with no stem). The note grows through them
-while she holds the key, so she can see a long sound become a long note (suggested by u/theskyisfalling1 on r/MVaveFM1). It goes after 6 seconds of quiet and starts again from the left. The big
+while she holds the key, so she can see a long sound become a long note (suggested by u/theskyisfalling1 on r/MVaveFM1). The staff is
+in 4/4 (shown after the clef) and draws a barline each time the written notes fill four beats; a note that runs past the bar gets the
+line after it (a toy's staff writes no ties). WRITE's big staff has barlines too, every four columns (a column is a beat). It goes
+after 6 seconds of quiet and starts again from the left. The big
 letter stays in the band. The clef is the treble clef of the FreeSerif font (GNU FreeFont, GPL-3.0 or later), scaled down to a bitmap in
 `tools/gen_kid_art.py`.
 

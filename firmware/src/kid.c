@@ -246,12 +246,13 @@ static const uint8_t KID_FONT[][7] = {
     {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},   /* 5 8 */
     {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00}, {0x0E, 0x11, 0x01, 0x06, 0x04, 0x00, 0x04},   /* - ? */
     {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08}, {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C},   /* 7 9 */
+    {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02},                                               /* 4 */
 };
 static int32_t kid_glyph_of(char c)
 {
     if (c >= 'A' && c <= 'Z')
         return c - 'A';
-    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : c == '?' ? 33 : c == '7' ? 34 : c == '9' ? 35 : -1;
+    return c == '1' ? 26 : c == '3' ? 27 : c == '#' ? 28 : c == '!' ? 29 : c == '5' ? 30 : c == '8' ? 31 : c == '-' ? 32 : c == '?' ? 33 : c == '7' ? 34 : c == '9' ? 35 : c == '4' ? 36 : -1;
 }
 
 static const int8_t KID_SIN[32] = {0, 25, 49, 71, 90, 106, 117, 125, 127, 125, 117, 106, 90, 71, 49, 25,
@@ -299,6 +300,7 @@ static struct {
     uint8_t fx, fxk;                    /* the top row's effect that is on (a KX_* bit, or 0), the one tapped last */
     uint8_t rearm;                      /* the looping effects let go for a new note, to be pressed again (kid_input) */
     uint8_t st_n;                       /* the staff's entries (st), oldest first */
+    uint16_t st_pos0;                   /* where the oldest entry starts, in sixteenths since the staff began (measures) */
     kid_st_t st[KID_ST_N];
     uint32_t st_ms, st_t0, st_sig;      /* the last note; the last entry's start; what the panel last showed */
     uint8_t vol_open, vol_hold;         /* the VOLUME is open (HOME held 1 s); HOME is down, since vol_ms */
@@ -309,6 +311,7 @@ static struct {
     uint8_t bass_ready;
     int8_t key;                         /* the key whose letter shows, -1 none */
     uint8_t rev0, dly0;                 /* the friend's sound's own sends (the echo adds to them) */
+    uint8_t acc_fr;                     /* the friend whose sound track 3 has (ACCORDION's chords apart), 0xFF none */
     uint8_t voice0;                     /* the friend's sound's own voice mode (a mono friend: LEGATO) */
     uint8_t full;                       /* draw everything next frame */
     uint32_t hint_ms, key_ms, hop_ms, party_ms, exit_ms, play_ms, bg_ms;
@@ -343,6 +346,8 @@ static uint32_t kid_art(uint32_t fr)
     return (KID_VOL_BYTE & KID_HIDE_BIT) && KID_ALT[fr] ? KID_ALT[fr] : fr;
 }
 
+static void kid_sound_to(track_t *t, uint32_t fr);
+
 /* ---------------------------------------------------------------- sound */
 static void kid_knobs(void)                       /* the knobs' state into the friend's track (track 1) */
 {
@@ -362,6 +367,26 @@ static void kid_knobs(void)                       /* the knobs' state into the f
                                                   * 2.5 dB down, about as loud as one: the loudness audit, RAINBOW.md) */
     t->p[P_AMODE] = kid.arp ? 3 : 0;              /* UPDN */
     t->p[P_ARATE] = 2;                            /* 1/16 */
+    {   /* ACCORDION with SPARKLE TUNE (ARP once): the black keys' chords on track 3, the friend's sound with no arp, so
+         * the tune sparkles over steady chords; SPARKLE ALL (twice) arpeggiates them too (seq.c kb_accord_trk) */
+        int apart = kid.mode == KM_ACCORD && kid.arp == 1u && !drum_track(t);
+        if (apart) {
+            track_t *c = &trk[2];
+            static const uint8_t SAME[] = {P_DLY, P_REV, P_LD_PIT, P_LRATE, P_LEVEL};
+            uint32_t i;
+            if (kid.acc_fr != kid.fr) {
+                kid_sound_to(c, kid.fr);
+                kid.acc_fr = kid.fr;
+            }
+            for (i = 0; i < sizeof SAME; i++)
+                c->p[SAME[i]] = t->p[SAME[i]];
+            c->p[P_VOICE] = V_POLY;
+            c->p[P_CHRD] = CH_OFF;
+            c->p[P_AMODE] = 0;
+            c->p[P_MUTE] = 0;
+        }
+        kb_accord_trk = apart ? 2u : 0u;
+    }
     song.octave = kid.mode >= KM_GUESS || drum_track(t) ? 0 : kid.oct;   /* (GUESS, FOLLOW: the keys where the notes
                                                   * are; a drum friend: each key always its drum, big or small) */
 }
@@ -500,6 +525,7 @@ static void kid_enter(void)
     song.sel = 0;
     kid.ready = 1;
     kid.key = -1;
+    kid.acc_fr = 0xFF;
     kid.beat = KID_SOUND[kid.fr].beat;
     kid_beat_load();
     kid_friend(kid.fr);
@@ -569,6 +595,20 @@ static void kid_look_set(int hide)
     kid_hint(KH_LOOK);
 }
 
+static uint32_t kid_beat_ms(void);
+
+/* a held time's note value (KT_*), against the beat */
+static uint32_t kid_st_type(uint32_t m)
+{
+    uint32_t q = kid_beat_ms();
+    return m * 8u < q * 3u ? KT_16TH : m * 4u < q * 3u ? KT_8TH : m * 2u < q * 3u ? KT_4TH : m < q * 3u ? KT_HALF : KT_WHOLE;
+}
+
+static uint32_t kid_st_len(uint32_t m)  /* .. and its length in sixteenths (the staff's measures: 16 a bar of 4/4) */
+{
+    return 1u << kid_st_type(m);
+}
+
 /* the staff gets the keys pressed now (a bit a key: key k plays MIDI 53 + k, F3 .. G5 at OCT 0), with a chord's
  * third and fifth if CHORD is on; keys within 90 ms of the entry's start are one chord */
 static void kid_staff_add(uint32_t keys, uint32_t now)
@@ -581,10 +621,13 @@ static void kid_staff_add(uint32_t keys, uint32_t now)
         e = &kid.st[kid.st_n - 1u];
     } else {
         if (kid.st_n == KID_ST_N) {
+            kid.st_pos0 = (uint16_t)(kid.st_pos0 + kid_st_len(kid.st[0].ms));   /* (its measure goes on) */
             for (j = 1; j < KID_ST_N; j++)
                 kid.st[j - 1u] = kid.st[j];
             kid.st_n--;
         }
+        if (!kid.st_n)
+            kid.st_pos0 = 0;
         e = &kid.st[kid.st_n++];
         e->n = 0;
         e->sharp = 0;
@@ -800,6 +843,7 @@ static void kw_enter(void)
     }
     kw.on = 1;
     kb_strum = kb_accord = 0;
+    kid.acc_fr = 0xFF;                                            /* (track 3 is the band's now) */
     kw.col = -1;
     kw.sig = 0;
     kid.key = -1;
@@ -926,6 +970,8 @@ static void kid_mode_set(uint32_t m)
     if (kid.mode == KM_GUESS && kid.g_state == KG_SING)
         kid_sing(kid.g_note, 0);
     kid.mode = (uint8_t)(m % KM_COUNT);
+    if (kid.mode != KM_ACCORD && kid.arp > 1u)                    /* (SPARKLE ALL is ACCORDION's: elsewhere SPARKLE) */
+        kid.arp = 1;
     kid.chord = kid.mode == KM_CHOIR;
     kb_strum = kid.mode == KM_STRUM && !kw.on;
     kb_accord = kid.mode == KM_ACCORD && !kw.on;
@@ -1059,7 +1105,8 @@ static void kid_input(void)
         case B_ARP:
             if (kw.on)
                 break;
-            kid.arp ^= 1u;
+            kid.arp = (uint8_t)(kid.mode == KM_ACCORD && !drum_track(&trk[0]) ? (kid.arp + 1u) % 3u : !kid.arp);   /* (ACCORDION:
+                                                  * SPARKLE TUNE, SPARKLE ALL, off) */
             kid_knobs();
             kid_hint(KH_SPARKLE);
             break;
@@ -1365,6 +1412,7 @@ static struct {
     int8_t meter;                       /* dots lit (HINT), -1 none */
     uint8_t staff;                      /* the staff shows */
     uint8_t st_ty[KID_ST_N];            /* .. each entry's note value (KT_*) */
+    uint8_t st_bar[KID_ST_N];           /* .. a barline after it (its note ends a 4/4 measure, or crosses into the next) */
     int8_t st_lo[KID_ST_N], st_hi[KID_ST_N];   /* .. its lowest and highest head (steps) */
     kid_txt_t stl;                      /* .. its octave mark (8VA ..), sc 0 = none */
 } kf;
@@ -1706,7 +1754,11 @@ static uint32_t kid_band_setup(uint32_t now)
             kf.txt = song.g[G_BPM] < 100 ? "SLOW" : song.g[G_BPM] > 135 ? "FAST" : "WALK";
             break;
         case KH_CHORD: kf.txt = KID_MODE_NAME[kid.mode % KM_COUNT]; v = -1; break;   /* (its picture: kid_band_icon) */
-        case KH_SPARKLE: v = kid.arp ? 8 : 0; break;
+        case KH_SPARKLE:
+            v = kid.arp ? 8 : 0;
+            if (kid.mode == KM_ACCORD && kid.arp)
+                kf.txt = kid.arp == 1u ? "SPARKLE TUNE" : "SPARKLE ALL";
+            break;
         case KH_BEAT: kf.txt = KID_BEATS[kid.beat % KB_COUNT].name; v = -1; break;
         case KH_VOLUME: v = (int32_t)kid_vol_level(); break;
         case KH_SONG: kf.txt = KID_SONGS[kid.f_song % KID_NSONGS].name; v = -1; break;
@@ -2159,7 +2211,7 @@ static uint16_t kid_pic_px(int32_t x, int32_t y)
 static uint32_t kid_staff_setup(uint32_t now)
 {
     static const char *const MARK[5] = {"15MB", "8VB", 0, "8VA", "15MA"};
-    uint32_t i, j, sig = 7;
+    uint32_t i, j, sig = 7, pos;
     kf.staff = kid.st_n && now - kid.st_ms < KID_ST_MS;
     if (!kf.staff) {
         kid.st_n = 0;
@@ -2170,12 +2222,14 @@ static uint32_t kid_staff_setup(uint32_t now)
         if (fm1_in.notes & e->keys)
             e->ms = (uint16_t)(now - kid.st_t0 > 60000u ? 60000u : now - kid.st_t0);
     }
-    for (i = 0; i < kid.st_n; i++) {
+    for (i = 0, pos = kid.st_pos0; i < kid.st_n; i++) {
         const kid_st_t *e = &kid.st[i];
-        uint32_t q = kid_beat_ms(), m = e->ms;
         int32_t lo = 99, hi = -99;
-        kf.st_ty[i] = (uint8_t)(m * 8u < q * 3u ? KT_16TH : m * 4u < q * 3u ? KT_8TH : m * 2u < q * 3u ? KT_4TH :
-                                m < q * 3u ? KT_HALF : KT_WHOLE);
+        kf.st_ty[i] = (uint8_t)kid_st_type(e->ms);
+        kf.st_bar[i] = (uint8_t)((pos + (1u << kf.st_ty[i])) / 16u != pos / 16u);   /* (a note that crosses the bar: the
+                                                  * line after it; a toy's staff writes no ties) */
+        pos += 1u << kf.st_ty[i];
+        sig = sig * 3u + kf.st_bar[i];
         for (j = 0; j < e->n; j++) {
             lo = e->step[j] < lo ? e->step[j] : lo;
             hi = e->step[j] > hi ? e->step[j] : hi;
@@ -2213,6 +2267,8 @@ static uint16_t kid_staff_px(int32_t x, int32_t y)
         return pic;
     if (!kid_staff_in(x, y, 2, 4))
         return KID_INK;
+    if (i >= 1 && i <= (int32_t)kid.st_n && (x - 44) % 21 == 0 && y >= 24 && y <= 48 && kf.st_bar[i - 1])
+        return KID_INK;                                               /* a barline after slot i - 1: its measure is full */
     if (i >= 0 && i < (int32_t)kid.st_n) {                           /* the notes of this slot */
         const kid_st_t *e = &kid.st[i];
         int32_t cx = 56 + 21 * i, dx = x - cx, lo = kf.st_lo[i], hi = kf.st_hi[i], ls, ty = kf.st_ty[i];
@@ -2246,6 +2302,8 @@ static uint16_t kid_staff_px(int32_t x, int32_t y)
     if (x >= 13 && x < 13 + KID_CLEF_W && d >= 0 && d < KID_CLEF_H && ((KID_CLEF[d] >> (15 - (x - 13))) & 1u))
         return KID_INK;
     if (x >= 12 && x < 228 && y >= 24 && y <= 48 && (y - 24) % 6 == 0)
+        return KID_INK;
+    if (kid_char_ink('4', 35, 27, 1, x, y) || kid_char_ink('4', 35, 39, 1, x, y))   /* the time: 4/4 */
         return KID_INK;
     if (kf.stl.sc && kid_ink_at(&kf.stl, x, y))
         return KID_INK;
@@ -2332,6 +2390,8 @@ static uint16_t kw_px(int32_t x, int32_t y)
             if (s <= 0 && dx >= -13 && dx <= 13 && y <= KW_Y(s) && (KW_Y(0) - y) % 12 == 0 && y >= KW_Y(0))
                 return KID_INK;                                    /* ledger lines under the staff */
         }
+        if ((col + 1) % 4 == 0 && x == KW_X0 + c * KW_CW + KW_CW - 1 && y >= KW_Y(10) && y <= KW_Y(2))
+            return KID_INK;                                        /* a barline: four beats a measure */
         if (col == at && x <= KW_X0 + c * KW_CW + KW_CW - 2 && y >= 10 && y <= 173) {   /* the column: highlighted */
             if (y >= KW_Y(10) && y <= KW_Y(2) && (KW_Y(2) - y) % 12 == 0)
                 return KID_INK;
