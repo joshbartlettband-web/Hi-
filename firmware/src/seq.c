@@ -587,7 +587,7 @@ static void key_on(uint32_t k, track_t *t)
         uint32_t x = kb_chord[k][i];
         if (midi_local_held(t, x))
             continue;
-        input_on(t, x, 100);
+        input_on(t, x, kb_accord && n == 3u && ((0x54Au >> pc) & 1u) ? 60u : 100u);   /* (ACCORDION's chord: softer) */
         midi_out_event(0x09u | (0x90u | mc) << 8 | x << 16 | 100u << 24);
     }
     kb_chn[k] = (uint8_t)n;

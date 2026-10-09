@@ -129,17 +129,29 @@ check("PRESETS: another friend (the band shows its name)", band() !== name0);
   ex.web_keys(0); render(7000);
 }
 
-const levels = [];
+// every friend sounds, and about as loud as the others: loudness (the energy over a phrase, the lows filtered out as the
+// ear hears them, about), not peaks: a pluck and an organ with the same peak are far apart to the ear
+const levels = [], peaks = [];
 for (let f = 0; f < 50; f++) {
+  let e = 0, n = 0, px = 0, py = 0;
   peak = 0;
-  for (const k of [12, 14, 16]) { ex.web_keys(1 << k); render(500); ex.web_keys(0); render(150); }
-  levels.push(peak);
+  for (const k of [12, 14, 16]) {
+    ex.web_keys(1 << k);
+    for (let ms = 0; ms < 650; ms += 2.9) {
+      if (ms >= 500) ex.web_keys(0);
+      ex.web_render(128);
+      const l = new Float32Array(mem.buffer, ex.web_out_l(), 128);
+      for (let i = 0; i < 128; i++) { const y = 0.985 * (py + l[i] - px); px = l[i]; py = y; e += y * y; n++; peak = Math.max(peak, Math.abs(l[i])); }
+    }
+  }
+  levels.push(10 * Math.log10(e / n + 1e-20));
+  peaks.push(peak);
   ex.web_enc(EN.PRESETS, 1);
   render(400);
 }
-const lo = Math.min(...levels), hi = Math.max(...levels);
-check(`all 50 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
-check("MASTER all the way up stays at about half (no friend peaks over 0.25)", hi < 0.25);
+const lo = Math.min(...levels), hi = Math.max(...levels), pmin = Math.min(...peaks), pmax = Math.max(...peaks);
+check(`all 50 friends sound, alike to the ear (within ${(hi - lo).toFixed(1)} dB; peaks ${pmin.toFixed(3)} .. ${pmax.toFixed(3)})`, pmin > 0.04 && hi - lo < 7);
+check("MASTER all the way up stays at about half (no friend peaks over 0.3)", pmax < 0.3);
 
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(1500);
 check("PLAY: the beat runs", ex.web_playing() === 1);

@@ -53,6 +53,22 @@ and stays at the left of the band while any setting but 1 FRIEND is on.
 In every setting, keys held together show their letters in their colors and, when it has one, the chord's name (MAJOR, MINOR,
 SEVEN, DIM, SUS), whatever their order (u/nutty_cartoon). GUESS and FOLLOW keep the keys at their own notes (OCT 0).
 
+## Drum friends
+
+Scissors, Beat Bot, Toy Drum, Bongo and Monkey play drum kits: every key is a different drum (Felucca's GM drum map). For them the
+band shows the drum's name (KICK, SNARE, CLAP, HI-HAT, OPEN HAT, TOM, CONGA, RIM, CLAVE, COWBELL, CYMBAL) in its own color instead of
+a note letter, the staff stays quiet (drums are not notes on it), 3 FRIENDS plays one drum a key, and KNOB 1 / OCT only change the
+friend's size: each key always plays the same drum. In WRITE their notes are written as the drums their keys play.
+
+## How loud everything is
+
+The friends were leveled by ear-loudness, not by peak: each one played the same phrase in the browser build and was measured
+with the broadcast loudness method (ITU-R BS.1770, K-weighted, gated), then its P_LEVEL moved toward the middle (half a dB a
+step). They had spread over 12 dB (a long organ note sounds far louder than a pluck with the same peak); now they are within about
+3.5 dB. The eleven beats were leveled the same way (now within half a dB of each other, about 4 dB under a friend). Three friends
+singing (3 FRIENDS) play 2.5 dB softer and the ACCORDION's chords softer too, so a chord is about as loud as one note.
+`web/emu/kid_test.mjs` checks the friends stay within 7 dB of each other on its own simpler measure.
+
 ## The staff
 
 When she plays, a treble clef and five lines drop in at the top of the screen and write her notes as colored heads (the color of the

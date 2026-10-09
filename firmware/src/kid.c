@@ -75,58 +75,58 @@ typedef struct {
     uint8_t kit;                        /* DRUM: its KIT + 1 (eng_drum.c DK_*: 5 = 80, 6 = 10, 7 = 66, 8 = 55), 0 STD */
 } kid_sound_t;
 static const kid_sound_t KID_SOUND[KID_N] = {
-    {12, "TINE EP", 108, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
-    {7, "SOFT FLUTE", 116, KS_HEARTS, KB_DISCO},      /* PINK DUCKY: WHEEL */
-    {0, "SAW LEAD", 102, KS_CONFETTI, KB_HIPHOP},     /* COOL DUCKY: ANALOG */
-    {9, "KALIMBA", 123, KS_BUBBLES, KB_REGGAE},       /* AXOLOTL: PHYS */
-    {8, "SHIMMER", 114, KS_RAINBOW, KB_DISCO},        /* UNICORN: GRAIN */
-    {12, "MARIMBA", 118, KS_FLOWERS, KB_SAMBA},       /* GIRAFFE */
-    {5, "WOW BASS", 106, KS_HEARTS, KB_DANCE},        /* GOO: VOICE */
-    {6, "FAT BASS", 110, KS_CONFETTI, KB_HIPHOP},     /* GOOBERT: TRIO */
-    {3, "PULSE LD", 103, KS_FLOWERS, KB_ROCK},        /* BLUE PUP: LOFI */
-    {5, "VOX LEAD", 96, KS_CONFETTI, KB_MARCH},       /* RED MONSTER */
-    {7, "FULL ORGAN", 107, KS_RAINBOW, KB_DISCO},     /* BLUE MONSTER */
-    {2, "BRASS", 97, KS_FLOWERS, KB_TRAIN},           /* APRIL: PHASE (the family dog) */
+    {12, "TINE EP", 97, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
+    {7, "SOFT FLUTE", 104, KS_HEARTS, KB_DISCO},      /* PINK DUCKY: WHEEL */
+    {0, "SAW LEAD", 97, KS_CONFETTI, KB_HIPHOP},     /* COOL DUCKY: ANALOG */
+    {9, "KALIMBA", 122, KS_BUBBLES, KB_REGGAE},       /* AXOLOTL: PHYS */
+    {8, "SHIMMER", 108, KS_RAINBOW, KB_DISCO},        /* UNICORN: GRAIN */
+    {12, "MARIMBA", 122, KS_FLOWERS, KB_SAMBA},       /* GIRAFFE */
+    {5, "WOW BASS", 94, KS_HEARTS, KB_DANCE},        /* GOO: VOICE */
+    {6, "FAT BASS", 113, KS_CONFETTI, KB_HIPHOP},     /* GOOBERT: TRIO */
+    {3, "PULSE LD", 95, KS_FLOWERS, KB_ROCK},        /* BLUE PUP: LOFI */
+    {5, "VOX LEAD", 89, KS_CONFETTI, KB_MARCH},       /* RED MONSTER */
+    {7, "FULL ORGAN", 98, KS_RAINBOW, KB_DISCO},     /* BLUE MONSTER */
+    {2, "BRASS", 86, KS_FLOWERS, KB_TRAIN},           /* APRIL: PHASE (the family dog) */
     {10, "DRUM KIT", 104, KS_CONFETTI, KB_ROCK},      /* SCISSORS: DRUM, every key another drum */
-    {5, "CHOIR AAH", 89, KS_STARS, KB_SPOOKY},        /* GHOST: oooOOooo, and the spooky beat */
-    {6, "SYNC LEAD", 103, KS_STARS, KB_ROCK},         /* WEB HERO */
-    {12, "BELL", 112, KS_FLOWERS, KB_LULLABY},        /* BUTTERFLY */
-    {9, "HARP", 114, KS_HEARTS, KB_SAMBA},            /* KITTY */
-    {3, "WAVE BASS", 111, KS_BUBBLES, KB_REGGAE},     /* FROG */
-    {3, "ARP 8BIT", 108, KS_STARS, KB_HIPHOP},        /* ROBOT */
-    {8, "CLOUD PAD", 108, KS_RAINBOW, KB_LULLABY},    /* RAINBOW */
-    {6, "CHIP CHOIR", 97, KS_HEARTS, KB_DISCO},      /* PRINCESS DUCKY: TRIO */
-    {3, "STEP LEAD", 103, KS_FLOWERS, KB_ROCK},       /* RED PUP: LOFI */
-    {0, "SINE KEY", 105, KS_FLOWERS, KB_MARCH},       /* YELLOW BIRD: ANALOG */
+    {5, "CHOIR AAH", 84, KS_STARS, KB_SPOOKY},        /* GHOST: oooOOooo, and the spooky beat */
+    {6, "SYNC LEAD", 96, KS_STARS, KB_ROCK},         /* WEB HERO */
+    {12, "BELL", 107, KS_FLOWERS, KB_LULLABY},        /* BUTTERFLY */
+    {9, "HARP", 121, KS_HEARTS, KB_SAMBA},            /* KITTY */
+    {3, "WAVE BASS", 110, KS_BUBBLES, KB_REGGAE},     /* FROG */
+    {3, "ARP 8BIT", 96, KS_STARS, KB_HIPHOP},        /* ROBOT */
+    {8, "CLOUD PAD", 100, KS_RAINBOW, KB_LULLABY},    /* RAINBOW */
+    {6, "CHIP CHOIR", 90, KS_HEARTS, KB_DISCO},      /* PRINCESS DUCKY: TRIO */
+    {3, "STEP LEAD", 99, KS_FLOWERS, KB_ROCK},       /* RED PUP: LOFI */
+    {0, "SINE KEY", 107, KS_FLOWERS, KB_MARCH},       /* YELLOW BIRD: ANALOG */
     {8, "GLITCH", 107, KS_STARS, KB_SPOOKY},          /* SLIMY: GRAIN, and the spooky beat */
-    {9, "PLUCK", 121, KS_FLOWERS, KB_DANCE},          /* BUNNY: PHYS */
-    {12, "PAD", 113, KS_RAINBOW, KB_HIPHOP},          /* PANDA: FM6 */
-    {3, "WAVE LEAD", 109, KS_STARS, KB_MARCH},        /* PENGUIN: LOFI */
+    {9, "PLUCK", 127, KS_FLOWERS, KB_DANCE},          /* BUNNY: PHYS */
+    {12, "PAD", 108, KS_RAINBOW, KB_HIPHOP},          /* PANDA: FM6 */
+    {3, "WAVE LEAD", 108, KS_STARS, KB_MARCH},        /* PENGUIN: LOFI */
     {5, "WHISPER", 97, KS_STARS, KB_LULLABY},        /* OWL: VOICE, hoo */
-    {6, "ARP LEAD", 101, KS_FLOWERS, KB_SAMBA},       /* BEE: TRIO, bzz */
-    {9, "BELL TREE", 113, KS_FLOWERS, KB_DANCE},      /* LADYBUG: PHYS */
-    {0, "ACID", 105, KS_CONFETTI, KB_ROCK},           /* DINO: ANALOG */
-    {8, "FROZEN", 125, KS_BUBBLES, KB_LULLABY},       /* WHALE: GRAIN */
-    {9, "MARIMBA", 120, KS_BUBBLES, KB_REGGAE},       /* OCTOPUS: PHYS */
-    {12, "PLUCK", 119, KS_BUBBLES, KB_REGGAE},        /* FISH: FM6 */
-    {9, "HAND DRUM", 111, KS_BUBBLES, KB_LULLABY},    /* TURTLE: PHYS */
-    {6, "RING BELL", 111, KS_CONFETTI, KB_DISCO},     /* ICE CREAM: TRIO */
-    {7, "JAZZ PERC", 106, KS_HEARTS, KB_DANCE},       /* CUPCAKE: WHEEL */
-    {11, "ARCADE", 115, KS_STARS, KB_HIPHOP},         /* ROCKET: NOISE */
-    {0, "PLUCK", 106, KS_HEARTS, KB_SAMBA},           /* STRAWBERRY: ANALOG */
+    {6, "ARP LEAD", 96, KS_FLOWERS, KB_SAMBA},       /* BEE: TRIO, bzz */
+    {9, "BELL TREE", 101, KS_FLOWERS, KB_DANCE},      /* LADYBUG: PHYS */
+    {0, "ACID", 110, KS_CONFETTI, KB_ROCK},           /* DINO: ANALOG */
+    {8, "FROZEN", 117, KS_BUBBLES, KB_LULLABY},       /* WHALE: GRAIN */
+    {9, "MARIMBA", 127, KS_BUBBLES, KB_REGGAE},       /* OCTOPUS: PHYS */
+    {12, "PLUCK", 118, KS_BUBBLES, KB_REGGAE},        /* FISH: FM6 */
+    {9, "HAND DRUM", 113, KS_BUBBLES, KB_LULLABY},    /* TURTLE: PHYS */
+    {6, "RING BELL", 116, KS_CONFETTI, KB_DISCO},     /* ICE CREAM: TRIO */
+    {7, "JAZZ PERC", 101, KS_HEARTS, KB_DANCE},       /* CUPCAKE: WHEEL */
+    {11, "ARCADE", 113, KS_STARS, KB_HIPHOP},         /* ROCKET: NOISE */
+    {0, "PLUCK", 113, KS_HEARTS, KB_SAMBA},           /* STRAWBERRY: ANALOG */
     {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
     /* suggested by r/MVaveFM1's u/veecheech (CREDITS.md) */
-    {0, "SAW", 100, KS_FLOWERS, KB_ROCK, 0, 0, 80},   /* T-REX: a growly bass: a saw, driven hard (DIST) */
-    {0, "SINE KEY", 105, KS_STARS, KB_SPOOKY, 12, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
-    {9, "PLUCK", 118, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
-    {0, "PLUCK", 106, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
-    {0, "RAVE", 102, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
-    {6, "SAW3", 110, KS_STARS, KB_DISCO, 6, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
+    {0, "SAW", 92, KS_FLOWERS, KB_ROCK, 0, 0, 80},   /* T-REX: a growly bass: a saw, driven hard (DIST) */
+    {0, "SINE KEY", 107, KS_STARS, KB_SPOOKY, 12, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
+    {9, "PLUCK", 125, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
+    {0, "PLUCK", 113, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
+    {0, "RAVE", 95, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
+    {6, "SAW3", 113, KS_STARS, KB_DISCO, 6, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
     /* more drum kits: every key another drum, as SCISSORS (Felucca's model kits) */
-    {10, "DRUM KIT", 99, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 5},    /* BEAT BOT: the 80 kit, a classic drum machine */
-    {10, "DRUM KIT", 102, KS_FLOWERS, KB_MARCH, 0, 0, 0, 8},     /* TOY DRUM: the 55 kit, small and tight */
-    {10, "DRUM KIT", 98, KS_HEARTS, KB_SAMBA, 0, 0, 0, 7},       /* BONGO: the 66 kit, congas */
-    {10, "DRUM KIT", 107, KS_STARS, KB_ROCK, 0, 0, 0, 6},        /* MONKEY: the 10 kit, a cymbal on the bell */
+    {10, "DRUM KIT", 103, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 5},    /* BEAT BOT: the 80 kit, a classic drum machine */
+    {10, "DRUM KIT", 105, KS_FLOWERS, KB_MARCH, 0, 0, 0, 8},     /* TOY DRUM: the 55 kit, small and tight */
+    {10, "DRUM KIT", 101, KS_HEARTS, KB_SAMBA, 0, 0, 0, 7},       /* BONGO: the 66 kit, congas */
+    {10, "DRUM KIT", 106, KS_STARS, KB_ROCK, 0, 0, 0, 6},        /* MONKEY: the 10 kit, a cymbal on the bell */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -144,35 +144,35 @@ static const kid_beat_t KID_BEATS[KB_COUNT] = {
     {"DANCE", 112, KD_HOP, 92, 100,
      {"x...x...x...x...", "....x.......x...", "............x...", "..x...x...x...x.", "..............x.", 0, 0, 0},
      {36, 0, 48, 0, 36, 0, 48, 0, 36, 0, 48, 0, 43, 0, 48, 0}},
-    {"MARCH", 100, KD_HOP, 92, 100,
+    {"MARCH", 100, KD_HOP, 91, 99,
      {"x.......x.......", "....x.......x.x.", 0, 0, 0, "..............xx", "x...x...x...x...", 0},
      {36, 0, 0, 0, 43, 0, 0, 0, 36, 0, 0, 0, 43, 0, 0, 0}},
-    {"SPOOKY", 116, KD_BOTH, 89, 98,                 /* a ghost-hunting funk (in the spirit, not the tune) */
+    {"SPOOKY", 116, KD_BOTH, 90, 99,                 /* a ghost-hunting funk (in the spirit, not the tune) */
      {"x..x...x..x.....", "....x.......x...", "....x.......x..x", "x.xxx.xxx.xxx.x.", "......x.......x.", 0, 0,
       "x.....x...x....."},
      {33, 0, 0, 45, 0, 33, 0, 0, 36, 0, 38, 0, 40, 0, 38, 36}},
     {"ROCK", 120, KD_HOP, 92, 100,
      {"x.....x.x.......", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", "..............x.", 0, 0, 0},
      {36, 0, 36, 0, 36, 0, 36, 0, 41, 0, 41, 0, 43, 0, 43, 0}},
-    {"DISCO", 118, KD_BOTH, 88, 98,
+    {"DISCO", 118, KD_BOTH, 89, 99,
      {"x...x...x...x...", "....x.......x...", "....x.......x...", "x.x.x.x.x.x.x.x.", "..x...x...x...x.", 0, 0, 0},
      {36, 0, 48, 0, 36, 0, 48, 0, 41, 0, 53, 0, 43, 0, 55, 0}},
-    {"HIP HOP", 90, KD_SWAY, 92, 104,
+    {"HIP HOP", 90, KD_SWAY, 97, 109,
      {"x......x..x.....", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", 0, 0, "...........x....", 0},
      {33, 0, 0, 0, 0, 0, 0, 33, 0, 0, 31, 0, 0, 0, 0, 0}},
-    {"TRAIN", 132, KD_HOP, 88, 100,                   /* choo choo */
+    {"TRAIN", 132, KD_HOP, 90, 102,                   /* choo choo */
      {"x.......x.......", "..x...x...x...x.", 0, "xxxxxxxxxxxxxxxx", 0, 0, 0, 0},
      {36, 0, 0, 0, 43, 0, 0, 0, 41, 0, 0, 0, 43, 0, 0, 0}},
-    {"SAMBA", 100, KD_BOTH, 90, 100,
+    {"SAMBA", 100, KD_BOTH, 88, 98,
      {"x..xx..xx..xx..x", 0, 0, "xxxxxxxxxxxxxxxx", 0, 0, "x.x..x.x.x..x.x.", "..x...x...x...x."},
      {36, 0, 0, 43, 36, 0, 0, 43, 36, 0, 0, 43, 36, 0, 0, 43}},
-    {"REGGAE", 80, KD_SWAY, 89, 104,
+    {"REGGAE", 80, KD_SWAY, 98, 113,
      {"........x.......", 0, 0, "x.x.x.x.x.x.x.x.", 0, 0, "........x.......", 0},
      {0, 0, 33, 0, 36, 0, 0, 0, 40, 0, 0, 0, 38, 0, 36, 0}},
     {"LULLABY", 70, KD_SLOW, 92, 106,
      {"x.......x.......", 0, 0, 0, 0, 0, "....x.......x...", 0},
      {36, 1, 1, 1, 1, 1, 1, 1, 31, 1, 1, 1, 1, 1, 1, 1}},
-    {"HOEDOWN", 126, KD_HOP, 90, 102,                 /* boom-chick, a walking bass (the cowboy and cowgirl's) */
+    {"HOEDOWN", 126, KD_HOP, 93, 105,                 /* boom-chick, a walking bass (the cowboy and cowgirl's) */
      {"x.......x.......", "....x.......x...", 0, "..x...x...x...x.", 0, 0, "..x...x...x...x.", 0},
      {36, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 40, 0, 41, 0}},
 };
@@ -313,10 +313,13 @@ static void kid_knobs(void)                       /* the knobs' state into the f
     t->p[P_REV] = (int16_t)clamp(kid.rev0 + kid.echo * 6, 0, 127);
     t->p[P_LD_PIT] = (int16_t)clamp(KID_SOUND[kid.fr % KID_N].vib + kid.wiggle * 5, -64, 63);
     t->p[P_LRATE] = 74;
-    t->p[P_CHRD] = kid.chord ? CH_DIA3 : CH_OFF;
+    t->p[P_CHRD] = kid.chord && !drum_track(t) ? CH_DIA3 : CH_OFF;   /* (a drum friend: one drum a key) */
+    t->p[P_LEVEL] = (int16_t)clamp(KID_SOUND[kid.fr % KID_N].level - (t->p[P_CHRD] ? 5 : 0), 0, 127);   /* (three voices:
+                                                  * 2.5 dB down, about as loud as one: the loudness audit, RAINBOW.md) */
     t->p[P_AMODE] = kid.arp ? 3 : 0;              /* UPDN */
     t->p[P_ARATE] = 2;                            /* 1/16 */
-    song.octave = kid.mode >= KM_GUESS ? 0 : kid.oct;   /* (GUESS, FOLLOW: the keys where the notes are) */
+    song.octave = kid.mode >= KM_GUESS || drum_track(t) ? 0 : kid.oct;   /* (GUESS, FOLLOW: the keys where the notes
+                                                  * are; a drum friend: each key always its drum, big or small) */
 }
 
 /* friend fr's sound into track t */
@@ -1137,7 +1140,7 @@ static void kid_input(void)
             kid.key = (int8_t)k;
             kid.key_ms = fm1_ms;
             kid.hop_ms = fm1_ms;
-            if (kid.mode != KM_STRUM)             /* (STRUM: the keys are not their own notes) */
+            if (kid.mode != KM_STRUM && !drum_track(&trk[0]))   /* (STRUM, a drum friend: the keys are not notes) */
                 kid_staff_add(notes, fm1_ms);
         }
     } else if (!kw.on && kid.key >= 0 && ((fm1_in.notes >> kid.key) & 1u)) {
@@ -1405,6 +1408,29 @@ static void kid_frame_setup(uint32_t now)
 }
 
 /* the band's content for this frame; returns its signature (a change redraws it) */
+/* a drum friend's key: the drum it strikes, as a word, and the drum's colour (Felucca's kit or a model kit's piece) */
+static const char *kid_drum_word(uint32_t key, uint16_t *col)
+{
+    static const char *const STD[DVT_COUNT] = {"KICK", "KICK", "SNARE", "CLAP", "HI-HAT", "OPEN HAT", "TOM", "CONGA",
+                                                "RIM", "CLAVE", "COWBELL", "CYMBAL"};
+    static const uint8_t LANE_OF[DVT_COUNT] = {0, 0, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7};
+    track_t *t = &trk[0];
+    int32_t st;
+    uint32_t n = kb_map(t, key), ty = drum_gm(t->p, n == KB_SILENT ? 36u : n, &st), lane;
+    const char *w;
+    if (ty >= 16u) {                                              /* a model kit: its piece in the lane */
+        lane = ty & 7u;
+        w = drum_lane_name(t, lane);
+        w = str_eq(w, "HATCL") ? "HI-HAT" : str_eq(w, "HATOP") ? "OPEN HAT" : str_eq(w, "CYM") ? "CYMBAL" :
+            str_eq(w, "BELL") ? "COWBELL" : w;
+    } else {
+        lane = LANE_OF[ty % DVT_COUNT];
+        w = STD[ty % DVT_COUNT];
+    }
+    *col = KID_RAINBOW[lane % 7u];
+    return w;
+}
+
 static uint32_t kid_band_word(const char *s, int16_t sc, uint16_t bg, uint32_t sig)   /* a word alone in the band */
 {
     uint32_t w = str_len(s) * 6u * (uint32_t)sc - (uint32_t)sc;
@@ -1508,6 +1534,8 @@ static uint32_t kid_play_band(uint32_t now)
         pcs[2] = (uint8_t)((r + 7u) % 12u);
         return kid_chord_band(pcs, 3);
     }
+    if (drum_track(&trk[0]))                                      /* (a drum friend: drums, not chords) */
+        return 0;
     if (kid.mode == KM_CHOIR && keyed && !((0x54Au >> ((53u + (uint32_t)kid.key) % 12u)) & 1u)) {
         static const uint8_t SCALE[7] = {0, 2, 4, 5, 7, 9, 11};  /* three friends: the key's chord in C major */
         uint32_t pc = (53u + (uint32_t)kid.key) % 12u, d;
@@ -1564,6 +1592,11 @@ static uint32_t kid_band_setup(uint32_t now)
         sig = 0x500u ^ (uint32_t)(uintptr_t)kf.txt * 7u ^ (uint32_t)kw.band[kw.stamp % 3u] << 24;
     } else if (!vol && !kw.on && (sig = kid_play_band(now)) != 0) {   /* (ALGORITHM's modes, a chord: all set) */
         return sig;
+    } else if (!vol && kid.key >= 0 && now - kid.key_ms < 900u && drum_track(&trk[0]) && !kid.fx) {   /* a drum friend: */
+        uint16_t c;                                                   /* the drum's name */
+        const char *w = kid_drum_word((uint32_t)kid.key, &c);
+        return kid_band_word(w, str_len(w) * 24u - 4u <= 232u ? 4 : 3, kid_mix(c, RGB(0, 0, 0), 30u),
+                             0x900u ^ (uint32_t)(uintptr_t)w * 7u);
     } else if (!vol && kid.key >= 0 && now - kid.key_ms < 900u) {      /* a note: its letter, big (the effect's word, if one is on) */
         uint32_t pc = (53u + (uint32_t)kid.key) % 12u;    /* key 0 is F (seq.c kb_map: 53 + k) */
         kf.band = KB_NOTE;
