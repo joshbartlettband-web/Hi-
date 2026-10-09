@@ -18,7 +18,8 @@ Thank you to the people who suggested these on r/MVaveFM1:
 | u/lastapoc | "Mario Paint music mode" | **WRITE** (SAVE): she writes a song on a big staff, each note a friend, and plays it back |
 | u/theskyisfalling1 | Show the note value on the staff by how long a key is held, so kids learn rhythm too | The staff writes sixteenths, eighths, quarters, halves and wholes, and a held note grows while the key is down |
 
-The characters are original drawings in the spirit of the suggestions, not copies.
+The characters are original drawings in the spirit of the suggestions, not copies. They are credited on the website and on the
+installer page too.
 
 ## Also
 

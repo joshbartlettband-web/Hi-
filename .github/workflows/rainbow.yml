@@ -232,12 +232,22 @@ jobs:
           cp -r landing/. site/
           repo="${{ github.repository }}"
           sed -i -e "s|@SITE@|${{ steps.pages.outputs.base_url }}|g" -e "s|@REPO@|$repo|g" site/index.html
-          if printf '%s' "$DONATE" | grep -Eq '^https://[A-Za-z0-9./?=_%:+~#-]+$'; then
-            sed -i "s|@DONATE@|$DONATE|g" site/index.html
+          find site -name '*.html' -exec sed -i "s|@REPO@|$repo|g" {} +   # (the installers' credits)
+          d=$(printf '%s' "$DONATE" | tr -d '[:space:]')   # (pasted on a phone: spaces, a line break, no https://)
+          case "$d" in
+            "") ;;
+            https://*) ;;
+            http://*) d="https://${d#http://}" ;;
+            *) d="https://$d" ;;
+          esac
+          if printf '%s' "$d" | grep -Eq '^https://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/[A-Za-z0-9./?=_%:+~#@&-]*)?$'; then
+            esc=$(printf '%s' "$d" | sed -e 's/[&|\\]/\\&/g')
+            sed -i "s|@DONATE@|$esc|g" site/index.html
             echo "tip card: on"
           else
             perl -0pi -e 's/\s*<!--DONATE-->.*?<!--\/DONATE-->//s' site/index.html
-            echo "tip card: off (no DONATE_URL variable, or not an https:// link)"
+            if [ -n "$d" ]; then echo "::warning::DONATE_URL is set but does not look like a web link (https://...): no tip card"
+            else echo "tip card: off (no DONATE_URL)"; fi
           fi
 
       - uses: actions/upload-pages-artifact@v3
