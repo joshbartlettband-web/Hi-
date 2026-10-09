@@ -75,7 +75,8 @@ typedef struct {
     uint8_t eng;
     const char *preset;
     uint8_t level, sky, beat;
-    int8_t vib;                         /* a vibrato of its own (P_LD_PIT; WIGGLE adds to it), 0 none */
+    int8_t vib;                         /* a vibrato of its own (P_LD_PIT, each step about +-19 cents: 1 or 2 is a
+                                         * singer's, 3 a theremin's; WIGGLE adds to it), 0 none */
     uint8_t glide;                      /* P_GLIDE: notes slide into each other, 0 none */
     uint8_t dist;                       /* P_DIST: its own drive (a growl), 0 the preset's */
     uint8_t kit;                        /* DRUM: its KIT + 1 (eng_drum.c DK_*: 5 = 80, 6 = 10, 7 = 66, 8 = 55), 0 STD */
@@ -137,11 +138,11 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
     /* suggested by r/MVaveFM1's u/veecheech (CREDITS.md) */
     {0, "SAW", 92, KS_FLOWERS, KB_ROCK, 0, 0, 80},   /* T-REX: a growly bass: a saw, driven hard (DIST) */
-    {0, "SINE KEY", 107, KS_STARS, KB_SPOOKY, 12, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
+    {0, "SINE KEY", 107, KS_STARS, KB_SPOOKY, 3, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
     {9, "PLUCK", 125, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
     {0, "PLUCK", 113, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
     {0, "RAVE", 95, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
-    {6, "SAW3", 113, KS_STARS, KB_DISCO, 6, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
+    {6, "SAW3", 113, KS_STARS, KB_DISCO, 1, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
     /* more drum kits: every key another drum, as SCISSORS (Felucca's model kits) */
     {10, "DRUM KIT", 103, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 5},    /* BEAT BOT: the 80 kit, a classic drum machine */
     {10, "DRUM KIT", 105, KS_FLOWERS, KB_MARCH, 0, 0, 0, 8},     /* TOY DRUM: the 55 kit, small and tight */
@@ -150,12 +151,12 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     /* Prophet-style (TW_*) */
     {0, "BRASS", 100, KS_DESERT, KB_MARCH, 0, 0, 0, 0, TW_ELEPHANT},      /* ELEPHANT: poly brass, a trumpet */
     {6, "SYNC LEAD", 96, KS_CLOUDS, KB_ROCK, 0, 8, 0, 0, TW_RACECAR},    /* RACE CAR: the sync sweep, zoom */
-    {0, "STRINGS", 93, KS_BUBBLES, KB_LULLABY, 3, 0, 0, 0, TW_JELLYFISH},   /* JELLYFISH: strings, floating */
+    {0, "STRINGS", 93, KS_BUBBLES, KB_LULLABY, 1, 0, 0, 0, TW_JELLYFISH},   /* JELLYFISH: strings, floating */
     {0, "SQR BASS", 118, KS_LEAVES, KB_HIPHOP, 0, 0, 0, 0, TW_BEAR},     /* BEAR: a punchy saw bass */
     {6, "RING BELL", 101, KS_SNOW, KB_DISCO, 0, 0, 0, 0, TW_SNOWMAN},    /* SNOWMAN: glassy bells (ring, like poly-mod) */
     {0, "PLUCK", 117, KS_BUBBLES, KB_REGGAE, 0, 0, 0, 0, TW_CRAB},       /* CRAB: a snappy clav */
-    {0, "SAW LEAD", 97, KS_STARS, KB_SPOOKY, 10, 30, 0, 0, TW_WOLF},     /* WOLF: a howl, swelling and sliding */
-    {0, "SAW LEAD", 96, KS_DESERT, KB_TRAIN, 5, 18, 0, 0, TW_CAMEL},     /* CAMEL: a big, loping lead */
+    {0, "SAW LEAD", 97, KS_STARS, KB_SPOOKY, 2, 30, 0, 0, TW_WOLF},     /* WOLF: a howl, swelling and sliding */
+    {0, "SAW LEAD", 96, KS_DESERT, KB_TRAIN, 1, 18, 0, 0, TW_CAMEL},     /* CAMEL: a big, loping lead */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
