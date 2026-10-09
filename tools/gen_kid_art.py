@@ -30,7 +30,7 @@ C = dict(
     navy=(30, 36, 90), teal=(36, 196, 190), green=(70, 200, 90), dgreen=(36, 130, 64), lime=(176, 232, 70),
     dlime=(112, 180, 40), lgreen=(214, 252, 170), purple=(150, 88, 226), dpurple=(104, 56, 180),
     lpurple=(204, 164, 255), brown=(150, 92, 46), dbrown=(84, 50, 32), tan=(226, 176, 112), dtan=(186, 128, 70),
-    silver=(214, 220, 236), dwhite=(204, 212, 238), sky=(150, 206, 255),
+    silver=(214, 220, 236), dwhite=(204, 212, 238), sky=(150, 206, 255), glass=(212, 236, 255),
 )
 
 
@@ -746,6 +746,26 @@ def vacuum():                                                    # an upright va
     return p.done()
 
 
+def spacehero():                                                 # a space hero in a bubble helmet (original design)
+    p = Pic()
+    p.rect(5, 36, 43, 46, "white")                               # the suit's shoulders
+    p.rect(5, 44, 43, 46, "dwhite")
+    p.rect(16, 37, 32, 46, "green")                              # the chest panel, its buttons
+    p.rect(16, 37, 32, 38, "dgreen")
+    for x, c in ((20, "red"), (24, "blue"), (28, "yellow")):
+        p.ell(x, 42, 1, 1, c)
+    p.rect(5, 36, 9, 46, "purple"); p.rect(39, 36, 43, 46, "purple")   # purple stripes down the arms
+    p.ell(24, 21, 21, 20, "lblue")                               # the glass dome
+    p.ell(24, 21, 19, 18, "glass")
+    p.ball(24, 21, 14, 14, "lpurple", "purple")                  # the hood round the face
+    p.ell(24, 23, 10, 11, "tan")                                 # the face
+    p.eye(19, 21, 3); p.eye(29, 21, 3)
+    p.rect(15, 15, 22, 16, "dbrown"); p.rect(26, 15, 33, 16, "dbrown")  # brave brows
+    p.smile(24, 28, 3)
+    p.line([(9, 14), (12, 9), (16, 6)], "white", 2)              # the glass's shine
+    return p.done()
+
+
 # order = the firmware's (kid.c KID_SOUND)
 FRIENDS = [
     ("DUCKY", ducky("yellow", "dyellow")),
@@ -793,6 +813,7 @@ FRIENDS = [
     ("COWBOY", cowkid("brown", "dbrown", "dbrown", "red", "yellow")),
     ("COWGIRL", cowkid("red", "dred", "orange", "yellow", "white", spots=True, braid=True)),
     ("VACUUM", vacuum),
+    ("SPACE HERO", spacehero),
 ]
 
 

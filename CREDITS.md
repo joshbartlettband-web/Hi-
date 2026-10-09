@@ -15,6 +15,7 @@ Thank you to the people who suggested these on r/MVaveFM1:
 | u/veecheech | A skeleton with a wide-vibrato, theremin-like spooky sound | **SKELETON** (a sine with a wide vibrato that slides between notes, SPOOKY beat) |
 | u/veecheech | A cowboy and a cowgirl with a twangy western guitar pluck | **COWBOY** and **COWGIRL** (twangy plucks, and a new beat for them: HOEDOWN) |
 | u/veecheech | A vacuum with a "hoover" bass, a joke for the adults | **VACUUM** (ANALOG RAVE, the rave hoover) |
+| u/veecheech | A space ranger with a buzzy, spacey synth | **SPACE HERO** (TRIO SAW3: three buzzy saws that swoop into each note and shimmer, STARS sky, DISCO beat) |
 | u/lastapoc | "Mario Paint music mode" | **WRITE** (SAVE): she writes a song on a big staff, each note a friend, and plays it back |
 | u/veecheech | Omnichord strumming with chords (as dxsloop's arp mode does it) | **STRUM** (ALGORITHM): black keys pick a chord, white keys strum it |
 | u/nutty_cartoon | Show chords, not only the last key | Keys held together show their letters and the chord's name |

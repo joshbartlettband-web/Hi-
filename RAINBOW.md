@@ -12,7 +12,7 @@ at the next power-on.
 | Control | What happens |
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
-| PRESETS | Next or previous friend (45 of them, each with its own picture, sound, home sky and favorite beat). |
+| PRESETS | Next or previous friend (46 of them, each with its own picture, sound, home sky and favorite beat). |
 | ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, GUESS, FOLLOW. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
@@ -101,9 +101,9 @@ E yellow, F green, G teal, A purple, B pink. Sharps get the color in between.
 Ducky, Pink Ducky, Cool Ducky, Axolotl, Unicorn, Giraffe, Goo, Goobert, Blue Pup, Red Monster,
 Blue Monster, April (the family dog), Scissors, Ghost, Web Hero, Butterfly, Kitty, Frog, Robot, Rainbow,
 Princess Ducky, Red Pup, Yellow Bird, Slimy, Bunny, Panda, Penguin, Owl, Bee, Ladybug, Dino, Whale,
-Octopus, Fish, Turtle, Ice Cream, Cupcake, Rocket, Strawberry, Star, and five suggested by u/veecheech on r/MVaveFM1:
+Octopus, Fish, Turtle, Ice Cream, Cupcake, Rocket, Strawberry, Star, and six suggested by u/veecheech on r/MVaveFM1:
 T-Rex (a growly bass), Skeleton (a theremin: a sine with a wide vibrato that slides between notes), Cowboy and Cowgirl (twangy
-plucks, and their own beat, HOEDOWN) and Vacuum (the rave "hoover" sound, a joke for the grown-ups). See CREDITS.md.
+plucks, and their own beat, HOEDOWN) Vacuum (the rave "hoover" sound, a joke for the grown-ups) and Space Hero (three buzzy saws that swoop into each note). See CREDITS.md.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
@@ -119,7 +119,7 @@ repository and its website are public.
 
 ## Where it lives
 
-- `tools/gen_kid_art.py`: the 45 pictures, drawn from shapes on a 48 x 48 grid and outlined
+- `tools/gen_kid_art.py`: the 46 pictures, drawn from shapes on a 48 x 48 grid and outlined
   automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
   sheet to look at. The build runs it (`tools/build.py` generate).
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main

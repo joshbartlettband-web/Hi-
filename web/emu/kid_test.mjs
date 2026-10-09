@@ -130,7 +130,7 @@ check("PRESETS: another friend (the band shows its name)", band() !== name0);
 }
 
 const levels = [];
-for (let f = 0; f < 45; f++) {
+for (let f = 0; f < 46; f++) {
   peak = 0;
   for (const k of [12, 14, 16]) { ex.web_keys(1 << k); render(500); ex.web_keys(0); render(150); }
   levels.push(peak);
@@ -138,7 +138,7 @@ for (let f = 0; f < 45; f++) {
   render(400);
 }
 const lo = Math.min(...levels), hi = Math.max(...levels);
-check(`all 45 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
+check(`all 46 friends sound, alike (peaks ${lo.toFixed(3)} .. ${hi.toFixed(3)})`, lo > 0.08 && hi / lo < 2);
 check("MASTER all the way up stays at about half (no friend peaks over 0.25)", hi < 0.25);
 
 ex.web_buttons(1 << B.PLAY); render(60); ex.web_buttons(0); render(1500);

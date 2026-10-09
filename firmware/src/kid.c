@@ -4,7 +4,7 @@
  *   Keys        play the friend's sound; the band shows the note's letter, big, in its colour (C red, D orange,
  *               E yellow, F green, G teal, A purple, B pink, as the coloured bells and tubes of music classes),
  *               and the friend hops
- *   PRESETS     the next / previous friend (45, each a picture, a sound, a home sky and a favourite beat:
+ *   PRESETS     the next / previous friend (46, each a picture, a sound, a home sky and a favourite beat:
  *               tools/gen_kid_art.py, KID_SOUND)
  *   ALGORITHM   how the keys play, a step a turn: 1 FRIEND, 3 FRIENDS (a key plays a chord in key), STRUM (an
  *               Omnichord: black keys pick a chord, white keys strum it), GUESS (an ear game: a friend sings a note,
@@ -119,6 +119,7 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {9, "PLUCK", 118, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
     {0, "PLUCK", 106, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
     {0, "RAVE", 102, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
+    {6, "SAW3", 110, KS_STARS, KB_DISCO, 6, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
