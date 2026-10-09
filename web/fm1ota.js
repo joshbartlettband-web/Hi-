@@ -116,15 +116,19 @@ export class Updater {
 
   // every in/out pair with the same port name that answers the handshake
   async find(filter) {
-    const outs = [...this.access.outputs.values()];
-    for (const input of this.access.inputs.values()) {
+    const outs = [...this.access.outputs.values()], ins = [...this.access.inputs.values()];
+    // (the log: what the browser sees, so a "not found" can be told apart: no ports, a name, no answer)
+    this.log(`MIDI in: ${ins.map((p) => `"${p.name}" (${p.state})`).join(", ") || "none"}; ` +
+             `out: ${outs.map((p) => `"${p.name}" (${p.state})`).join(", ") || "none"}`);
+    for (const input of ins) {
       if (input.state === "disconnected") continue;
       if (!/fm-1|felucca|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;   // never probe other gear
       const output = outs.find((o) => o.name === input.name && o.state !== "disconnected");
-      if (!output) continue;
-      try { await input.open(); await output.open(); } catch (_) { continue; }
+      if (!output) { this.log(`"${input.name}": no output port of the same name`); continue; }
+      try { await input.open(); await output.open(); } catch (e) { this.log(`"${input.name}": cannot open (${e && e.message})`); continue; }
       const link = new Link(input, output);
       const id = await handshake(link, 2);
+      this.log(`"${input.name}": ${id ? `answered ${id.text}` : "no answer"}`);
       if (id && (!filter || filter(id))) return { link, id, name: input.name };
       link.close();
     }
