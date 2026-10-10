@@ -148,7 +148,7 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
     /* suggested by r/MVaveFM1's u/veecheech (CREDITS.md) */
     {0, "SAW", 92, KS_FLOWERS, KB_ROCK, 0, 0, 80},   /* T-REX: a growly bass: a saw, driven hard (DIST) */
-    {0, "SINE KEY", 107, KS_STARS, KB_SPOOKY, 3, 36, 0, 0, TW_SWOOP},  /* SKELETON: a theremin, a wide vibrato and a slide */
+    {0, "SINE KEY", 103, KS_STARS, KB_SPOOKY, 3, 36, 0, 0, TW_SWOOP},  /* SKELETON: a theremin, a wide vibrato and a slide */
     {9, "PLUCK", 125, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
     {0, "PLUCK", 113, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
     {0, "RAVE", 95, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
