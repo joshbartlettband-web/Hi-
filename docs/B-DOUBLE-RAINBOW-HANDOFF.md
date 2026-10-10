@@ -147,6 +147,12 @@ For a kid of about eight, roughly in order of delight per effort:
 5. **Unlocks:** new friends, skies or chord rows earned by playing.
 6. **Theory in color:** major and minor as happy and sad skies, a scale picker, measures and note values (already in Rainbow
    mode's staff).
+7. **A chord course (agreed: "both"):** Rainbow mode has a first version, CHORDS on ALGORITHM (u/Yablan's request for
+   "really basic lofi chords"): five 4-chord lessons from FIRST CHORDS to LOFI JAZZ, the chord's keys lit, its name and
+   letters in the band, YES on exactly its keys, and a swung LOFI beat whose bass plays each chord's root, a bar a chord.
+   See `KID_LESSONS` and `kid_lesson_chord` in `kid.c`. Grow it here: fingering numbers, longer progressions, a score for
+   chords played in time, voice-leading hints (which finger moves), inversions as their own lessons, and a "find this
+   chord" quiz. Adults asked for this too, so keep it usable without the kid layer.
 
 Questions still open for Josh: what the girls like (songs, characters, games), whether each has her own FM-1, and which two
 or three ideas to build first.

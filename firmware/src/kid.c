@@ -66,7 +66,7 @@ static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4
 enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_CLOUDS, KS_SNOW, KS_LEAVES, KS_DESERT,
        KS_COUNT };
 enum { KB_DANCE, KB_MARCH, KB_SPOOKY, KB_ROCK, KB_DISCO, KB_HIPHOP, KB_TRAIN, KB_SAMBA, KB_REGGAE, KB_LULLABY,
-       KB_HOEDOWN, KB_COUNT };
+       KB_HOEDOWN, KB_LOFI, KB_COUNT };
 
 /* each friend's sound, in the order of KID_NAME: an engine and one of its factory presets (by name), its level
  * (P_LEVEL, 1/2 dB steps: the friends measured alike, about 0.14 peak with MASTER up), its home sky and its
@@ -205,6 +205,9 @@ static const kid_beat_t KID_BEATS[KB_COUNT] = {
     {"HOEDOWN", 126, KD_HOP, 93, 105,                 /* boom-chick, a walking bass (the cowboy and cowgirl's) */
      {"x.......x.......", "....x.......x...", 0, "..x...x...x...x.", 0, 0, "..x...x...x...x.", 0},
      {36, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 40, 0, 41, 0}},
+    {"LOFI", 80, KD_SWAY, 95, 104,                    /* slow and swung (CHORDS: the bass plays each chord's root) */
+     {"x.........x.....", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", 0, 0, "..............x.", 0},
+     {41, 1, 1, 1, 0, 0, 0, 0, 40, 1, 1, 1, 0, 0, 38, 0}},
 };
 
 /* the top row, tapped on and off: Felucca's performance effects (perform.c), and what the friend does meanwhile */
@@ -263,8 +266,11 @@ enum { KH_NONE, KH_SIZE, KH_NIGHT, KH_ECHO, KH_WIGGLE, KH_SPEED, KH_CHORD, KH_SP
 enum { KB_NAME, KB_NOTE, KB_HINT, KB_CHORD };
 /* ALGORITHM: how the keys play (kid_mode_set). CHOIR: three friends sing a chord; STRUM: an Omnichord (seq.c
  * kb_strum_map); GUESS: an ear game; FOLLOW: songs to learn, the next key lit */
-enum { KM_ONE, KM_CHOIR, KM_STRUM, KM_ACCORD, KM_GUESS, KM_FOLLOW, KM_COUNT };
-static const char *const KID_MODE_NAME[KM_COUNT] = {"1 FRIEND", "3 FRIENDS", "STRUM", "ACCORDION", "GUESS", "FOLLOW"};
+enum { KM_ONE, KM_CHOIR, KM_STRUM, KM_ACCORD, KM_GUESS, KM_FOLLOW, KM_CHORDS, KM_COUNT };
+static const char *const KID_MODE_NAME[KM_COUNT] = {"1 FRIEND", "3 FRIENDS", "STRUM", "ACCORDION", "GUESS", "FOLLOW",
+                                                    "CHORDS"};
+#define KID_LESSON_LEN 4u                /* CHORDS: chords a lesson (kid_lesson_chord), a bar each with the beat */
+static uint32_t kid_lesson_chord(uint32_t lesson, uint32_t i, uint32_t *root, char *name, uint32_t cap);
 _Static_assert(KID_ICON_N == KM_COUNT, "a picture for each of ALGORITHM's modes (tools/gen_kid_art.py ICONS)");
 
 /* the staff: what she played, as the heads of one entry (a key, or the keys of a chord pressed together) */
@@ -294,6 +300,8 @@ static struct {
     uint32_t g_ms, g_yes_ms, g_try_ms;
     uint8_t f_song, f_pos;              /* FOLLOW: the song, the note she is on */
     uint32_t f_done_ms;
+    uint8_t c_lesson, c_pos, c_ok, c_beat;   /* CHORDS: the lesson, its chord, played this bar, the bass is the lesson's */
+    uint32_t c_held, c_yes_ms;          /* .. the keys held when last looked, the last YES */
     int8_t oct;                         /* -2 .. 2: song.octave; the friend's size follows */
     int8_t acc;                         /* KNOB 1: detents toward the next octave */
     uint8_t hint, home_down;
@@ -435,6 +443,7 @@ static void kid_beat_load(void)
     uint32_t i, l;
     if (t->eng_req != ENGI_DRUM)
         set_engine_of(t, ENGI_DRUM);
+    song.g[G_SWING] = kid.beat % KB_COUNT == KB_LOFI ? 30 : 0;   /* (LOFI: swung) */
     track_defaults_steps(t);
     t->p[P_SLEN] = 16;
     t->p[P_LEVEL] = b->dlvl;                      /* (the kit alone peaks about twice a friend) */
@@ -462,6 +471,26 @@ static void kid_beat_load(void)
         flags[i] = b->bass[i] == 1u ? 4u : 0u;    /* (1: a TIE, the note before held on) */
     }
     load_pat16(bt, note, flags);
+    kid.c_beat = 0;
+    if (kid.mode == KM_CHORDS && kid.beat == KB_LOFI) {           /* CHORDS: a bar a chord, the bass on its root */
+        uint32_t c, r;
+        for (c = 0; c < KID_LESSON_LEN; c++) {
+            kid_lesson_chord(kid.c_lesson, c, &r, 0, 0);
+            for (i = 0; i < 16u; i++) {
+                step_t *s = &bt->step[c * 16u + i];
+                uint32_t on = i == 0u || i == 10u, tie = (i > 0u && i < 7u) || i == 11u;
+                s->note[0] = (uint8_t)(on || tie ? 36u + r : 0u);
+                s->n = on || tie ? 1u : 0u;
+                s->time = tie ? ST_TIE : on ? ST_NOTE : ST_REST;
+                s->flags = 0;
+                s->vel = on ? 96u : 0u;
+                s->hit = s->acc = 0;
+                s->probability = 0;
+            }
+        }
+        bt->p[P_SLEN] = (int16_t)(16u * KID_LESSON_LEN);
+        kid.c_beat = 1;
+    }
     bt->p[P_LEVEL] = b->blvl;
     song.g[G_BPM] = b->bpm;
 }
@@ -951,6 +980,45 @@ static uint32_t kid_song_key(uint32_t song_i, uint32_t i)       /* note i of a s
     return 99u;
 }
 
+/* CHORDS (u/Yablan's idea): lessons of four chords, from first chords to lofi. A chord's keys light up and its name and
+ * letters show; holding exactly its keys plays it, says YES and lights the next. With PLAY a slow, swung LOFI beat runs,
+ * each chord gets a bar (the bass plays its root) and the next one blinks a beat early. Voiced so the hand barely
+ * moves from chord to chord. A token: its name (_ a space) = its notes (+ between) */
+typedef struct { const char *name, *chords; } kid_lesson_t;
+static const kid_lesson_t KID_LESSONS[] = {
+    {"FIRST CHORDS", "C_MAJOR=C4+E4+G4 F_MAJOR=C4+F4+A4 G_MAJOR=B3+D4+G4 C_MAJOR=C4+E4+G4"},
+    {"POP FOUR", "C_MAJOR=C4+E4+G4 G_MAJOR=B3+D4+G4 A_MINOR=C4+E4+A4 F_MAJOR=C4+F4+A4"},
+    {"SEVENTHS", "C_MAJ7=C4+E4+G4+B4 A_MIN7=C4+E4+G4+A4 D_MIN7=C4+D4+F4+A4 G_SEVEN=B3+D4+F4+G4"},
+    {"LOFI", "F_MAJ7=F3+A3+C4+E4 E_MIN7=G3+B3+D4+E4 D_MIN7=F3+A3+C4+D4 C_MAJ7=G3+B3+C4+E4"},
+    {"LOFI JAZZ", "D_MIN9=F3+A3+C4+E4 G_13=F3+A3+B3+E4 C_MAJ9=G3+B3+D4+E4 C_MAJ9=G3+B3+D4+E4"},   /* (rootless: the
+                                                  * bass plays the root, as lofi keys do) */
+};
+#define KID_NLESSONS (sizeof KID_LESSONS / sizeof KID_LESSONS[0])
+
+/* chord i of a lesson: its keys (a bit a key), its root's pitch class, its name into name (the band's), 0 none */
+static uint32_t kid_lesson_chord(uint32_t lesson, uint32_t i, uint32_t *root, char *name, uint32_t cap)
+{
+    static const uint8_t PC[7] = {9, 11, 0, 2, 4, 5, 7};          /* A .. G */
+    const char *s = KID_LESSONS[lesson % KID_NLESSONS].chords;
+    uint32_t keys = 0, j = 0;
+    for (; i && *s; s++)                                          /* to token i */
+        if (*s == ' ')
+            i--;
+    if (!*s)
+        return 0;
+    if (root)
+        *root = PC[(*s - 'A') % 7] + (s[1] == '#');
+    for (; *s && *s != '='; s++)
+        if (name && j + 1u < cap)
+            name[j++] = *s == '_' ? ' ' : *s;
+    if (name)
+        name[j] = 0;
+    for (; *s && *s != ' '; s++)
+        if (*s >= 'A' && *s <= 'G')
+            keys |= 1u << ((uint32_t)(12 * (s[1] - '0' + 1) + PC[*s - 'A']) - 53u);
+    return keys;
+}
+
 /* GUESS: the notes it asks, the first two far apart; a level more after three right in a row */
 static const uint8_t KID_GUESS_KEY[8] = {7, 14, 11, 9, 16, 12, 18, 19};   /* C4 G4 E4 D4 A4 F4 B4 C5 */
 enum { KG_IDLE, KG_SING, KG_WAIT };
@@ -967,9 +1035,15 @@ static void kid_sing(uint32_t key, int on)                       /* the friend s
 
 static void kid_mode_set(uint32_t m)
 {
+    uint32_t was = kid.mode;
     if (kid.mode == KM_GUESS && kid.g_state == KG_SING)
         kid_sing(kid.g_note, 0);
     kid.mode = (uint8_t)(m % KM_COUNT);
+    kid.c_pos = kid.c_ok = 0;
+    kid.c_held = fm1_in.notes;
+    kid.c_yes_ms = 0;
+    if ((was == KM_CHORDS && kid.c_beat) || (kid.mode == KM_CHORDS && kid.beat == KB_LOFI && !kw.on))
+        kid_beat_load();                                          /* (CHORDS' bass: the lesson's roots, or back) */
     if (kid.mode != KM_ACCORD && kid.arp > 1u)                    /* (SPARKLE ALL is ACCORDION's: elsewhere SPARKLE) */
         kid.arp = 1;
     kid.chord = kid.mode == KM_CHOIR;
@@ -1042,8 +1116,32 @@ static void kid_game(int32_t lo)
                 kid.party_ms = now | 1u;
             }
         }
+    } else if (kid.mode == KM_CHORDS) {
+        uint32_t held = fm1_in.notes & 0x7FFFFFFu, want, beat = kid.c_beat && song.playing;
+        if (beat && (trk[1].seq_idx / 16u) % KID_LESSON_LEN != kid.c_pos) {   /* with the beat: a bar a chord */
+            kid.c_pos = (uint8_t)((trk[1].seq_idx / 16u) % KID_LESSON_LEN);
+            kid.c_ok = 0;
+        }
+        want = kid_lesson_chord(kid.c_lesson, kid.c_pos, 0, 0, 0);
+        if (held != kid.c_held) {                                 /* (a change of keys: the same chord twice needs a
+                                                                   * new press) */
+            kid.c_held = held;
+            if (held == want && !kid.c_ok) {                      /* exactly its keys: YES */
+                kid.c_yes_ms = now | 1u;
+                kid.hop_ms = now;
+                if (beat) {
+                    kid.c_ok = 1;
+                } else {                                          /* at her own pace: the next, a party at the end */
+                    kid.c_pos = (uint8_t)((kid.c_pos + 1u) % KID_LESSON_LEN);
+                    if (!kid.c_pos)
+                        kid.party_ms = now | 1u;
+                }
+            }
+        }
     }
 }
+
+static uint32_t kid_lit_mask(uint32_t now);
 
 static int32_t kid_lit_key(uint32_t now)                         /* the key to light (GUESS's hint, FOLLOW's next), -1 */
 {
@@ -1052,6 +1150,18 @@ static int32_t kid_lit_key(uint32_t now)                         /* the key to l
     if (kid.mode == KM_GUESS && kid.g_wrong >= 2u && (now / 250u) & 1u)
         return kid.g_target;
     return -1;
+}
+
+static uint32_t kid_lit_mask(uint32_t now)                       /* the keys to light: CHORDS' chord, or kid_lit_key's */
+{
+    int32_t k;
+    if (kid.mode == KM_CHORDS && !kw.on) {
+        if (kid.c_beat && song.playing && trk[1].seq_idx % 16u >= 12u)   /* the bar's last beat: the next chord, blinking */
+            return (now / 150u) & 1u ? kid_lesson_chord(kid.c_lesson, (kid.c_pos + 1u) % KID_LESSON_LEN, 0, 0, 0) : 0u;
+        return kid.c_ok ? 0u : kid_lesson_chord(kid.c_lesson, kid.c_pos, 0, 0, 0);
+    }
+    k = kid_lit_key(now);
+    return k >= 0 ? 1u << k : 0u;
 }
 
 static void kid_input(void)
@@ -1098,8 +1208,13 @@ static void kid_input(void)
             if (song.playing || chain_busy()) {
                 transport_req = 2;
             } else {
+                if (kid.mode == KM_CHORDS && !kw.on && kid.beat != KB_LOFI) {   /* CHORDS: practice over the LOFI beat */
+                    kid.beat = KB_LOFI;
+                    kid_beat_load();
+                }
                 transport_req = 1;
                 kid.play_ms = fm1_ms;
+                kid.c_pos = kid.c_ok = 0;
             }
             break;
         case B_ARP:
@@ -1111,6 +1226,15 @@ static void kid_input(void)
             kid_hint(KH_SPARKLE);
             break;
         case B_SEQ:
+            if (kid.mode == KM_CHORDS && !kw.on) {   /* CHORDS: the next lesson */
+                kid.c_lesson = (uint8_t)((kid.c_lesson + 1u) % KID_NLESSONS);
+                kid.c_pos = kid.c_ok = 0;
+                kid.c_held = fm1_in.notes;
+                if (kid.c_beat)
+                    kid_beat_load();
+                kid_hint(KH_SONG);
+                break;
+            }
             if (kid.mode == KM_FOLLOW && !kw.on) {   /* FOLLOW: the next song */
                 kid.f_song = (uint8_t)((kid.f_song + 1u) % KID_NSONGS);
                 kid.f_pos = 0;
@@ -1335,13 +1459,14 @@ static void kid_input(void)
 static void kid_leds(void)
 {
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0};
-    uint32_t k, c;
+    uint32_t k, c, lit;
     for (k = 0; k < KX_COUNT; k++)
         led_put(nl, panel.btn[KID_FX_BTN[k]], (kid.fx >> k) & 1u);
     led_put(nl, panel.btn[B_ARP], kid.arp && !kw.on);
     led_put(nl, panel.btn[B_SAVE], kw.on);        /* (WRITE: SAVE lit) */
+    lit = kid_lit_mask(fm1_ms);
     for (k = 0; k < 27u; k++) {
-        led_put(nl, 14u + k, (int)((fm1_in.notes >> k) & 1u) || (int32_t)k == kid_lit_key(fm1_ms));
+        led_put(nl, 14u + k, (int)((fm1_in.notes >> k) & 1u) || (int)((lit >> k) & 1u));
         led_put(nd, 14u + k, 1);
     }
     for (k = 0; k < NB; k++)
@@ -1405,6 +1530,7 @@ static struct {
     kid_txt_t bt;                       /* the band's text */
     kid_txt_t bt2;                      /* .. its second line (a long name: two lines), sc 0 = none */
     char l1[16], l2[16];
+    char cname[12];                     /* CHORDS: the chord's name */
     uint16_t ccol[16];                  /* KB_CHORD: the colour of each of l1's letters */
     int8_t icon;                        /* ALGORITHM's mode as a picture at the band's left (KID_ICON_*), -1 none */
     int16_t ol;                         /* its outline (px) */
@@ -1560,8 +1686,9 @@ static uint32_t kid_band_word(const char *s, int16_t sc, uint16_t bg, uint32_t s
     return sig;
 }
 
-/* a chord in the band: its letters in their colours (low to high), and its name under them when it has one */
-static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n)
+/* a chord in the band: its letters in their colours (low to high), and its name under them when it has one (named:
+ * that name, its root nroot; CHORDS' lessons name their rootless chords) */
+static uint32_t kid_chord_band_n(const uint8_t *pcs, uint32_t n, const char *named, uint32_t nroot)
 {
     static const struct { uint16_t m; const char *q; } T[] = {
         {0x091, "MAJOR"}, {0x089, "MINOR"}, {0x491, "SEVEN"}, {0x049, "DIM"}, {0x0A1, "SUS"},
@@ -1572,6 +1699,10 @@ static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n)
     char *p = kf.l1;
     for (i = 0; i < n; i++)
         mask |= 1u << pcs[i];
+    if (named) {
+        q = named;
+        root = nroot;
+    }
     for (i = 0; i < n && !q; i++) {                               /* (any of its notes can be the root: inversions) */
         uint32_t rel = ((mask >> pcs[i]) | (mask << (12u - pcs[i]))) & 0xFFFu;
         for (j = 0; j < sizeof T / sizeof T[0]; j++)
@@ -1600,10 +1731,14 @@ static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n)
     kf.bt.y = (int16_t)(q ? KID_BAND_Y + 4 : KID_BAND_Y + 15);
     kf.bt2.sc = 0;
     if (q) {
-        str_cpy(kf.l2, KID_NOTE[root], sizeof kf.l2);
-        p = kf.l2 + str_len(kf.l2);
-        *p++ = ' ';
-        str_cpy(p, q, sizeof kf.l2 - (uint32_t)(p - kf.l2));
+        if (named) {
+            str_cpy(kf.l2, named, sizeof kf.l2);
+        } else {
+            str_cpy(kf.l2, KID_NOTE[root], sizeof kf.l2);
+            p = kf.l2 + str_len(kf.l2);
+            *p++ = ' ';
+            str_cpy(p, q, sizeof kf.l2 - (uint32_t)(p - kf.l2));
+        }
         kf.bt2.s = kf.l2;
         kf.bt2.sc = 3;
         kf.bt2.x = (int16_t)((240 - (int32_t)(str_len(kf.l2) * 18u - 3u)) / 2);
@@ -1616,6 +1751,8 @@ static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n)
     kf.bg2 = kid_mix(KID_NOTE_COL[root], KID_WHITE, 90u);
     return sig;
 }
+
+static uint32_t kid_chord_band(const uint8_t *pcs, uint32_t n) { return kid_chord_band_n(pcs, n, 0, 0); }
 
 /* ALGORITHM's modes in the band: 0 = nothing of theirs now (the usual band) */
 static uint32_t kid_play_band(uint32_t now)
@@ -1633,6 +1770,16 @@ static uint32_t kid_play_band(uint32_t now)
         if (!keyed)
             return kid_band_word("?", 7, RGB(150, 110, 230), 0x703u);
         return 0;
+    }
+    if (kid.mode == KM_CHORDS) {                                  /* CHORDS: the chord to play, its letters and name */
+        uint32_t keys, r;
+        if (kid.c_yes_ms && (now | 1u) - kid.c_yes_ms < 700u)
+            return kid_band_word("YES!", 6, RGB(56, 170, 80), 0x704u);
+        keys = kid_lesson_chord(kid.c_lesson, kid.c_pos, &r, kf.cname, sizeof kf.cname);
+        for (k = 0; k < 27u && n < 6u; k++)
+            if ((keys >> k) & 1u)
+                pcs[n++] = (uint8_t)((53u + k) % 12u);
+        return kid_chord_band_n(pcs, n, kf.cname, r) ^ (uint32_t)kid.c_pos << 28;
     }
     if (kid.mode == KM_STRUM && keyed && !ENGINES[eng_idx(trk[0].eng_req)]->keys) {   /* the chord she strums */
         uint32_t r = kb_strum_root;
@@ -1761,7 +1908,10 @@ static uint32_t kid_band_setup(uint32_t now)
             break;
         case KH_BEAT: kf.txt = KID_BEATS[kid.beat % KB_COUNT].name; v = -1; break;
         case KH_VOLUME: v = (int32_t)kid_vol_level(); break;
-        case KH_SONG: kf.txt = KID_SONGS[kid.f_song % KID_NSONGS].name; v = -1; break;
+        case KH_SONG:
+            kf.txt = kid.mode == KM_CHORDS ? KID_LESSONS[kid.c_lesson % KID_NLESSONS].name : KID_SONGS[kid.f_song % KID_NSONGS].name;
+            v = -1;
+            break;
         case KH_LOOK: kf.txt = KID_VOL_BYTE & KID_HIDE_BIT ? "LOOK-ALIKES OFF" : "LOOK-ALIKES ON"; v = -1; break;
         default: break;
         }
@@ -1770,7 +1920,8 @@ static uint32_t kid_band_setup(uint32_t now)
         kf.ink = KID_WHITE;
         kf.bg = RGB(150, 110, 230);
         kf.bg2 = RGB(120, 84, 200);
-        sig = 0x200u | (uint32_t)kid.hint << 4 | (uint32_t)(v + 1) << 12 | (uint32_t)kid.beat << 20 | (uint32_t)kid.f_song << 26;
+        sig = 0x200u | (uint32_t)kid.hint << 4 | (uint32_t)(v + 1) << 12 | (uint32_t)kid.beat << 20 | (uint32_t)kid.f_song << 26 |
+              (uint32_t)kid.c_lesson << 29;
     } else {
         kf.band = KB_NAME;
         kf.txt = KID_NAME[kid_art(kid.fr)];

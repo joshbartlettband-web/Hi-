@@ -460,7 +460,38 @@ check("PLAY again stops it", ex.web_playing() === 0);
   check("a wrong key: nothing moves on", ((ex.web_lit_keys() >> 14) & 1) === 1);
   tapb(B.SEQ); render(200);
   check("SEQ: the next song (MARY starts on E)", ((ex.web_lit_keys() >> 11) & 1) === 1);
-  algo(-1); algo(-1); algo(-1); algo(-1); algo(-1); render(1500);
+  // CHORDS (u/Yablan): a lesson's chord lights up with its name; exactly its keys say YES and light the next; four make
+  // the loop; SEQ the next lesson; PLAY the LOFI beat, a bar a chord
+  algo(1);
+  render(1800);
+  const mask = (...ks) => ks.reduce((a, k) => a | (1 << k), 0), litIs = (m) => (ex.web_lit_keys() & 0x7FFFFFF) === m;
+  const C = mask(7, 11, 14), F = mask(7, 12, 16), G = mask(6, 9, 14);
+  shot("chords");
+  check("CHORDS: FIRST CHORDS, C lights (C E G), its letters in the band", litIs(C) && bandHas(C_RED) && bandHas(G_TEAL));
+  ex.web_keys(F); render(300); ex.web_keys(0); render(300);
+  check("..another chord: nothing moves on", litIs(C));
+  ex.web_keys(C); render(200);
+  check("..exactly its keys: YES!", bandHas(col(56, 170, 80)));
+  ex.web_keys(0); render(800);
+  check("..and the next chord (F: C F A) lights", litIs(F));
+  for (const m of [F, G, C]) { ex.web_keys(m); render(200); ex.web_keys(0); render(800); }
+  check("..all four: round again to C", litIs(C));
+  for (let i = 0; i < 3; i++) tapb(B.SEQ);
+  render(1800);
+  const FMAJ7 = mask(0, 4, 7, 11), EMIN7 = mask(2, 6, 9, 11);
+  shot("chords_lofi");
+  check("SEQ three times: LOFI, Fmaj7 lights (F A C E)", litIs(FMAJ7));
+  tapb(B.PLAY); render(1200);
+  check("PLAY: the LOFI beat, Fmaj7 for the first bar", ex.web_playing() === 1 && (litIs(FMAJ7) || litIs(0)));
+  render(3000);
+  check("..the next bar: Em7 (G B D E)", litIs(EMIN7) || litIs(0));
+  let seen = false;
+  for (let i = 0; i < 40 && !seen; i++) { render(100); seen = litIs(EMIN7); }
+  ex.web_keys(EMIN7); render(200);
+  check("..played in its bar: YES!", seen && bandHas(col(56, 170, 80)));
+  ex.web_keys(0);
+  tapb(B.PLAY); render(400);
+  algo(-1); algo(-1); algo(-1); algo(-1); algo(-1); algo(-1); render(1500);
 }
 
 // WRITE (SAVE): her own song. A key writes a note (a friend in a ball of the note's color) and the column moves on, the

@@ -13,7 +13,7 @@ at the next power-on.
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
 | PRESETS | Next or previous friend (58 of them, each with its own picture, sound, home sky and favorite beat). |
-| ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, ACCORDION, GUESS, FOLLOW. |
+| ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, ACCORDION, GUESS, FOLLOW, CHORDS. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
 | KNOB 2 | Day to night. The sky darkens, the sun sets, the moon comes out, and the sound gets softer and darker. |
@@ -46,6 +46,7 @@ at the next power-on.
 | ACCORDION | A black key plays a whole chord while it is held (the same chords as STRUM: F, G, A minor, C, D minor), and the white keys play their own notes, so one hand can play a tune over the chords. Each row of black keys voices them differently: the lowest (F#3 to D#4) plays plain triads, the next (F#4 to D#5) jazz ninths (Fmaj9, G9, Am9, Cmaj9, Dm9: root, 3rd, 7th and 9th), and the top key (F#5) a stack of fourths on F (F B E A, the "So What" sound). On friends whose engine plays three notes at a time (PHYS, GRAIN) the ninths become jazz shells (root, 3rd, 7th). The band shows the chord's letters and name and the staff writes it. |
 | GUESS | An ear game (an idea from u/nutty_cartoon). A friend sings a note and the band shows ?. The right key: YES! and confetti. Another key: TRY AGAIN, with no sound of its own, and the friend sings the note again; after two tries the right key blinks. It starts with C and G and adds a note after three right in a row (C G E D A F B, then high C). PLAY: hear it again. |
 | FOLLOW | Songs to learn (u/nutty_cartoon). The next note's key lights and the band shows its letter; she plays the song at her own pace, and a wrong key changes nothing. At the end, a party, and it starts again. SEQ picks the song: Twinkle Twinkle, Mary Had a Little Lamb, Hot Cross Buns, Row Your Boat, Old MacDonald, Frere Jacques, London Bridge, Ode to Joy (all old and free). |
+| CHORDS | Chord lessons (u/Yablan on r/MVaveFM1). The next chord's keys light up and the band shows its letters and name; holding exactly those keys plays it, says YES! and lights the next. Four chords make a lesson, and a party comes at the end of each round. SEQ picks the lesson: FIRST CHORDS (C F G C), POP FOUR (C G Am F), SEVENTHS (Cmaj7 Am7 Dm7 G7), LOFI (Fmaj7 Em7 Dm7 Cmaj7) and LOFI JAZZ (Dm9 G13 Cmaj9, rootless, the way lofi keys are played). Each is voiced so the hand barely moves. PLAY starts the slow, swung LOFI beat: each chord gets a bar, the bass plays its root, and the next chord blinks a beat early. |
 
 Each setting has a picture, for children who do not read yet: a smiling face, three singing friends, a harp, an accordion, a
 speech bubble with a note and a question mark, and piano keys with one lit. It shows beside the setting's name when ALGORITHM turns,
@@ -66,7 +67,7 @@ friend's size: each key always plays the same drum. In WRITE their notes are wri
 The friends were leveled by ear-loudness, not by peak: each one played the same phrase in the browser build and was measured
 with the broadcast loudness method (ITU-R BS.1770, K-weighted, gated), then its P_LEVEL moved toward the middle (half a dB a
 step). They had spread over 12 dB (a long organ note sounds far louder than a pluck with the same peak); now they are within about
-3.5 dB. The eleven beats were leveled the same way (now within half a dB of each other, about 4 dB under a friend). Three friends
+3.5 dB. The twelve beats were leveled the same way (now within half a dB of each other, about 4 dB under a friend). Three friends
 singing (3 FRIENDS) play 2.5 dB softer and the ACCORDION's chords softer too, so a chord is about as loud as one note.
 `web/emu/kid_test.mjs` checks the friends stay within 7 dB of each other on its own simpler measure.
 
@@ -96,7 +97,7 @@ friends, the way Mario Paint's composer did, and plays it back.
 | OCT- / OCT+ | The yellow column back and forward (32 columns, 4 pages of 8: the dots). |
 | HOME | Wipes the column (held 1 s it is the grown-ups' VOLUME, as always). |
 | PLAY | Plays her song from the start, in a loop: the column turns green and the friend of each note hops along over it. PLAY again stops. |
-| SEQ | A beat under it: none, then each of the eleven (drums only). |
+| SEQ | A beat under it: none, then each of the twelve (drums only). |
 | SELECT | Slower or faster. |
 | REC held 2 s | A new, empty song. |
 | SAVE | Back to playing. |

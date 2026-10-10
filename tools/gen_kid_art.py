@@ -899,6 +899,20 @@ def icon_follow():                                               # piano keys, o
     return p.done()
 
 
+def icon_chords():                                               # piano keys, a chord of three lit in their colors
+    p = Pic()
+    p.rect(2, 22, 46, 46, "white")
+    for x in range(8, 46, 8):                                    # the white keys' edges
+        p.line([(x, 22), (x, 46)], "dgrey", 1)
+    for x, c in ((1, "red"), (17, "yellow"), (33, "teal")):      # C, E and G, lit
+        p.rect(x + 2, 37, x + 6, 46, c)
+    for x in (6, 14, 30, 38):                                    # black keys
+        p.rect(x, 22, x + 4, 36, "black")
+    for x, y, c in ((12, 9, "red"), (24, 5, "yellow"), (36, 9, "teal")):   # three notes above, a chord
+        p.ell(x, y + 6, 4, 3, c)
+    return p.done()
+
+
 # the Prophet-style friends (sounds after the Sequential Prophet-5's classic patches, made on Felucca's engines)
 def elephant():                                                  # brass: an elephant's trumpet
     p = Pic()
@@ -1205,7 +1219,7 @@ STAND_INS = {                    # the look-alike's name: the stand-in's name an
     "SPACE HERO": ("ALIEN", alien),
 }
 
-ICONS = [icon_one, icon_choir, icon_strum, icon_accordion, icon_guess, icon_follow]
+ICONS = [icon_one, icon_choir, icon_strum, icon_accordion, icon_guess, icon_follow, icon_chords]
 
 
 # order = the firmware's (kid.c KID_SOUND)
