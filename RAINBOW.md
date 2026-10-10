@@ -170,9 +170,10 @@ same way) and Sunflower (a softer acid line with an echo; every note slides from
 favorite beat is ACID: four on the floor, and Felucca's own acid line (A minor, with accents and slides of about 60 ms) played on
 the ACID sound. All the friends' slides use Felucca's TIME glide (a slide takes the same time whatever the interval); its RATE
 glide at small values slides in a few milliseconds, too fast to hear.
-And two of her own, drawn up with her dad: Spider Mom (a mom web hero in a rainbow suit, with a ponytail and a bow; PHASE's RESO,
-ringing on) and Dragon Duck (a duck with horns, a bat wing and a puff of fire; VOICE's VOX LEAD with a growl). She also asked for
-Goobert to be blue.
+And two of her own, drawn up with her dad: Spider Mom (the classic web hero's mask in rainbow stripes, with a mom's long dark brown
+hair; PHASE's RESO, ringing on) and Dragon Duck (a duck with horns, a bat wing and a puff of fire; VOICE's VOX LEAD with a growl). She also asked for
+Goobert to be blue and squishy (ANALOG's PLUCK on a square wave through a ringing filter that pops open and
+settles, with a little wobble).
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
