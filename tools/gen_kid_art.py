@@ -934,18 +934,21 @@ def racecar():                                                   # the sync lead
 
 
 def jellyfish():                                                 # strings: a slow, floating jellyfish
+    import math
     p = Pic()
-    for i, x in enumerate((12, 18, 24, 30, 36)):                 # wavy tentacles
-        dx = 2 if i % 2 else -2
-        p.line([(x, 26), (x + dx, 33), (x, 39), (x + dx, 45)], "pink" if i % 2 else "lpurple", 2)
-    p.pie(24, 26, 18, 180, 360, "lpurple")                       # the bell
-    p.ell(24, 26, 18, 3, "purple")
-    for x in (12, 20, 28, 36):                                   # the frilly hem
-        p.ell(x, 27, 3, 2, "lpurple")
-    p.ell(16, 14, 4, 3, "white")                                 # shine
-    p.eye(18, 20, 3); p.eye(30, 20, 3)
-    p.smile(24, 24, 2)
-    p.cheek(12, 22); p.cheek(36, 22)
+    p.ball(24, 22, 19, 16, "lpurple", "purple")                  # the bell
+    p.rect(3, 29, 45, 40, "")                                    # (its flat underside)
+    for x0, c in ((12, "purple"), (36, "purple"), (17, "lpurple"), (31, "lpurple")):   # wavy tentacles
+        p.line([(x0 + 1.6 * math.sin((y - 30) / 2.6 + x0), y) for y in range(30, 46)], c, 2)
+    for x0 in (21, 27):                                          # two frilly arms in the middle, swaying together
+        p.line([(x0 + 1.2 * math.sin((y - 30) / 1.5), y) for y in range(30, 44)], "pink", 3)
+    for x in range(8, 41, 8):                                    # a scalloped hem
+        p.ell(x, 29, 4, 3, "lpurple")
+    for x, y, r in ((14, 13, 2), (31, 10, 2), (37, 17, 1), (22, 9, 1)):   # spots
+        p.ell(x, y, r, r, "lpink")
+    p.eye(18, 21, 3); p.eye(30, 21, 3)
+    p.smile(24, 26, 2)
+    p.cheek(12, 25); p.cheek(36, 25)
     return p.done()
 
 
@@ -1010,21 +1013,26 @@ def wolf():                                                      # a howl: a wol
     return p.done()
 
 
-def camel():                                                     # a big, loping lead: a camel
+def camel():                                                     # a big, loping lead: a camel, side on
     p = Pic()
-    p.rect(13, 34, 16, 46, "dtan"); p.rect(19, 34, 22, 46, "dtan")   # legs
-    p.rect(30, 34, 33, 46, "dtan"); p.rect(36, 34, 39, 46, "dtan")
-    p.ball(26, 30, 15, 8, "tan", "dtan")                         # body
-    p.ball(20, 22, 6, 6, "tan", "dtan"); p.ball(32, 22, 6, 6, "tan", "dtan")   # two humps
-    p.rect(30, 26, 33, 32, "red"); p.rect(19, 26, 22, 32, "red")  # a blanket with a stripe
-    p.rect(16, 27, 36, 30, "red"); p.rect(16, 28, 36, 28, "yellow")
-    p.poly([(10, 30), (4, 14), (8, 12), (14, 28)], "tan")        # neck
-    p.ball(8, 10, 6, 5, "tan", "dtan")                           # head
-    p.ell(4, 12, 3, 3, "tan"); p.px(2, 11, "dbrown")             # snout, a nostril
-    p.ell(10, 5, 2, 2, "tan")                                    # an ear
-    p.dot_eye(8, 9)
-    p.smile(5, 14, 1)
-    p.line([(42, 28), (44, 36)], "dtan", 2)                      # tail
+    for x, c in ((17, "dtan"), (33, "dtan"), (22, "tan"), (38, "tan")):   # legs, the far ones darker, and hooves
+        p.rect(x, 35, x + 3, 45, c)
+        p.rect(x, 44, x + 3, 45, "dbrown")
+    p.line([(43, 28), (45, 36)], "dtan", 2)                      # a tail with a tuft
+    p.ell(45, 37, 1, 2, "dbrown")
+    p.ball(25, 18, 6, 9, "tan", "dtan"); p.ball(38, 19, 5, 8, "tan", "dtan")   # two tall humps
+    p.ball(31, 30, 13, 7, "tan", "dtan")                         # body
+    p.line([(31, 23), (32, 26)], "dtan", 1)                      # (the dip between them)
+    p.ell(23, 13, 2, 2, "cream"); p.ell(37, 15, 1, 2, "cream")    # a shine on each
+    p.poly([(10, 17), (16, 16), (21, 30), (16, 33)], "tan")      # neck
+    p.ball(11, 13, 8, 6, "tan", "dtan")                          # head
+    p.ell(6, 16, 4, 4, "cream")                                  # muzzle
+    p.px(3, 14, "dbrown")                                        # nostril
+    p.smile(6, 18, 2)
+    p.ell(16, 7, 2, 3, "dtan")                                   # ear
+    p.eye(12, 11, 3)
+    p.line([(10, 6), (11, 7)], "black", 1); p.line([(13, 5), (13, 7)], "black", 1)   # long lashes
+    p.cheek(15, 16)
     return p.done()
 
 
