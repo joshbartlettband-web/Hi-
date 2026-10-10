@@ -12,7 +12,7 @@ at the next power-on.
 | Control | What happens |
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
-| PRESETS | Next or previous friend (61 of them, each with its own picture, sound, home sky and favorite beat). |
+| PRESETS | Next or previous friend (63 of them, each with its own picture, sound, home sky and favorite beat). |
 | ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, ACCORDION, GUESS, FOLLOW, CHORDS. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
@@ -138,6 +138,7 @@ LOOK-ALIKES OFF, and each of them is replaced by an original stand-in with the s
 | Cowboy | Horse |
 | Cowgirl | Cactus (in a cowboy hat) |
 | Space Hero | Alien |
+| Spider Mom | Rainbow Mom (a mom with a rainbow headband) |
 
 Turn **PRESETS right** the same way to bring the originals back. The choice is kept when the FM-1 is switched off (the top bit of the
 VOLUME's byte). Songs in WRITE are untouched; their notes just show the stand-ins. The list is `STAND_INS` in
@@ -169,6 +170,9 @@ same way) and Sunflower (a softer acid line with an echo; every note slides from
 favorite beat is ACID: four on the floor, and Felucca's own acid line (A minor, with accents and slides of about 60 ms) played on
 the ACID sound. All the friends' slides use Felucca's TIME glide (a slide takes the same time whatever the interval); its RATE
 glide at small values slides in a few milliseconds, too fast to hear.
+And two of her own, drawn up with her dad: Spider Mom (a mom web hero in a rainbow suit, with a ponytail and a bow; PHASE's RESO,
+ringing on) and Dragon Duck (a duck with horns, a bat wing and a puff of fire; VOICE's VOX LEAD with a growl). She also asked for
+Goobert to be blue.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
@@ -184,7 +188,7 @@ repository and its website are public.
 
 ## Where it lives
 
-- `tools/gen_kid_art.py`: the 61 pictures, drawn from shapes on a 48 x 48 grid and outlined
+- `tools/gen_kid_art.py`: the 63 pictures, drawn from shapes on a 48 x 48 grid and outlined
   automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
   sheet to look at. The build runs it (`tools/build.py` generate).
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main

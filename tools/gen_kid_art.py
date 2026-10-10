@@ -1112,6 +1112,51 @@ def sunflower():                                                 # a sunflower, 
     return p.done()
 
 
+# her own: Spider Mom and Dragon Duck (her ideas)
+def spidermom():                                                 # a mom web hero in a rainbow suit, a ponytail and a bow
+    import math
+    p = Pic()
+    rain = ["red", "orange", "yellow", "green", "blue", "purple"]
+    for i, c in enumerate(rain):                                 # the mask: rainbow bands
+        p.rect(4, 4 + i * 7, 44, 10 + i * 7, c)
+    p.line([(24, 4), (24, 46)], "navy", 1)                       # its web, a few lines
+    for a in range(0, 360, 60):
+        p.line([(24, 26), (24 + 22 * math.cos(math.radians(a)), 26 + 24 * math.sin(math.radians(a)))], "navy", 1)
+    p.d.ellipse([24 - 12 + OFF, 26 - 13 + OFF, 24 + 12 + OFF, 26 + 13 + OFF], outline=C["navy"] + (255,))
+    p.poly([(9, 18), (21, 22), (21, 29), (11, 28)], "white")     # eye lenses, rounder and friendlier
+    p.poly([(39, 18), (27, 22), (27, 29), (37, 28)], "white")
+    p.ell(15, 24, 2, 2, "black"); p.ell(33, 24, 2, 2, "black")
+    p.smile(24, 35, 4)
+    im = p.im                                                    # keep the head round
+    for y in range(W):
+        for x in range(W):
+            if ((x - 24 - OFF) / 19.5) ** 2 + ((y - 26 - OFF) / 21.5) ** 2 > 1:
+                im.putpixel((x, y), (0, 0, 0, 0))
+    p.ell(40, 8, 4, 6, "dbrown"); p.ell(44, 15, 2, 5, "dbrown")  # a ponytail, out the top
+    p.poly([(34, 2), (39, 5), (34, 8)], "hpink"); p.poly([(44, 2), (39, 5), (44, 8)], "hpink")   # and its bow
+    p.ell(39, 5, 2, 2, "pink")
+    return p.done()
+
+
+def dragonduck():                                                # a duck that is also a little dragon
+    p = Pic()
+    p.poly([(28, 30), (33, 12), (38, 18), (43, 10), (45, 24), (40, 30)], "purple")   # a bat wing, up
+    p.line([(33, 13), (36, 28)], "dpurple", 1); p.line([(43, 11), (41, 28)], "dpurple", 1)
+    p.poly([(38, 30), (45, 20), (43, 36)], "dgreen")             # tail
+    for x, y in ((24, 27), (31, 27)):                             # spikes down the back
+        p.poly([(x - 2, y + 2), (x + 2, y + 2), (x, y - 3)], "orange")
+    p.ball(26, 37, 17, 10, "green", "dgreen")                    # body
+    p.ell(26, 40, 10, 5, "lime")                                 # a pale belly
+    p.poly([(13, 11), (15, 3), (18, 10)], "cream"); p.poly([(20, 10), (23, 3), (25, 11)], "cream")   # two little horns
+    p.ball(19, 19, 10, 10, "green", "dgreen")                    # head
+    p.ell(7, 22, 6, 3, "orange")                                 # beak
+    p.rect(3, 23, 10, 24, "dorange")
+    p.ell(3, 18, 2, 1, "yellow"); p.ell(5, 16, 1, 1, "red")      # a puff of fire
+    p.dot_eye(17, 17)
+    p.cheek(22, 23)
+    return p.done()
+
+
 # the stand-ins: original friends shown in place of the look-alikes when the grown-ups' LOOK-ALIKES is off (kid.c),
 # with the same sound, sky and beat
 def spottypup():                                                 # a white pup with a brown patch and floppy ears
@@ -1253,6 +1298,22 @@ def cactus():                                                    # a cactus in a
     return p.done()
 
 
+def rainbowmom():                                                # Spider Mom's stand-in: a mom with a rainbow headband
+    p = Pic()
+    p.ball(24, 22, 19, 19, "brown", "dbrown")                    # hair, down to her shoulders
+    p.rect(5, 22, 43, 42, "brown"); p.rect(39, 22, 43, 42, "dbrown")
+    p.ball(24, 26, 13, 14, "tan", "dtan")                        # face
+    p.pie(24, 18, 13, 180, 360, "brown")                         # a side-swept fringe
+    rain = ["red", "orange", "yellow", "green", "blue", "purple"]
+    for i, c in enumerate(rain):                                 # the rainbow headband, an arch over her head
+        r = 19 - i
+        p.d.arc([24 - r + OFF, 18 - r + OFF, 24 + r + OFF, 18 + r + OFF], 195, 345, fill=C[c] + (255,), width=1)
+    p.eye(19, 26, 3); p.eye(29, 26, 3)
+    p.smile(24, 33, 3)
+    p.cheek(15, 31); p.cheek(33, 31)
+    return p.done()
+
+
 def alien():                                                     # a little green alien with antennae
     p = Pic()
     p.line([(17, 12), (12, 4)], "dlime", 2); p.line([(31, 12), (36, 4)], "dlime", 2)
@@ -1279,6 +1340,7 @@ STAND_INS = {                    # the look-alike's name: the stand-in's name an
     "COWBOY": ("HORSE", horse),
     "COWGIRL": ("CACTUS", cactus),
     "SPACE HERO": ("ALIEN", alien),
+    "SPIDER MOM": ("RAINBOW MOM", rainbowmom),
 }
 
 ICONS = [icon_one, icon_choir, icon_strum, icon_accordion, icon_guess, icon_follow, icon_chords]
@@ -1293,7 +1355,7 @@ FRIENDS = [
     ("UNICORN", unicorn),
     ("GIRAFFE", giraffe),
     ("GOO", goo("pink", "dpink", "lpink")),
-    ("GOOBERT", goo("lime", "dlime", "lgreen")),
+    ("GOOBERT", goo("mblue", "blue", "lblue")),
     ("BLUE PUP", bluepup),
     ("RED MONSTER", monster("red", "dred", "orange")),
     ("BLUE MONSTER", monster("blue", "dblue", None, True)),
@@ -1347,6 +1409,8 @@ FRIENDS = [
     ("SCIENTIST", scientist),
     ("FLYTRAP", flytrap),
     ("SUNFLOWER", sunflower),
+    ("SPIDER MOM", spidermom),
+    ("DRAGON DUCK", dragonduck),
 ]
 
 

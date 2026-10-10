@@ -96,6 +96,7 @@ static const int16_t TW_SNOWMAN[] = {P_E0, 12, P_E1, 17, P_E4, 0, P_E5, 110, P_D
 static const int16_t TW_CRAB[] = {P_E0, 1, P_E1, 0, P_E4, 50, P_E5, 45, P_ED_FLT, 55, P_DEC, 72, P_REL, 36, -1};
 static const int16_t TW_WOLF[] = {P_E4, 34, P_E5, 55, P_ED_FLT, 40, P_ATK, 55, P_SUS, 110, P_REL, 60, -1};
 static const int16_t TW_CAMEL[] = {P_E1, 22, P_E4, 62, P_E5, 18, P_E6, 25, P_ATK, 8, -1};
+static const int16_t TW_SPIDERMOM[] = {P_DEC, 85, P_SUS, 80, P_REL, 55, -1};   /* (RESO rings on: a hero holds her notes) */
 static const int16_t TW_SWOOP[] = {P_VOICE, V_MONO, -1};   /* (a poly sound's new note starts on a fresh voice, with nothing to
                                                   * slide from: MONO, so every note swoops in from the last) */
 /* the acid friends, on ANALOG's ACID (a 303's squelch; their beat is ACID). The Scientist is set as a TD-3 often is: saw,
@@ -174,6 +175,9 @@ static const kid_sound_t KID_SOUND[KID_N] = {
                                                   * as the Scientist) */
     {0, "ACID", 103, KS_CLOUDS, KB_ACID, 0, 30, 0, 0, TW_SUNFLOWER},   /* SUNFLOWER: a softer acid line, echoing; every
                                                   * note slides from the last (MONO), no need to hold keys over */
+    /* hers: she drew them up with her dad */
+    {2, "RESO", 100, KS_RAINBOW, KB_DISCO, 0, 0, 0, 0, TW_SPIDERMOM},           /* SPIDER MOM: a zappy, resonant hero (a look-alike: RAINBOW MOM) */
+    {5, "VOX LEAD", 89, KS_CLOUDS, KB_ROCK, 0, 0, 70},   /* DRAGON DUCK: a quacky vowel with a dragon's growl (DIST) */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -753,9 +757,9 @@ static uint32_t kw_bits_get(uint32_t *at, uint32_t n)
 static void kw_pack(void)
 {
     uint32_t at = 0, c, i;
-    kw_bits_put(&at, 1, 4);
+    kw_bits_put(&at, 2, 4);                                      /* (version 2: a band friend in 7 bits; 1 had 6) */
     for (i = 0; i < 3u; i++)
-        kw_bits_put(&at, kw.band[i] == 0xFFu ? 0u : kw.band[i] + 1u, 6);
+        kw_bits_put(&at, kw.band[i] == 0xFFu ? 0u : kw.band[i] + 1u, 7);
     kw_bits_put(&at, (uint32_t)clamp((song.g[G_BPM] - 60) / 5, 0, 24), 5);
     kw_bits_put(&at, kw.beat, 4);
     for (c = 0; c < KW_COLS; c++) {
@@ -764,19 +768,21 @@ static void kw_pack(void)
     }
 }
 
-_Static_assert(KID_N <= 62, "WRITE keeps a band friend in 6 bits (kw_pack): at most 62 friends");
+_Static_assert(KID_N <= 126, "WRITE keeps a band friend in 7 bits (kw_pack): at most 126 friends");
+_Static_assert(4 + 3 * 7 + 5 + 4 + KW_COLS * 13 <= 58 * 8, "WRITE's song fits its 58 bytes");
 
 static void kw_unpack(void)
 {
-    uint32_t at = 0, c, i, v;
+    uint32_t at = 0, c, i, v, ver;
     for (c = 0; c < KW_COLS; c++)
         kw.note[c][0] = kw.note[c][1] = 0;
     kw.band[0] = kw.band[1] = kw.band[2] = 0xFF;
     kw.beat = 0;
-    if (kw_bits_get(&at, 4) != 1u)                               /* none yet (or another version): an empty song */
+    ver = kw_bits_get(&at, 4);
+    if (ver != 1u && ver != 2u)                                   /* none yet (or another version): an empty song */
         return;
     for (i = 0; i < 3u; i++) {
-        v = kw_bits_get(&at, 6);
+        v = kw_bits_get(&at, ver == 2u ? 7u : 6u);               /* (a song saved before 63 friends: 6 bits) */
         kw.band[i] = v && v <= KID_N ? (uint8_t)(v - 1u) : 0xFFu;
     }
     song.g[G_BPM] = (int16_t)(60 + 5 * (int32_t)kw_bits_get(&at, 5));
