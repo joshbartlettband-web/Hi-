@@ -41,7 +41,7 @@ const shot = (name) => {
   fs.writeFileSync(`${outDir}/kid_${name}.ppm`, Buffer.concat([Buffer.from("P6 240 240 255\n"), b]));
 };
 const WHITE = 0xFFFF;
-const NF = 58;                                                               // the friends (kid_art.h KID_N)
+const NF = 61;                                                               // the friends (kid_art.h KID_N)
 const KID_Y = (step) => 54 - 3 * step;
 const FXB = [B.FX, B.SCL, B.ENV, B.LFO, B.EDIT, B.GLO];
 

@@ -66,7 +66,7 @@ static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4
 enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_CLOUDS, KS_SNOW, KS_LEAVES, KS_DESERT,
        KS_COUNT };
 enum { KB_DANCE, KB_MARCH, KB_SPOOKY, KB_ROCK, KB_DISCO, KB_HIPHOP, KB_TRAIN, KB_SAMBA, KB_REGGAE, KB_LULLABY,
-       KB_HOEDOWN, KB_LOFI, KB_COUNT };
+       KB_HOEDOWN, KB_LOFI, KB_ACID, KB_COUNT };
 
 /* each friend's sound, in the order of KID_NAME: an engine and one of its factory presets (by name), its level
  * (P_LEVEL, 1/2 dB steps: the friends measured alike, about 0.14 peak with MASTER up), its home sky and its
@@ -95,6 +95,12 @@ static const int16_t TW_SNOWMAN[] = {P_E0, 12, P_E1, 17, P_E4, 0, P_E5, 110, P_D
 static const int16_t TW_CRAB[] = {P_E0, 1, P_E1, 0, P_E4, 50, P_E5, 45, P_ED_FLT, 55, P_DEC, 72, P_REL, 36, -1};
 static const int16_t TW_WOLF[] = {P_E4, 34, P_E5, 55, P_ED_FLT, 40, P_ATK, 55, P_SUS, 110, P_REL, 60, -1};
 static const int16_t TW_CAMEL[] = {P_E1, 22, P_E4, 62, P_E5, 18, P_E6, 25, P_ATK, 8, -1};
+/* the acid friends, on ANALOG's ACID (a 303's squelch; their beat is ACID). The Scientist is set as a TD-3 often is: saw,
+ * cutoff low, resonance high, a strong envelope, a short decay, notes held over each other slide */
+static const int16_t TW_SCIENTIST[] = {P_E4, 38, P_E5, 108, P_ED_FLT, 58, P_DEC, 50, P_SUS, 64, P_REL, 22, -1};
+static const int16_t TW_FLYTRAP[] = {P_E0, 1, P_E4, 34, P_E5, 112, P_E6, 70, P_ED_FLT, 60, P_DEC, 42, P_SUS, 64, -1};   /* (square,
+                                                  * driven: a chomp) */
+static const int16_t TW_SUNFLOWER[] = {P_E4, 58, P_E5, 92, P_ED_FLT, 36, P_DEC, 75, P_SUS, 40, P_REL, 50, P_DLY, 70, -1};
 static const kid_sound_t KID_SOUND[KID_N] = {
     {12, "TINE EP", 97, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
     {7, "SOFT FLUTE", 104, KS_HEARTS, KB_DISCO},      /* PINK DUCKY: WHEEL */
@@ -157,6 +163,10 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {0, "PLUCK", 117, KS_BUBBLES, KB_REGGAE, 0, 0, 0, 0, TW_CRAB},       /* CRAB: a snappy clav */
     {0, "SAW LEAD", 97, KS_STARS, KB_SPOOKY, 2, 30, 0, 0, TW_WOLF},     /* WOLF: a howl, swelling and sliding */
     {0, "SAW LEAD", 96, KS_DESERT, KB_TRAIN, 1, 18, 0, 0, TW_CAMEL},     /* CAMEL: a big, loping lead */
+    /* acid (TW_*) */
+    {0, "ACID", 97, KS_CONFETTI, KB_ACID, 0, 10, 0, 0, TW_SCIENTIST},  /* SCIENTIST: a TD-3's classic squelch, sliding */
+    {0, "ACID", 95, KS_FLOWERS, KB_ACID, 0, 6, 0, 0, TW_FLYTRAP},      /* FLYTRAP: a square wave, driven: chomp */
+    {0, "ACID", 103, KS_CLOUDS, KB_ACID, 0, 14, 0, 0, TW_SUNFLOWER},    /* SUNFLOWER: a softer acid line, echoing */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -169,6 +179,8 @@ typedef struct {
     uint8_t bpm, dance, dlvl, blvl;     /* tempo, the dance, the kit's and the bass's level */
     const char *lane[NLANE];
     uint8_t bass[16];
+    uint8_t bfl[16];                    /* its steps' SF_ACCENT (1) and SF_SLIDE (2) */
+    uint8_t acid;                       /* the bass plays ANALOG's ACID (a 303's squelch), not SQR BASS */
 } kid_beat_t;
 static const kid_beat_t KID_BEATS[KB_COUNT] = {
     {"DANCE", 112, KD_HOP, 92, 100,
@@ -208,6 +220,11 @@ static const kid_beat_t KID_BEATS[KB_COUNT] = {
     {"LOFI", 80, KD_SWAY, 95, 104,                    /* slow and swung (CHORDS: the bass plays each chord's root) */
      {"x.........x.....", "....x.......x...", 0, "x.x.x.x.x.x.x.x.", 0, 0, "..............x.", 0},
      {41, 1, 1, 1, 0, 0, 0, 0, 40, 1, 1, 1, 0, 0, 38, 0}},
+    {"ACID", 124, KD_BOTH, 91, 96,                    /* four on the floor, and Felucca's acid line (engines.c PATTERNS:
+                                                  * A minor, accents and slides) on the ACID sound */
+     {"x...x...x...x...", 0, "....x.......x...", "x.x.x.x.x.x.x.x.", "..x...x...x...x.", 0, 0, 0},
+     {45, 45, 57, 45, 0, 48, 45, 55, 45, 0, 57, 52, 45, 48, 0, 50},
+     {1, 0, 2, 0, 0, 0, 1, 2, 0, 0, 1, 0, 0, 2, 0, 1}, 1},
 };
 
 /* the top row, tapped on and off: Felucca's performance effects (perform.c), and what the friend does meanwhile */
@@ -456,19 +473,19 @@ static void kid_beat_load(void)
         return;
     }
     t->p[P_MUTE] = 0;
-    if (!kid.bass_ready) {                        /* the bass sound, once */
+    if (kid.bass_ready != 1u + b->acid) {         /* the bass sound (SQR BASS, or ACID), when it changes */
         const engine_t *e = ENGINES[0];
         uint32_t p = 0;
         for (i = 0; i < e->npresets; i++)
-            if (str_eq(e->presets[preset_orig(e, i)].name, "SQR BASS"))
+            if (str_eq(e->presets[preset_orig(e, i)].name, b->acid ? "ACID" : "SQR BASS"))
                 p = i;
         set_engine_of(bt, 0);
         apply_preset_to(bt, p);
-        kid.bass_ready = 1;
+        kid.bass_ready = (uint8_t)(1u + b->acid);
     }
     for (i = 0; i < 16u; i++) {
         note[i] = b->bass[i] > 1u ? b->bass[i] : 0u;
-        flags[i] = b->bass[i] == 1u ? 4u : 0u;    /* (1: a TIE, the note before held on) */
+        flags[i] = (uint8_t)((b->bass[i] == 1u ? 4u : 0u) | b->bfl[i]);   /* (1: a TIE, the note before held on) */
     }
     load_pat16(bt, note, flags);
     kid.c_beat = 0;

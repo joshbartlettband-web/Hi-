@@ -1050,6 +1050,64 @@ def camel():                                                     # a big, loping
     return p.done()
 
 
+# the acid friends (a 303's squelch on ANALOG's ACID; the Scientist voiced like a TD-3's classic setting)
+def scientist():                                                 # a young scientist: goggles, a lab coat, a bubbling flask
+    p = Pic()
+    p.rect(12, 30, 36, 46, "white"); p.rect(34, 30, 36, 46, "dwhite")   # the lab coat
+    p.poly([(21, 30), (24, 36), (27, 30)], "teal")               # a shirt at the collar
+    p.ball(24, 18, 12, 12, "tan", "dtan")                        # face
+    p.ell(24, 8, 12, 6, "dbrown"); p.ell(13, 14, 3, 6, "dbrown"); p.ell(35, 14, 3, 6, "dbrown")   # hair
+    p.rect(12, 14, 36, 16, "black")                              # the goggles' strap
+    for x in (18, 30):                                           # the goggles, eyes behind the glass
+        p.ell(x, 16, 6, 6, "silver"); p.ell(x, 16, 4, 4, "glass")
+        p.ell(x, 17, 2, 2, "black"); p.px(x - 1, 16, "white")
+    p.smile(24, 24, 2)
+    p.cheek(15, 22); p.cheek(33, 22)
+    p.poly([(40, 26), (44, 26), (43, 31), (47, 42), (37, 42), (41, 31)], "glass")   # the flask
+    p.poly([(39, 36), (45, 36), (47, 42), (37, 42)], "lime")     # its green potion
+    p.ell(41, 22, 2, 2, "lgreen"); p.ell(44, 18, 1, 1, "lgreen")  # bubbles
+    p.ell(38, 38, 3, 3, "tan")                                   # the hand holding it
+    return p.done()
+
+
+def flytrap():                                                   # a Venus flytrap: its trap wide open, in a pot
+    p = Pic()
+    p.poly([(14, 37), (34, 37), (31, 46), (17, 46)], "dorange"); p.rect(13, 35, 35, 38, "orange")   # the pot
+    p.line([(24, 35), (24, 27)], "dgreen", 3)                    # stem and leaves
+    p.ell(15, 32, 5, 2, "green"); p.ell(33, 32, 5, 2, "green")
+    for i in range(7):                                           # spikes round the trap, pointing out
+        x = 8 + i * 5
+        p.poly([(x - 1, 9), (x + 1, 9), (x, 3)], "lime")
+        p.poly([(x - 1, 25), (x + 1, 25), (x, 30)], "lime")
+    p.poly([(5, 14), (8, 8), (40, 8), (43, 14), (24, 18)], "green")    # the upper jaw, tipped up
+    p.poly([(5, 18), (24, 16), (43, 18), (40, 25), (8, 25)], "green")  # the lower jaw
+    p.poly([(9, 13), (24, 16), (39, 13), (39, 19), (24, 22), (9, 19)], "hpink")   # inside, wide open
+    p.line([(11, 16), (24, 19), (37, 16)], "dpink", 1)           # its throat
+    p.eye(17, 6, 3); p.eye(31, 6, 3)                             # eyes on top
+    p.cheek(9, 22); p.cheek(39, 22)
+    return p.done()
+
+
+def sunflower():                                                 # a sunflower, smiling
+    p = Pic()
+    import math
+    p.line([(24, 30), (24, 44)], "dgreen", 3)                    # stem and leaves
+    p.ell(17, 36, 6, 3, "green"); p.ell(31, 39, 6, 3, "green")
+    for i in range(12):                                          # oval petals all round
+        a = i * math.pi / 6 + (math.pi / 12 if i % 2 else 0)
+        cx, cy = 24 + 10.5 * math.cos(a), 16 + 10.5 * math.sin(a)
+        p.poly([(cx + 6 * math.cos(t) * math.cos(a) - 2.6 * math.sin(t) * math.sin(a),
+                 cy + 6 * math.cos(t) * math.sin(a) + 2.6 * math.sin(t) * math.cos(a)) for t in [k * math.pi / 8 for k in range(16)]],
+               "gold" if i % 2 else "yellow")
+    p.ball(24, 16, 8, 8, "brown", "dbrown")                      # the seedy middle, its face
+    for x, y in ((19, 11), (29, 11), (24, 9)):
+        p.px(x, y, "dbrown")
+    p.eye(21, 15, 2); p.eye(27, 15, 2)
+    p.smile(24, 19, 2, "black")
+    p.cheek(18, 18); p.cheek(30, 18)
+    return p.done()
+
+
 # the stand-ins: original friends shown in place of the look-alikes when the grown-ups' LOOK-ALIKES is off (kid.c),
 # with the same sound, sky and beat
 def spottypup():                                                 # a white pup with a brown patch and floppy ears
@@ -1282,6 +1340,9 @@ FRIENDS = [
     ("CRAB", crab),
     ("WOLF", wolf),
     ("CAMEL", camel),
+    ("SCIENTIST", scientist),
+    ("FLYTRAP", flytrap),
+    ("SUNFLOWER", sunflower),
 ]
 
 

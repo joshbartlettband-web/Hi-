@@ -12,7 +12,7 @@ at the next power-on.
 | Control | What happens |
 | --- | --- |
 | Keys | Play the friend's sound. The note's letter shows big in the band at the bottom, in its own color, and the friend hops. A music staff drops in at the top and writes the note (see below). |
-| PRESETS | Next or previous friend (58 of them, each with its own picture, sound, home sky and favorite beat). |
+| PRESETS | Next or previous friend (61 of them, each with its own picture, sound, home sky and favorite beat). |
 | ALGORITHM | How the keys play, one step per turn (below): 1 FRIEND, 3 FRIENDS, STRUM, ACCORDION, GUESS, FOLLOW, CHORDS. |
 | SELECT | The beat slower or faster (SLOW, WALK, FAST). |
 | KNOB 1 | Big and small. Low notes make a big friend, high notes a small one. OCT- and OCT+ do the same. |
@@ -67,7 +67,7 @@ friend's size: each key always plays the same drum. In WRITE their notes are wri
 The friends were leveled by ear-loudness, not by peak: each one played the same phrase in the browser build and was measured
 with the broadcast loudness method (ITU-R BS.1770, K-weighted, gated), then its P_LEVEL moved toward the middle (half a dB a
 step). They had spread over 12 dB (a long organ note sounds far louder than a pluck with the same peak); now they are within about
-3.5 dB. The twelve beats were leveled the same way (now within half a dB of each other, about 4 dB under a friend). Three friends
+3.5 dB. The thirteen beats were leveled the same way (now within half a dB of each other, about 4 dB under a friend). Three friends
 singing (3 FRIENDS) play 2.5 dB softer and the ACCORDION's chords softer too, so a chord is about as loud as one note.
 `web/emu/kid_test.mjs` checks the friends stay within 7 dB of each other on its own simpler measure.
 
@@ -97,7 +97,7 @@ friends, the way Mario Paint's composer did, and plays it back.
 | OCT- / OCT+ | The yellow column back and forward (32 columns, 4 pages of 8: the dots). |
 | HOME | Wipes the column (held 1 s it is the grown-ups' VOLUME, as always). |
 | PLAY | Plays her song from the start, in a loop: the column turns green and the friend of each note hops along over it. PLAY again stops. |
-| SEQ | A beat under it: none, then each of the twelve (drums only). |
+| SEQ | A beat under it: none, then each of the thirteen (drums only). |
 | SELECT | Slower or faster. |
 | REC held 2 s | A new, empty song. |
 | SAVE | Back to playing. |
@@ -162,6 +162,10 @@ TRIO's SYNC with the envelope moving the second oscillator), Jellyfish (strings)
 bells, like the Prophet's Poly-Mod), Crab (a snappy clav), Wolf (a howl that swells and slides) and Camel (a big, loping lead). Their
 tweaks on top of the presets are the `TW_*` lists in `kid.c`. Four new skies came with them: clouds, snow, autumn leaves and a
 desert at sunset.
+Then three acid friends (u/litomanu asked for 303 sounds) on ANALOG's ACID, the squelchy resonant bass of a Roland TB-303:
+Scientist (set as a TD-3, the 303 clone, often is: saw, cutoff low, resonance high, a strong envelope, a short decay, and notes
+held over each other slide), Flytrap (a driven square wave: a chomp) and Sunflower (a softer acid line with an echo). Their
+favorite beat is ACID: four on the floor, and Felucca's own acid line (A minor, with accents and slides) played on the ACID sound.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
@@ -177,7 +181,7 @@ repository and its website are public.
 
 ## Where it lives
 
-- `tools/gen_kid_art.py`: the 58 pictures, drawn from shapes on a 48 x 48 grid and outlined
+- `tools/gen_kid_art.py`: the 61 pictures, drawn from shapes on a 48 x 48 grid and outlined
   automatically. `python3 tools/gen_kid_art.py /tmp/kid_art.h --png /tmp/sheet.png` writes a contact
   sheet to look at. The build runs it (`tools/build.py` generate).
 - `firmware/src/kid.c`: everything else (sounds, knobs, buttons, the screen). It takes over the main
