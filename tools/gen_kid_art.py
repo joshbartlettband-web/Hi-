@@ -1113,28 +1113,30 @@ def sunflower():                                                 # a sunflower, 
 
 
 # her own: Spider Mom and Dragon Duck (her ideas)
-def spidermom():                                                 # a mom web hero in a rainbow suit, a ponytail and a bow
-    import math
+def spidermom():                                                 # a masked web hero, rainbow instead of red, and a mom's long
+    import math                                                  # dark brown hair (her idea)
     p = Pic()
+    p.ball(24, 21, 21, 19, "dbrown", "black")                    # long hair behind the head, down to the shoulders
+    p.rect(3, 21, 13, 45, "dbrown"); p.rect(35, 21, 45, 45, "dbrown")
+    p.line([(7, 23), (6, 43)], "brown", 1); p.line([(41, 23), (42, 43)], "brown", 1)   # a shine in it
+    m = Pic()                                                    # the mask, drawn on its own and kept round
     rain = ["red", "orange", "yellow", "green", "blue", "purple"]
-    for i, c in enumerate(rain):                                 # the mask: rainbow bands
-        p.rect(4, 4 + i * 7, 44, 10 + i * 7, c)
-    p.line([(24, 4), (24, 46)], "navy", 1)                       # its web, a few lines
-    for a in range(0, 360, 60):
-        p.line([(24, 26), (24 + 22 * math.cos(math.radians(a)), 26 + 24 * math.sin(math.radians(a)))], "navy", 1)
-    p.d.ellipse([24 - 12 + OFF, 26 - 13 + OFF, 24 + 12 + OFF, 26 + 13 + OFF], outline=C["navy"] + (255,))
-    p.poly([(9, 18), (21, 22), (21, 29), (11, 28)], "white")     # eye lenses, rounder and friendlier
-    p.poly([(39, 18), (27, 22), (27, 29), (37, 28)], "white")
-    p.ell(15, 24, 2, 2, "black"); p.ell(33, 24, 2, 2, "black")
-    p.smile(24, 35, 4)
-    im = p.im                                                    # keep the head round
+    for i, c in enumerate(rain):
+        m.rect(4, 2 if i == 0 else 8 + round(i * 6.3), 44, 7 + round((i + 1) * 6.3), c)   # (red starts under her bangs)
+    for a in range(0, 360, 45):                                  # the web: lines out from the middle, and rings
+        m.line([(24, 24), (24 + 22 * math.cos(math.radians(a)), 24 + 24 * math.sin(math.radians(a)))], "black", 1)
+    for r in (8, 15):
+        m.d.ellipse([24 - r + OFF, 24 - r * 1.15 + OFF, 24 + r + OFF, 24 + r * 1.15 + OFF], outline=C["black"] + (255,))
+    m.poly([(7, 15), (21, 20), (21, 29), (9, 27)], "black")      # the big eyes
+    m.poly([(41, 15), (27, 20), (27, 29), (39, 27)], "black")
+    m.poly([(10, 18), (19, 22), (19, 27), (11, 25)], "white")
+    m.poly([(38, 18), (29, 22), (29, 27), (37, 25)], "white")
     for y in range(W):
         for x in range(W):
-            if ((x - 24 - OFF) / 19.5) ** 2 + ((y - 26 - OFF) / 21.5) ** 2 > 1:
-                im.putpixel((x, y), (0, 0, 0, 0))
-    p.ell(40, 8, 4, 6, "dbrown"); p.ell(44, 15, 2, 5, "dbrown")  # a ponytail, out the top
-    p.poly([(34, 2), (39, 5), (34, 8)], "hpink"); p.poly([(44, 2), (39, 5), (44, 8)], "hpink")   # and its bow
-    p.ell(39, 5, 2, 2, "pink")
+            if ((x - 24 - OFF) / 17.5) ** 2 + ((y - 24 - OFF) / 20.5) ** 2 > 1:
+                m.im.putpixel((x, y), (0, 0, 0, 0))
+    p.im.alpha_composite(m.im)
+    p.pie(24, 11, 11, 205, 335, "dbrown")                        # her hair over the top of the mask
     return p.done()
 
 

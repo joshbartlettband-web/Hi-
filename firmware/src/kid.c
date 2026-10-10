@@ -96,6 +96,9 @@ static const int16_t TW_SNOWMAN[] = {P_E0, 12, P_E1, 17, P_E4, 0, P_E5, 110, P_D
 static const int16_t TW_CRAB[] = {P_E0, 1, P_E1, 0, P_E4, 50, P_E5, 45, P_ED_FLT, 55, P_DEC, 72, P_REL, 36, -1};
 static const int16_t TW_WOLF[] = {P_E4, 34, P_E5, 55, P_ED_FLT, 40, P_ATK, 55, P_SUS, 110, P_REL, 60, -1};
 static const int16_t TW_CAMEL[] = {P_E1, 22, P_E4, 62, P_E5, 18, P_E6, 25, P_ATK, 8, -1};
+static const int16_t TW_GOOBERT[] = {P_E0, 1, P_E1, 6, P_E2, 50, P_E4, 26, P_E5, 96, P_E6, 0, P_ED_FLT, 48, P_ATK, 2,
+                                     P_DEC, 62, P_SUS, 56, P_REL, 45, P_LD_FLT, 10, -1};   /* (a rubbery bloop: a
+                                     * ringing filter that pops open and settles, with a little jelly wobble) */
 static const int16_t TW_SPIDERMOM[] = {P_DEC, 85, P_SUS, 80, P_REL, 55, -1};   /* (RESO rings on: a hero holds her notes) */
 static const int16_t TW_SWOOP[] = {P_VOICE, V_MONO, -1};   /* (a poly sound's new note starts on a fresh voice, with nothing to
                                                   * slide from: MONO, so every note swoops in from the last) */
@@ -114,7 +117,7 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {8, "SHIMMER", 108, KS_RAINBOW, KB_DISCO},        /* UNICORN: GRAIN */
     {12, "MARIMBA", 122, KS_FLOWERS, KB_SAMBA},       /* GIRAFFE */
     {5, "WOW BASS", 94, KS_HEARTS, KB_DANCE},        /* GOO: VOICE */
-    {6, "FAT BASS", 113, KS_CONFETTI, KB_HIPHOP},     /* GOOBERT: TRIO */
+    {0, "PLUCK", 106, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 0, TW_GOOBERT},   /* GOOBERT: squishy (she asked) */
     {3, "PULSE LD", 95, KS_FLOWERS, KB_ROCK},        /* BLUE PUP: LOFI */
     {5, "VOX LEAD", 89, KS_CONFETTI, KB_MARCH},       /* RED MONSTER */
     {7, "FULL ORGAN", 98, KS_RAINBOW, KB_DISCO},     /* BLUE MONSTER */
