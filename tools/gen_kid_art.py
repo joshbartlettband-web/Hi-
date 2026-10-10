@@ -1070,21 +1070,25 @@ def scientist():                                                 # a young scien
     return p.done()
 
 
-def flytrap():                                                   # a Venus flytrap: its trap wide open, in a pot
+def flytrap():                                                   # a Venus flytrap, side on: its trap open, in a pot
     p = Pic()
     p.poly([(14, 37), (34, 37), (31, 46), (17, 46)], "dorange"); p.rect(13, 35, 35, 38, "orange")   # the pot
-    p.line([(24, 35), (24, 27)], "dgreen", 3)                    # stem and leaves
-    p.ell(15, 32, 5, 2, "green"); p.ell(33, 32, 5, 2, "green")
-    for i in range(7):                                           # spikes round the trap, pointing out
-        x = 8 + i * 5
-        p.poly([(x - 1, 9), (x + 1, 9), (x, 3)], "lime")
-        p.poly([(x - 1, 25), (x + 1, 25), (x, 30)], "lime")
-    p.poly([(5, 14), (8, 8), (40, 8), (43, 14), (24, 18)], "green")    # the upper jaw, tipped up
-    p.poly([(5, 18), (24, 16), (43, 18), (40, 25), (8, 25)], "green")  # the lower jaw
-    p.poly([(9, 13), (24, 16), (39, 13), (39, 19), (24, 22), (9, 19)], "hpink")   # inside, wide open
-    p.line([(11, 16), (24, 19), (37, 16)], "dpink", 1)           # its throat
-    p.eye(17, 6, 3); p.eye(31, 6, 3)                             # eyes on top
-    p.cheek(9, 22); p.cheek(39, 22)
+    p.line([(24, 35), (21, 30), (14, 26)], "dgreen", 3)          # a stem curving up to the trap
+    p.ell(30, 31, 5, 2, "green")                                 # a leaf
+    for x, y in ((22, 4), (28, 3), (34, 4), (40, 7)):            # spines along the top jaw's rim
+        p.poly([(x - 1, y + 2), (x + 1, y + 2), (x + 3, y - 2)], "lime")
+    for x, y in ((22, 32), (28, 33), (34, 31), (40, 28)):        # .. and the bottom one's
+        p.poly([(x - 1, y - 2), (x + 1, y - 2), (x + 3, y + 2)], "lime")
+    p.poly([(6, 18), (8, 10), (16, 4), (28, 3), (42, 7), (36, 11), (22, 14)], "green")      # the top jaw, tipped up
+    p.poly([(6, 20), (22, 23), (40, 27), (36, 31), (24, 34), (12, 30)], "green")            # the bottom jaw
+    p.poly([(10, 17), (22, 13), (38, 9), (35, 11), (22, 15)], "hpink")                      # their pink insides
+    p.poly([(10, 21), (22, 24), (38, 28), (35, 26), (22, 22)], "hpink")
+    for x, y in ((27, 14), (33, 12)):                            # green bristles over the gap, as a real one has
+        p.poly([(x - 1, y), (x + 1, y), (x + 1, y + 4)], "lime")
+    for x, y in ((27, 24), (33, 26)):
+        p.poly([(x - 1, y), (x + 1, y), (x + 1, y - 4)], "lime")
+    p.eye(18, 9, 3)                                              # an eye on top
+    p.cheek(12, 13)
     return p.done()
 
 
