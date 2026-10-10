@@ -77,7 +77,8 @@ typedef struct {
     uint8_t level, sky, beat;
     int8_t vib;                         /* a vibrato of its own (P_LD_PIT, each step about +-19 cents: 1 or 2 is a
                                          * singer's, 3 a theremin's; WIGGLE adds to it), 0 none */
-    uint8_t glide;                      /* P_GLIDE: notes slide into each other, 0 none */
+    uint8_t glide;                      /* P_GLIDE in TIME mode: a slide takes about 0.73 ms x (1 + glide^2 / 8), whatever
+                                         * the interval, as a 303's does (24: ~50 ms, 30: ~80, 36: ~120), 0 none */
     uint8_t dist;                       /* P_DIST: its own drive (a growl), 0 the preset's */
     uint8_t kit;                        /* DRUM: its KIT + 1 (eng_drum.c DK_*: 5 = 80, 6 = 10, 7 = 66, 8 = 55), 0 STD */
     const int16_t *tw;                  /* its own tweaks on the preset: parameter, value, .., -1; 0 none */
@@ -95,12 +96,15 @@ static const int16_t TW_SNOWMAN[] = {P_E0, 12, P_E1, 17, P_E4, 0, P_E5, 110, P_D
 static const int16_t TW_CRAB[] = {P_E0, 1, P_E1, 0, P_E4, 50, P_E5, 45, P_ED_FLT, 55, P_DEC, 72, P_REL, 36, -1};
 static const int16_t TW_WOLF[] = {P_E4, 34, P_E5, 55, P_ED_FLT, 40, P_ATK, 55, P_SUS, 110, P_REL, 60, -1};
 static const int16_t TW_CAMEL[] = {P_E1, 22, P_E4, 62, P_E5, 18, P_E6, 25, P_ATK, 8, -1};
+static const int16_t TW_SWOOP[] = {P_VOICE, V_MONO, -1};   /* (a poly sound's new note starts on a fresh voice, with nothing to
+                                                  * slide from: MONO, so every note swoops in from the last) */
 /* the acid friends, on ANALOG's ACID (a 303's squelch; their beat is ACID). The Scientist is set as a TD-3 often is: saw,
  * cutoff low, resonance high, a strong envelope, a short decay, notes held over each other slide */
 static const int16_t TW_SCIENTIST[] = {P_E4, 38, P_E5, 108, P_ED_FLT, 58, P_DEC, 50, P_SUS, 64, P_REL, 22, -1};
 static const int16_t TW_FLYTRAP[] = {P_E0, 1, P_E4, 34, P_E5, 112, P_E6, 70, P_ED_FLT, 60, P_DEC, 42, P_SUS, 64, -1};   /* (square,
                                                   * driven: a chomp) */
-static const int16_t TW_SUNFLOWER[] = {P_E4, 58, P_E5, 92, P_ED_FLT, 36, P_DEC, 75, P_SUS, 40, P_REL, 50, P_DLY, 70, -1};
+static const int16_t TW_SUNFLOWER[] = {P_E4, 58, P_E5, 92, P_ED_FLT, 36, P_DEC, 75, P_SUS, 40, P_REL, 50, P_DLY, 70,
+                                       P_VOICE, V_MONO, -1};
 static const kid_sound_t KID_SOUND[KID_N] = {
     {12, "TINE EP", 97, KS_BUBBLES, KB_DANCE},       /* DUCKY: FM6 */
     {7, "SOFT FLUTE", 104, KS_HEARTS, KB_DISCO},      /* PINK DUCKY: WHEEL */
@@ -144,11 +148,11 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {2, "BELL", 108, KS_STARS, KB_LULLABY},           /* STAR: PHASE */
     /* suggested by r/MVaveFM1's u/veecheech (CREDITS.md) */
     {0, "SAW", 92, KS_FLOWERS, KB_ROCK, 0, 0, 80},   /* T-REX: a growly bass: a saw, driven hard (DIST) */
-    {0, "SINE KEY", 107, KS_STARS, KB_SPOOKY, 3, 24},  /* SKELETON: a theremin, a wide vibrato and a slide */
+    {0, "SINE KEY", 107, KS_STARS, KB_SPOOKY, 3, 36, 0, 0, TW_SWOOP},  /* SKELETON: a theremin, a wide vibrato and a slide */
     {9, "PLUCK", 125, KS_FLOWERS, KB_HOEDOWN},        /* COWBOY: a twangy string */
     {0, "PLUCK", 113, KS_HEARTS, KB_HOEDOWN},         /* COWGIRL: a twangy pluck */
     {0, "RAVE", 95, KS_CONFETTI, KB_DANCE},          /* VACUUM: the rave "hoover", a joke for the grown-ups */
-    {6, "SAW3", 113, KS_STARS, KB_DISCO, 1, 14},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
+    {6, "SAW3", 113, KS_STARS, KB_DISCO, 1, 32, 0, 0, TW_SWOOP},      /* SPACE HERO: buzzy saws that swoop (a glide) and shimmer */
     /* more drum kits: every key another drum, as SCISSORS (Felucca's model kits) */
     {10, "DRUM KIT", 103, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 5},    /* BEAT BOT: the 80 kit, a classic drum machine */
     {10, "DRUM KIT", 105, KS_FLOWERS, KB_MARCH, 0, 0, 0, 8},     /* TOY DRUM: the 55 kit, small and tight */
@@ -156,17 +160,20 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {10, "DRUM KIT", 106, KS_STARS, KB_ROCK, 0, 0, 0, 6},        /* MONKEY: the 10 kit, a cymbal on the bell */
     /* Prophet-style (TW_*) */
     {0, "BRASS", 100, KS_DESERT, KB_MARCH, 0, 0, 0, 0, TW_ELEPHANT},      /* ELEPHANT: poly brass, a trumpet */
-    {6, "SYNC LEAD", 96, KS_CLOUDS, KB_ROCK, 0, 8, 0, 0, TW_RACECAR},    /* RACE CAR: the sync sweep, zoom */
+    {6, "SYNC LEAD", 96, KS_CLOUDS, KB_ROCK, 0, 22, 0, 0, TW_RACECAR},    /* RACE CAR: the sync sweep, zoom */
     {0, "STRINGS", 93, KS_BUBBLES, KB_LULLABY, 1, 0, 0, 0, TW_JELLYFISH},   /* JELLYFISH: strings, floating */
     {0, "SQR BASS", 118, KS_LEAVES, KB_HIPHOP, 0, 0, 0, 0, TW_BEAR},     /* BEAR: a punchy saw bass */
     {6, "RING BELL", 101, KS_SNOW, KB_DISCO, 0, 0, 0, 0, TW_SNOWMAN},    /* SNOWMAN: glassy bells (ring, like poly-mod) */
     {0, "PLUCK", 117, KS_BUBBLES, KB_REGGAE, 0, 0, 0, 0, TW_CRAB},       /* CRAB: a snappy clav */
-    {0, "SAW LEAD", 97, KS_STARS, KB_SPOOKY, 2, 30, 0, 0, TW_WOLF},     /* WOLF: a howl, swelling and sliding */
-    {0, "SAW LEAD", 96, KS_DESERT, KB_TRAIN, 1, 18, 0, 0, TW_CAMEL},     /* CAMEL: a big, loping lead */
+    {0, "SAW LEAD", 97, KS_STARS, KB_SPOOKY, 2, 40, 0, 0, TW_WOLF},     /* WOLF: a howl, swelling and sliding */
+    {0, "SAW LEAD", 96, KS_DESERT, KB_TRAIN, 1, 33, 0, 0, TW_CAMEL},     /* CAMEL: a big, loping lead */
     /* acid (TW_*) */
-    {0, "ACID", 97, KS_CONFETTI, KB_ACID, 0, 10, 0, 0, TW_SCIENTIST},  /* SCIENTIST: a TD-3's classic squelch, sliding */
-    {0, "ACID", 95, KS_FLOWERS, KB_ACID, 0, 6, 0, 0, TW_FLYTRAP},      /* FLYTRAP: a square wave, driven: chomp */
-    {0, "ACID", 103, KS_CLOUDS, KB_ACID, 0, 14, 0, 0, TW_SUNFLOWER},    /* SUNFLOWER: a softer acid line, echoing */
+    {0, "ACID", 97, KS_CONFETTI, KB_ACID, 0, 26, 0, 0, TW_SCIENTIST},  /* SCIENTIST: a TD-3's classic squelch: a key held
+                                                  * while the next is pressed slides into it (~60 ms), as on a 303 */
+    {0, "ACID", 95, KS_FLOWERS, KB_ACID, 0, 24, 0, 0, TW_FLYTRAP},     /* FLYTRAP: a square wave, driven: chomp (slides
+                                                  * as the Scientist) */
+    {0, "ACID", 103, KS_CLOUDS, KB_ACID, 0, 30, 0, 0, TW_SUNFLOWER},   /* SUNFLOWER: a softer acid line, echoing; every
+                                                  * note slides from the last (MONO), no need to hold keys over */
 };
 
 /* the beats: drums on track 4 (DRUM), a bass line on track 2, 16 steps of 1/16. Drums: a string per lane
@@ -432,6 +439,7 @@ static void kid_sound_to(track_t *t, uint32_t fr)
     apply_preset_to(t, p);
     t->p[P_LEVEL] = s->level;
     t->p[P_GLIDE] = s->glide;
+    t->p[P_GLMODE] = 1;                           /* (TIME: Felucca's RATE glide at these values is a few ms, not heard) */
     if (s->dist)
         t->p[P_DIST] = s->dist;
     if (s->kit)
@@ -509,6 +517,8 @@ static void kid_beat_load(void)
         kid.c_beat = 1;
     }
     bt->p[P_LEVEL] = b->blvl;
+    bt->p[P_GLIDE] = b->acid ? 26 : 0;             /* (ACID: its slides ~60 ms, as a 303's; in TIME mode, see KID_SOUND) */
+    bt->p[P_GLMODE] = 1;
     song.g[G_BPM] = b->bpm;
 }
 

@@ -106,6 +106,10 @@ Read it with `RAINBOW.md` (how Rainbow mode works) and `CREDITS.md` (who suggest
 8. **Editing a big C file.** Use exact-match replacements that assert the match count. Never write a file with
    `open(path, "w").write(open(path).read())` in one line: it empties the file before reading it (this truncated `kid.c` once).
 9. **Test the test.** After writing a check, break the feature on purpose and watch the check fail.
+11. **Glides you cannot hear.** Felucca's default glide (GLMODE RATE) at small `P_GLIDE` values slides in a few milliseconds:
+    Rainbow mode's sliding friends and its sequencer's acid slides were effectively instant until we measured them. Use TIME
+    mode (`P_GLMODE` 1: about 0.73 ms x (1 + glide^2 / 8)); 26 gives a 303's ~60 ms. A poly sound never slides (a new note gets
+    a fresh voice), so sliding friends need MONO or LEGATO. Pitch-track a slide to check it.
 10. **Recording videos:** turning an encoder more than once per emulator frame drops steps. Step one detent a frame until the
     target is reached (see `go()` in `tools/video/record_tour.mjs`).
 

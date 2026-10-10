@@ -163,9 +163,12 @@ bells, like the Prophet's Poly-Mod), Crab (a snappy clav), Wolf (a howl that swe
 tweaks on top of the presets are the `TW_*` lists in `kid.c`. Four new skies came with them: clouds, snow, autumn leaves and a
 desert at sunset.
 Then three acid friends (u/litomanu asked for 303 sounds) on ANALOG's ACID, the squelchy resonant bass of a Roland TB-303:
-Scientist (set as a TD-3, the 303 clone, often is: saw, cutoff low, resonance high, a strong envelope, a short decay, and notes
-held over each other slide), Flytrap (a driven square wave: a chomp) and Sunflower (a softer acid line with an echo). Their
-favorite beat is ACID: four on the floor, and Felucca's own acid line (A minor, with accents and slides) played on the ACID sound.
+Scientist (set as a TD-3, the 303 clone, often is: saw, cutoff low, resonance high, a strong envelope, a short decay; hold a key
+while pressing the next and it slides into it in about 60 ms, as a 303 does), Flytrap (a driven square wave: a chomp, sliding the
+same way) and Sunflower (a softer acid line with an echo; every note slides from the last, no need to hold keys over). Their
+favorite beat is ACID: four on the floor, and Felucca's own acid line (A minor, with accents and slides of about 60 ms) played on
+the ACID sound. All the friends' slides use Felucca's TIME glide (a slide takes the same time whatever the interval); its RATE
+glide at small values slides in a few milliseconds, too fast to hear.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
