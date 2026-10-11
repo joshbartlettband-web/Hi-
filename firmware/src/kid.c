@@ -64,7 +64,7 @@ static const uint16_t KID_VOL_CAP[8] = {362, 512, 724, 1024, 1448, 2048, 2896, 4
 #define KID_SLEEP_MS 3000u              /* SLEEPY: winds down, dozes, then wakes up by itself after this */
 
 enum { KS_RAINBOW, KS_STARS, KS_HEARTS, KS_BUBBLES, KS_FLOWERS, KS_CONFETTI, KS_CLOUDS, KS_SNOW, KS_LEAVES, KS_DESERT,
-       KS_COUNT };
+       KS_STREET, KS_COUNT };
 enum { KB_DANCE, KB_MARCH, KB_SPOOKY, KB_ROCK, KB_DISCO, KB_HIPHOP, KB_TRAIN, KB_SAMBA, KB_REGGAE, KB_LULLABY,
        KB_HOEDOWN, KB_LOFI, KB_ACID, KB_COUNT };
 
@@ -119,8 +119,8 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {5, "WOW BASS", 94, KS_HEARTS, KB_DANCE},        /* GOO: VOICE */
     {0, "PLUCK", 106, KS_CONFETTI, KB_HIPHOP, 0, 0, 0, 0, TW_GOOBERT},   /* GOOBERT: squishy (she asked) */
     {3, "PULSE LD", 95, KS_FLOWERS, KB_ROCK},        /* BLUE PUP: LOFI */
-    {5, "VOX LEAD", 89, KS_CONFETTI, KB_MARCH},       /* RED MONSTER */
-    {7, "FULL ORGAN", 98, KS_RAINBOW, KB_DISCO},     /* BLUE MONSTER */
+    {5, "VOX LEAD", 89, KS_STREET, KB_MARCH},         /* RED MONSTER */
+    {7, "FULL ORGAN", 98, KS_STREET, KB_DISCO},      /* BLUE MONSTER */
     {2, "BRASS", 86, KS_FLOWERS, KB_TRAIN},           /* APRIL: PHASE (the family dog) */
     {10, "DRUM KIT", 104, KS_CONFETTI, KB_ROCK},      /* SCISSORS: DRUM, every key another drum */
     {5, "CHOIR AAH", 84, KS_STARS, KB_SPOOKY},        /* GHOST: oooOOooo, and the spooky beat */
@@ -132,7 +132,7 @@ static const kid_sound_t KID_SOUND[KID_N] = {
     {8, "CLOUD PAD", 100, KS_RAINBOW, KB_LULLABY},    /* RAINBOW */
     {6, "CHIP CHOIR", 90, KS_HEARTS, KB_DISCO},      /* PRINCESS DUCKY: TRIO */
     {3, "STEP LEAD", 99, KS_FLOWERS, KB_ROCK},       /* RED PUP: LOFI */
-    {0, "SINE KEY", 107, KS_FLOWERS, KB_MARCH},       /* YELLOW BIRD: ANALOG */
+    {0, "SINE KEY", 107, KS_STREET, KB_MARCH},        /* YELLOW BIRD: ANALOG */
     {8, "GLITCH", 107, KS_STARS, KB_SPOOKY},          /* SLIMY: GRAIN, and the spooky beat */
     {9, "PLUCK", 127, KS_FLOWERS, KB_DANCE},          /* BUNNY: PHYS */
     {12, "PAD", 108, KS_RAINBOW, KB_HIPHOP},          /* PANDA: FM6 */
@@ -2129,6 +2129,108 @@ static uint16_t kid_band_px(int32_t x, int32_t y)
     return kf.bg;
 }
 
+/* the street (her idea: a street like a famous one on children's TV, and all the monster friends): two brick
+ * houses, one with a stoop, a lamp post and a trash can on the sidewalk, and the monsters at home in the windows, on
+ * the stoop and in the can. The friend she plays is out on the sidewalk, so its spot is empty. At night the windows
+ * and the lamp light up */
+static int32_t kid_street_who(uint32_t fr, int32_t x, int32_t y, int32_t x0, int32_t y0, int32_t sz)
+{
+    if (kid_art(fr) == kid_art(kid.fr))
+        return -1;
+    return kw_sprite(fr, x - x0, y - y0, sz);
+}
+
+static int32_t kid_street_px(int32_t x, int32_t y)
+{
+    static const int16_t WIN[6][3] = {   /* windows: left, top, who (a friend, -1 none) */
+        {8, 62, 10}, {44, 62, -1}, {80, 62, 22}, {132, 84, -1}, {168, 84, -1}, {200, 84, 9}};
+    uint32_t t = kf.t, nt = kid.night * 20u, i;
+    int32_t c, bob = KID_SIN[(t / 70u) & 31u] * 2 / 127, lit = kid.night >= 4u;
+    uint16_t dusk = RGB(24, 20, 56);
+    if (x >= 225 && x <= 230 && y >= 64 && y < 182)               /* the lamp post */
+        return kid_mix(x == 225 ? RGB(70, 120, 90) : RGB(40, 84, 62), dusk, nt);
+    if (x >= 221 && x <= 234 && y >= 174 && y < 184)
+        return kid_mix(RGB(40, 84, 62), dusk, nt);
+    if (y >= 48 && y < 64 && x >= 220 && x <= 235) {              /* .. its lantern */
+        int32_t dx = x - 227 < 0 ? 227 - x : x - 227;
+        if (y < 52)
+            return dx <= (y - 46) * 2 ? kid_mix(RGB(40, 84, 62), dusk, nt) : -1;
+        if (y >= 61 || dx >= 6)
+            return kid_mix(RGB(40, 84, 62), dusk, nt);
+        return lit ? RGB(255, 236, 150) : RGB(220, 232, 236);
+    }
+    if (x >= 174 && x <= 198 && y >= 150 && y < 182) {           /* the trash can, ridged */
+        if (y < 154)
+            return kid_mix(RGB(118, 124, 132), dusk, nt);
+        return kid_mix((x - 174) % 5 == 0 ? RGB(128, 134, 142) : RGB(168, 174, 180), dusk, nt);
+    }
+    if (y >= 120 + bob && y < 125 + bob && x >= 171 && x <= 201)   /* .. its lid, held up by who is inside */
+        return kid_mix(y == 120 + bob ? RGB(186, 192, 198) : RGB(140, 146, 154), dusk, nt);
+    if (y >= 117 + bob && y < 120 + bob && x >= 183 && x <= 189)
+        return kid_mix(RGB(118, 124, 132), dusk, nt);
+    if (x >= 173 && x < 199 && y >= 125 && y < 150 && (c = kid_street_who(23, x, y, 173, 125 + bob, 26)) >= 0)
+        return c;                                                 /* (SLIMY, peeking out) */
+    if ((c = kid_street_who(7, x, y, 21, 126, 26)) >= 0)          /* GOOBERT in the doorway, GOO on the steps */
+        return c;
+    if ((c = kid_street_who(6, x, y, 50, 147 + (bob > 0), 22)) >= 0)
+        return c;
+    if (y >= 136 && y < 168) {                                    /* the stoop's rails */
+        int32_t lx = 16 - (y - 136) * 12 / 32, rx = 52 + (y - 136) * 12 / 32;
+        if ((x >= lx - 1 && x <= lx) || (x >= rx && x <= rx + 1))
+            return kid_mix(RGB(44, 38, 50), dusk, nt);
+    }
+    if (y >= 152 && y < 168) {                                    /* .. and its steps */
+        int32_t k = (y - 152) / 4;
+        if (x >= 18 - k * 3 && x <= 50 + k * 3)
+            return kid_mix((y - 152) % 4 == 0 ? RGB(196, 134, 100) : RGB(146, 92, 70), dusk, nt);
+    }
+    if (y >= 168) {                                               /* the sidewalk */
+        if (y >= 181)
+            return kid_mix(RGB(150, 148, 142), dusk, nt);
+        return kid_mix(y == 168 || x % 40 == 0 ? RGB(168, 166, 158) : RGB(208, 206, 198), dusk, nt);
+    }
+    for (i = 0; i < 6; i++) {                                     /* the windows */
+        int32_t wx = WIN[i][0], wy = WIN[i][1], dx = x - wx, dy = y - wy;
+        if (dx < 0 || dx >= 24 || dy < 0 || dy >= 30)
+            continue;
+        if (dx < 2 || dx >= 22 || dy < 2 || dy >= 26 || dx == 11 || dx == 12)
+            return kid_mix(dy >= 26 ? RGB(236, 226, 200) : RGB(250, 242, 220), dusk, nt / 2u);
+        if (WIN[i][2] >= 0 && (c = kid_street_who((uint32_t)WIN[i][2], x, y, wx - 1, wy + 5 + bob * (i == 2 ? -1 : 1), 26)) >= 0)
+            return c;
+        if (lit)
+            return kid_mix(RGB(255, 214, 110), RGB(255, 170, 70), (uint32_t)dy * 8u);
+        return dy - dx > 2 && dy - dx < 6 ? RGB(170, 200, 236) : kid_mix(RGB(96, 140, 200), RGB(70, 104, 170), (uint32_t)dy * 8u);
+    }
+    if (x >= 20 && x <= 48 && y >= 112 && y < 152) {              /* the door, round at the top, and its light */
+        int32_t dx = x - 34, dy = y - 126;
+        if (y >= 126 || dx * dx + dy * dy <= 14 * 14) {
+            if (y < 126 && dx * dx + dy * dy >= 10 * 10)
+                return kid_mix(RGB(250, 242, 220), dusk, nt / 2u);
+            if (y < 126)
+                return lit ? RGB(255, 214, 110) : RGB(120, 160, 210);
+            if (x < 22 || x > 46)
+                return kid_mix(RGB(250, 242, 220), dusk, nt / 2u);
+            if (x == 42 && y == 140)
+                return RGB(255, 210, 60);
+            return kid_mix(x == 34 || (y - 126) % 12 == 0 ? RGB(28, 86, 62) : RGB(40, 118, 84), dusk, nt);
+        }
+    }
+    {                                                             /* the houses: brick, a stone trim at the top */
+        int32_t top = x < 118 ? 52 : 72, row;
+        uint16_t b, m;
+        if (y < top)
+            return -1;
+        if (y < top + 6)
+            return kid_mix(y == top + 5 ? RGB(150, 120, 96) : RGB(222, 200, 170), dusk, nt);
+        row = (y - top) / 5;
+        b = x < 118 ? RGB(150, 88, 70) : RGB(204, 116, 78);
+        m = x < 118 ? RGB(126, 72, 58) : RGB(176, 94, 64);
+        if (x == 117 || x == 118)
+            return kid_mix(RGB(96, 58, 48), dusk, nt);
+        return kid_mix((y - top) % 5 == 0 || (x + (row & 1) * 6) % 12 == 0 ? m : b, dusk, nt);
+    }
+}
+
 static int32_t kid_scene_px(uint32_t scene, int32_t x, int32_t y)   /* the scene's decoration, -1 none */
 {
     uint32_t t = kf.t, h;
@@ -2302,6 +2404,8 @@ static int32_t kid_scene_px(uint32_t scene, int32_t x, int32_t y)   /* the scene
         }
         break;
     }
+    case KS_STREET:
+        return kid_street_px(x, y);
     default:
         break;
     }

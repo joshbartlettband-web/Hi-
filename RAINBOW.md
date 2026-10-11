@@ -29,7 +29,7 @@ at the next power-on.
 | PLAY | Starts and stops the beat: drums and a bass line that is always in key, so anything she plays fits. The friend dances. |
 | SEQ | The next beat: DANCE, MARCH, SPOOKY, ROCK, DISCO, HIP HOP, TRAIN, SAMBA, REGGAE, LULLABY, HOEDOWN. |
 | ARP | Sparkle: a held key plays up and down by itself. In ACCORDION it has three settings, one a press: SPARKLE TUNE (the white keys sparkle while the black keys' chords hold steady), SPARKLE ALL (the chords sparkle too) and off. |
-| REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti, clouds, snow, autumn leaves, desert), with confetti. |
+| REC | The next sky (rainbow, stars, hearts, bubbles, flowers, confetti, clouds, snow, autumn leaves, desert, the street), with confetti. |
 | HOME | A surprise friend, with confetti. Held for 1 second it opens the grown-ups' VOLUME instead (below). |
 | SAVE | WRITE: she writes her own song (below). SAVE again goes back to playing. |
 | HOME held 1 s, then OCT- / OCT+ | The grown-ups' VOLUME: the most the MASTER knob can give (below). |
@@ -173,7 +173,11 @@ glide at small values slides in a few milliseconds, too fast to hear.
 And two of her own, drawn up with her dad: Spider Mom (the classic web hero's mask in rainbow stripes, with a mom's long dark brown
 hair; PHASE's RESO, ringing on) and Dragon Duck (a duck with horns, a bat wing and a puff of fire; VOICE's VOX LEAD with a growl). She also asked for
 Goobert to be blue and squishy (ANALOG's PLUCK on a square wave through a ringing filter that pops open and
-settles, with a little wobble).
+settles, with a little wobble), and a sky with all the monster friends: the street, after a famous one on children's TV.
+Two brick houses, a stoop, a lamp post and a trash can, with Blue Monster, Yellow Bird and Red Monster in the windows,
+Goobert in the doorway, Goo on the steps and Slimy peeking out of the can. The friend she is playing is out on the
+sidewalk, so its own spot is empty; at night the windows and the lamp light up. It is Red Monster's, Blue Monster's and
+Yellow Bird's home sky, and with LOOK-ALIKES off the stand-ins move in instead.
 
 Each one uses one of Felucca's own factory sounds (listed in `firmware/src/kid.c`, `KID_SOUND`), with its
 level set so they all play at about the same loudness. Each also has a home sky and a favorite beat
@@ -183,6 +187,8 @@ plays the drum kit: every key is a different drum.
 The pictures are drawn on a roomy canvas, then trimmed, centred and stood on the bottom of a 48 x 48 grid;
 a picture that would not fit stops the build, so none is ever cut off. On the screen they are drawn at 1x,
 1.5x, 2x, 2.5x or 3x (KNOB 1) and kept inside the screen even at their biggest, hopping and wiggling.
+They are stored a row at a time as runs of one colour (`KID_RLE`: 35 KB for the 75 pictures, from 86 KB), and
+`kid_row` in `kid.c` decodes a row as the screen is drawn, keeping the last 16 rows (about 800 B of RAM).
 
 The characters are original drawings in the spirit of the ones she loves, not copies, because this
 repository and its website are public.

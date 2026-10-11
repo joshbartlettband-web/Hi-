@@ -39,8 +39,9 @@ Read it with `RAINBOW.md` (how Rainbow mode works) and `CREDITS.md` (who suggest
   (PROPHET, CZ-1, Dexed-based FM6). **Measure Melodee's image size before planning anything.** Its build prints
   `image N B` and checks against the slot.
 - The friend pictures were Rainbow mode's biggest own cost: 69 pictures at 1,152 B each (48 x 48, 4 bits a pixel) = 79 KB.
-  Simple run-length coding shrinks them to about 31 KB. Decode the shown friend into a small RAM buffer (or a cache of four
-  for WRITE's band). Do this from the start in the new project.
+  Rainbow mode now stores them as runs, a row at a time (75 pictures: 86,400 B down to 35,381 B), and decodes a row as the
+  screen is drawn into a 16-row cache (`kid_row`, about 800 B of RAM; whole-picture buffers would not fit the RAM that was
+  left). The screens came out the same pixel for pixel and no slower. Do this from the start in the new project.
 - The browser emulator's CPU time says nothing about the device. Watch for heavy engines (PROPHET costs three voice units per
   note) and test on the FM-1.
 
