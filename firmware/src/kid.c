@@ -43,7 +43,7 @@
 #define FELUCCA_KID 1
 #endif
 #if FELUCCA_KID
-#include "kid_art.h"                    /* KID_N friends: KID_NAME, KID_PAL, KID_PIX (tools/gen_kid_art.py); and
+#include "kid_art.h"                    /* KID_N friends: KID_NAME, KID_PAL, KID_RLE (tools/gen_kid_art.py); and
                                          * KID_HELLO_NAME, the child's name in the hello (from the build's environment,
                                          * KID_NAME: kept out of the source; none, a plain HI!) */
 
@@ -383,6 +383,47 @@ static uint32_t kid_art(uint32_t fr)
 {
     fr %= KID_N;
     return (KID_VOL_BYTE & KID_HIDE_BIT) && KID_ALT[fr] ? KID_ALT[fr] : fr;
+}
+
+/* row ry of picture art as colour indexes (0 clear), from its runs (KID_RLE, tools/gen_kid_art.py): a few rows kept, as
+ * the screen is drawn a line at a time and a line meets only a few friends' rows (the friend and its echoes, WRITE's
+ * band). Read it before the next call */
+#define KID_ROWS 16u
+static struct {
+    uint16_t key[KID_ROWS];             /* art * 64 + row + 1, 0 none */
+    uint8_t px[KID_ROWS][KID_PW];
+    uint8_t last, next;
+} krow;
+
+static const uint8_t *kid_row(uint32_t art, uint32_t ry)
+{
+    uint32_t key = art * 64u + ry + 1u, i, r, x = 0;
+    const uint8_t *len, *p, *e;
+    uint8_t *o;
+    if (krow.key[krow.last] == key)
+        return krow.px[krow.last];
+    for (i = 0; i < KID_ROWS; i++)
+        if (krow.key[i] == key) {
+            krow.last = (uint8_t)i;
+            return krow.px[i];
+        }
+    i = krow.next;
+    krow.next = (uint8_t)((i + 1u) % KID_ROWS);
+    krow.last = (uint8_t)i;
+    krow.key[i] = (uint16_t)key;
+    o = krow.px[i];
+    len = KID_RLE + KID_RLE_AT[art];    /* (the 48 rows' lengths, then the rows) */
+    p = len + KID_PW;
+    for (r = 0; r < ry; r++)
+        p += len[r];
+    for (e = p + len[ry]; p < e; p++) {
+        uint32_t c = *p >> 4, n = (*p & 15u) + 1u;
+        while (n-- && x < KID_PW)
+            o[x++] = (uint8_t)c;
+    }
+    while (x < KID_PW)
+        o[x++] = 0;
+    return o;
 }
 
 static void kid_sound_to(track_t *t, uint32_t fr);
@@ -1544,7 +1585,7 @@ typedef struct {
     int16_t x, y, w, h, wig;            /* top left, size (px), wobble (px) */
     uint16_t invx, invy;                /* KID_PW * 256 / w, / h */
     uint8_t flip;                       /* mirrored (BACKWARDS) */
-    const uint8_t *pix;
+    uint8_t art;                        /* the picture (kid_art) */
     const uint16_t *pal;
 } kid_inst_t;
 
@@ -1619,7 +1660,7 @@ static void kid_inst(kid_inst_t *in, int32_t cx, int32_t w, int32_t h, int32_t h
     in->x = (int16_t)clamp(cx - w / 2, in->wig, 240 - w - in->wig);           /* never off the screen's sides */
     in->y = (int16_t)clamp(KID_GROUND - h - hop, 0, KID_GROUND - h);         /* .. nor its top */
     in->flip = (kid.fx >> KX_BACK) & 1u;
-    in->pix = KID_PIX[kid_art(kid.fr)];
+    in->art = (uint8_t)kid_art(kid.fr);
     in->pal = pal;
 }
 
@@ -2297,8 +2338,7 @@ static int32_t kid_friends_px(int32_t x, int32_t y)        /* the friends, front
         rx = sx * in->invx >> 8;
         if (in->flip)
             rx = KID_PW - 1 - rx;
-        b = in->pix[ry * (KID_PW / 2) + (rx >> 1)];
-        b = rx & 1 ? b & 15u : b >> 4;
+        b = kid_row(in->art, (uint32_t)ry)[rx];
         if (b)
             return in->pal[b];
     }
@@ -2534,9 +2574,9 @@ static int32_t kw_sprite(uint32_t fr, int32_t x, int32_t y, int32_t sz)   /* fri
     uint32_t rx = (uint32_t)(x * KID_PW / sz), ry = (uint32_t)(y * KID_PW / sz), b;
     if (x < 0 || y < 0 || x >= sz || y >= sz)
         return -1;
-    b = KID_PIX[kid_art(fr)][ry * (KID_PW / 2) + (rx >> 1)];
-    b = rx & 1u ? b & 15u : b >> 4;
-    return b ? (int32_t)KID_PAL[kid_art(fr)][b] : -1;
+    fr = kid_art(fr);
+    b = kid_row(fr, ry)[rx];
+    return b ? (int32_t)KID_PAL[fr][b] : -1;
 }
 
 static uint16_t kw_px(int32_t x, int32_t y)

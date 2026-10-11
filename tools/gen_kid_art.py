@@ -1468,6 +1468,24 @@ CLEF = [
 ]
 
 
+def rle(idx):                          # a picture's colour indexes (N x N) as kid.c's runs (KID_RLE)
+    lens, body = [], bytearray()
+    for y in range(N):
+        r = idx[y * N:(y + 1) * N]
+        while r and r[-1] == 0:
+            r.pop()
+        row, i = bytearray(), 0
+        while i < len(r):
+            j = i
+            while j < len(r) and r[j] == r[i] and j - i < 16:
+                j += 1
+            row.append(r[i] << 4 | (j - i - 1))
+            i = j
+        lens.append(len(row))
+        body += row
+    return bytes(lens) + bytes(body)
+
+
 def rgb565(c):
     r, g, b = c[:3]
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
@@ -1518,12 +1536,22 @@ def main(out, png=None):
             raise SystemExit(f"{name}: {len(cols)} colours, 15 at most")
         pal = [0] + [rgb565(c) for c in cols] + [0] * (15 - len(cols))
         lines.append("    {" + ", ".join(f"0x{v:04X}" for v in pal) + "},")
-        data.append(bytes((idx[i] << 4) | idx[i + 1] for i in range(0, len(idx), 2)))
+        data.append(rle(idx))
     lines.append("};")
-    lines.append(f"static const uint8_t KID_PIX[KID_NART][{N * N // 2}] = {{")
+    at, n = [], 0
     for d in data:
-        lines.append("    {" + ",".join(str(b) for b in d) + "},")
+        at.append(n)
+        n += len(d)
+    if n > 0xFFFF:
+        raise SystemExit(f"kid art: {n} B of runs, KID_RLE_AT is 16-bit")
+    lines.append("/* each picture: its 48 rows' lengths in bytes, then the rows, a byte a run (colour << 4 | length - 1),")
+    lines.append(" * a row's clear end left off; kid.c kid_row decodes a row */")
+    lines.append("static const uint16_t KID_RLE_AT[KID_NART] = {" + ", ".join(map(str, at)) + "};")
+    lines.append(f"static const uint8_t KID_RLE[{n}] = {{")
+    for d in data:
+        lines.append("    " + ",".join(str(b) for b in d) + ",")
     lines.append("};")
+    rle_bytes = n
     icons = []
     for f in ICONS:
         im, cols, idx = f().im, [], []
@@ -1555,7 +1583,7 @@ def main(out, png=None):
     lines.append("    " + ", ".join(f"0x{sum(1 << (15 - x) for x, c in enumerate(r) if c == '#'):04X}" for r in CLEF))
     lines.append("};")
     open(out, "w").write("\n".join(lines) + "\n")
-    print(f"kid art: {len(FRIENDS)} friends and {len(STAND_INS)} stand-ins, {sum(len(d) for d in data)} B of pixels")
+    print(f"kid art: {len(FRIENDS)} friends and {len(STAND_INS)} stand-ins, {rle_bytes} B of runs (from {len(data) * N * N // 2})")
     if png:
         cols = 5
         sheet = Image.new("RGB", (cols * (N * 4 + 8), ((len(pics) + cols - 1) // cols) * (N * 4 + 8)), (120, 200, 255))
